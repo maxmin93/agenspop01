@@ -1,0 +1,38 @@
+## config context path to "/" by setting an empty string
+server:
+  port: 8080
+  error:
+    whitelabel:
+      enabled: false
+
+spring:
+  pid:
+    file: agenspop.pid
+  main:
+    banner-mode: "off"
+  resources:
+    cache:
+      period: 3600
+    static-locations: classpath:/resources/,classpath:/static/
+  groovy:
+    template:
+      check-template-location: false
+
+agens:
+  api:
+    base-path: /api
+    query-timeout: 600000       # 1000 ms = 1 sec
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://27.117.163.21:15602/northwind?ApplicationName=AgensWeb2
+    #      url: jdbc:postgresql://127.0.0.1:6179/northwind?ApplicationName=AgensWeb13
+    graph_path: test_graph
+    username: agraph
+    password: agraph
+    max-rows: 1000
+  drivers:
+    #path: ./drivers
+    path: classpath:bin
+    jars:
+      pgsql: postgresql-42.2.5.jar
+      mysql: mysql-connector-java-5.1.47-bin.jar
