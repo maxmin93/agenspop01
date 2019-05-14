@@ -9,6 +9,7 @@ public abstract class AgensElement implements Element {
     protected final Object id;
     protected final String label;
     protected boolean removed = false;
+    protected String datasource = "default";
 
     protected AgensElement(final Object id, final String label) {
         this.id = id;
@@ -28,6 +29,10 @@ public abstract class AgensElement implements Element {
     @Override
     public String label() {
         return this.label;
+    }
+
+    public String datasource() {
+        return this.datasource;
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")

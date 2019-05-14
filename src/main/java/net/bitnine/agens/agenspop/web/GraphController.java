@@ -1,6 +1,9 @@
 package net.bitnine.agens.agenspop.web;
 
 import net.bitnine.agens.agenspop.graph.AgensGraphManager;
+import net.bitnine.agens.agenspop.graph.structure.AgensIoRegistryV1;
+import net.bitnine.agens.agenspop.graph.structure.AgensVertex;
+import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/graph")
@@ -26,6 +30,11 @@ public class GraphController {
     private static final ObjectMapper mapper = GraphSONMapper.build()
             .version(GraphSONVersion.V1_0).typeInfo(TypeInfo.NO_TYPES)
             .create().createMapper();
+
+    private static ObjectMapper mapperV1 = GraphSONMapper.build().
+            addRegistry(AgensIoRegistryV1.instance()).
+            addCustomModule(new AbstractGraphSONMessageSerializerV1d0.GremlinServerModule()).
+            version(GraphSONVersion.V1_0).create().createMapper();
 
     private final GraphManager manager;
     private final String gName = "modern";
@@ -49,10 +58,11 @@ public class GraphController {
         if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
 
         List<Vertex> vList = ts.V().limit(5).next(5);
+        List<AgensVertex> avList = vList.stream().map(v->(AgensVertex)v).collect(Collectors.toList());
         String json = "[]";
         if( vList != null ){
-            json = mapper.writeValueAsString(vList);
-            System.out.println(String.format("++ V(%d) ==> {%s}", vList.size(), json));
+            json = mapperV1.writeValueAsString(avList);     // AgensIoRegistryV1
+            System.out.println(String.format("++ V(%d) ==> {%s}", avList.size(), json));
         }
         return json;
     }

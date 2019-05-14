@@ -1,6 +1,8 @@
 package net.bitnine.agens.agenspop.graph.structure;
 
 
+import com.google.common.collect.Sets;
+import io.netty.util.internal.ConcurrentSet;
 import net.bitnine.agens.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agens.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 import org.apache.commons.configuration.BaseConfiguration;
@@ -72,6 +74,7 @@ public final class AgensGraph implements Graph {
     protected AtomicLong currentId = new AtomicLong(-1L);
     protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
     protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
+    protected Set<String> datasources = ConcurrentHashMap.newKeySet();
 
     protected AgensGraphVariables variables = null;
     protected Object graphComputerView = null;

@@ -21,6 +21,11 @@ public final class AgensHelper {
     private AgensHelper() {
     }
 
+    protected static Element setDatasource(final AgensElement element, final String datasource) {
+        if( datasource != null ) element.datasource = datasource;
+        return element;
+    }
+
     protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
         ElementHelper.validateLabel(label);
         ElementHelper.legalPropertyKeyValueArray(keyValues);
