@@ -3,6 +3,7 @@ package net.bitnine.agens.agenspop.graph;
 import net.bitnine.agens.agenspop.graph.exception.AgensGraphManagerException;
 import net.bitnine.agens.agenspop.graph.structure.AgensFactory;
 
+import net.bitnine.agens.agenspop.graph.structure.AgensGraph;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
@@ -67,8 +68,9 @@ public class AgensGraphManager implements GraphManager {
     @PostConstruct
     private synchronized void ready(){
         String gName = "modern";
-        Graph g = AgensFactory.createModern();
-        putGraph("graph", g);
+        AgensGraph g = AgensFactory.createEmpty(gName);
+        AgensFactory.generateModern(g);
+        putGraph(gName, g);
         updateTraversalSource(gName, g);
         // for DEBUG
         System.out.println("AgensGraphManager ready: "+g.toString());

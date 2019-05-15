@@ -2,6 +2,7 @@ package net.bitnine.agens.agenspop.graph.structure;
 
 
 import org.apache.tinkerpop.gremlin.structure.Element;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 public abstract class AgensElement implements Element {
@@ -9,7 +10,6 @@ public abstract class AgensElement implements Element {
     protected final Object id;
     protected final String label;
     protected boolean removed = false;
-    protected String datasource = "default";
 
     protected AgensElement(final Object id, final String label) {
         this.id = id;
@@ -29,10 +29,6 @@ public abstract class AgensElement implements Element {
     @Override
     public String label() {
         return this.label;
-    }
-
-    public String datasource() {
-        return this.datasource;
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")

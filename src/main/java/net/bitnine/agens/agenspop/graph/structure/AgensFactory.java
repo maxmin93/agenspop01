@@ -25,6 +25,15 @@ public final class AgensFactory {
 
     private AgensFactory() {}
 
+    public static AgensGraph createEmpty(String gName) {
+        final Configuration conf = new BaseConfiguration();
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
+        return AgensGraph.open(conf);
+    }
+
     /**
      * Create the "modern" graph which has the same structure as the "classic" graph from AgensPop 2.x but includes
      * 3.x features like vertex labels.
@@ -59,7 +68,7 @@ public final class AgensFactory {
      */
     public static AgensGraph createTheCrew() {
         final Configuration conf = getNumberIdManagerConfiguration();
-        conf.setProperty(AgensGraph.GREMLIN_TINKERGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.list.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.list.name());
         final AgensGraph g = AgensGraph.open(conf);
         generateTheCrew(g);
         return g;
@@ -171,9 +180,9 @@ public final class AgensFactory {
 
     private static Configuration getNumberIdManagerConfiguration() {
         final Configuration conf = new BaseConfiguration();
-        conf.setProperty(AgensGraph.GREMLIN_TINKERGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_TINKERGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_TINKERGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
         return conf;
     }
 }

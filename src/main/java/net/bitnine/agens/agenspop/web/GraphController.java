@@ -1,6 +1,7 @@
 package net.bitnine.agens.agenspop.web;
 
 import net.bitnine.agens.agenspop.graph.AgensGraphManager;
+import net.bitnine.agens.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agens.agenspop.graph.structure.AgensIoRegistryV1;
 import net.bitnine.agens.agenspop.graph.structure.AgensVertex;
 import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
@@ -64,6 +65,20 @@ public class GraphController {
             json = mapperV1.writeValueAsString(avList);     // AgensIoRegistryV1
             System.out.println(String.format("++ V(%d) ==> {%s}", avList.size(), json));
         }
+        return json;
+    }
+
+    @GetMapping("/test2")
+    @ResponseStatus(HttpStatus.OK)
+    public String test2() throws Exception {
+        AgensGraph g = (AgensGraph) this.manager.getGraph(gName);
+        if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", gName));
+
+        String json = "[]";
+        json = mapperV1.writeValueAsString(g);     // AgensIoRegistryV1
+        // for DEBUG
+        // System.out.println(String.format("++ G(%s) ==> {%s}", g.toString(), json));
+
         return json;
     }
 

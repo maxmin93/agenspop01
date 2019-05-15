@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
+import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
+import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphson;
+
 /**
  * An in-memory (with optional persistence on calls to {@link #close()}), reference implementation of the property
  * graph interfaces provided by TinkerPop.
@@ -62,20 +65,21 @@ public final class AgensGraph implements Graph {
         this.setProperty(Graph.GRAPH, AgensGraph.class.getName());
     }};
 
-    public static final String GREMLIN_TINKERGRAPH_VERTEX_ID_MANAGER = "gremlin.tinkergraph.vertexIdManager";
-    public static final String GREMLIN_TINKERGRAPH_EDGE_ID_MANAGER = "gremlin.tinkergraph.edgeIdManager";
-    public static final String GREMLIN_TINKERGRAPH_VERTEX_PROPERTY_ID_MANAGER = "gremlin.tinkergraph.vertexPropertyIdManager";
-    public static final String GREMLIN_TINKERGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY = "gremlin.tinkergraph.defaultVertexPropertyCardinality";
-    public static final String GREMLIN_TINKERGRAPH_GRAPH_LOCATION = "gremlin.tinkergraph.graphLocation";
-    public static final String GREMLIN_TINKERGRAPH_GRAPH_FORMAT = "gremlin.tinkergraph.graphFormat";
+    public static final String GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER = "gremlin.agensgraph.vertexIdManager";
+    public static final String GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER = "gremlin.agensgraph.edgeIdManager";
+    public static final String GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER = "gremlin.agensgraph.vertexPropertyIdManager";
+    public static final String GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY = "gremlin.agensgraph.defaultVertexPropertyCardinality";
+    public static final String GREMLIN_AGENSGRAPH_GRAPH_LOCATION = "gremlin.agensgraph.graphLocation";
+    public static final String GREMLIN_AGENSGRAPH_GRAPH_FORMAT = "gremlin.agensgraph.graphFormat";
+    public static final String GREMLIN_AGENSGRAPH_GRAPH_NAME = "gremlin.agensgraph.graphName";
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
     protected AtomicLong currentId = new AtomicLong(-1L);
     protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
     protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
-    protected Set<String> datasources = ConcurrentHashMap.newKeySet();
 
+    protected final String graphName;
     protected AgensGraphVariables variables = null;
     protected Object graphComputerView = null;
     protected AgensIndex<AgensVertex> vertexIndex = null;
@@ -95,18 +99,19 @@ public final class AgensGraph implements Graph {
      */
     private AgensGraph(final Configuration configuration) {
         this.configuration = configuration;
-        vertexIdManager = selectIdManager(configuration, GREMLIN_TINKERGRAPH_VERTEX_ID_MANAGER, Vertex.class);
-        edgeIdManager = selectIdManager(configuration, GREMLIN_TINKERGRAPH_EDGE_ID_MANAGER, Edge.class);
-        vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_TINKERGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
+        vertexIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, Vertex.class);
+        edgeIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, Edge.class);
+        vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.valueOf(
-                configuration.getString(GREMLIN_TINKERGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single.name()));
+                configuration.getString(GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single.name()));
 
-        graphLocation = configuration.getString(GREMLIN_TINKERGRAPH_GRAPH_LOCATION, null);
-        graphFormat = configuration.getString(GREMLIN_TINKERGRAPH_GRAPH_FORMAT, null);
+        graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
+        graphLocation = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_LOCATION, null);
+        graphFormat = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_FORMAT, null);
 
         if ((graphLocation != null && null == graphFormat) || (null == graphLocation && graphFormat != null))
             throw new IllegalStateException(String.format("The %s and %s must both be specified if either is present",
-                    GREMLIN_TINKERGRAPH_GRAPH_LOCATION, GREMLIN_TINKERGRAPH_GRAPH_FORMAT));
+                    GREMLIN_AGENSGRAPH_GRAPH_LOCATION, GREMLIN_AGENSGRAPH_GRAPH_FORMAT));
 
         if (graphLocation != null) loadGraph();
     }
@@ -137,6 +142,10 @@ public final class AgensGraph implements Graph {
      * @return a newly opened {@link Graph}
      */
     public static AgensGraph open(final Configuration configuration) {
+        return new AgensGraph(configuration);
+    }
+    public static AgensGraph open(final Configuration configuration, final String gName) {
+        if( gName != null ) configuration.setProperty(GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
         return new AgensGraph(configuration);
     }
 
@@ -186,7 +195,11 @@ public final class AgensGraph implements Graph {
 
     @Override
     public String toString() {
-        return StringFactory.graphString(this, "vertices:" + this.vertices.size() + " edges:" + this.edges.size());
+        return StringFactory.graphString(this, graphName + "][vertices:" + this.vertices.size() + " edges:" + this.edges.size());
+    }
+
+    public String name() {
+        return this.graphName;
     }
 
     public void clear() {
@@ -200,7 +213,7 @@ public final class AgensGraph implements Graph {
     }
 
     /**
-     * This method only has an effect if the {@link #GREMLIN_TINKERGRAPH_GRAPH_LOCATION} is set, in which case the
+     * This method only has an effect if the {@link #GREMLIN_AGENSGRAPH_GRAPH_LOCATION} is set, in which case the
      * data in the graph is persisted to that location. This method may be called multiple times and does not release
      * resources.
      */
@@ -234,9 +247,9 @@ public final class AgensGraph implements Graph {
         if (f.exists() && f.isFile()) {
             try {
                 if (graphFormat.equals("graphml")) {
-                    io(IoCore.graphml()).readGraph(graphLocation);
+                    io(graphml()).readGraph(graphLocation);
                 } else if (graphFormat.equals("graphson")) {
-                    io(IoCore.graphson()).readGraph(graphLocation);
+                    io(graphson()).readGraph(graphLocation);
                 } else if (graphFormat.equals("gryo")) {
                     io(IoCore.gryo()).readGraph(graphLocation);
                 } else {
@@ -263,9 +276,9 @@ public final class AgensGraph implements Graph {
 
         try {
             if (graphFormat.equals("graphml")) {
-                io(IoCore.graphml()).writeGraph(graphLocation);
+                io(graphml()).writeGraph(graphLocation);
             } else if (graphFormat.equals("graphson")) {
-                io(IoCore.graphson()).writeGraph(graphLocation);
+                io(graphson()).writeGraph(graphLocation);
             } else if (graphFormat.equals("gryo")) {
                 io(IoCore.gryo()).writeGraph(graphLocation);
             } else {

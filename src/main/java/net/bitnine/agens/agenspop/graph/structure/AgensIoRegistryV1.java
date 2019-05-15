@@ -124,32 +124,65 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             super(AgensGraph.class);
         }
 
+/*
+    graph: {
+        name: ""                          // graphName (구별자) ==> datasource
+        elements: {
+            nodes: [ <node>, ... ],
+            edges: [ <edge>, ... ]
+        },
+
+        // 캔버스 상의 렌더링 위치를 알려면 pan, zoom 필요
+        pan: {x: 624.67, y: 221.38 },   // viewport 위치
+        zoom: 0.16                      // 확대 배율
+    }
+ */
         @Override
         public void serialize(final AgensGraph graph, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
                 throws IOException {
-            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStartObject();       // depth=0
+            // cytoscape.js :: elements
+            jsonGenerator.writeFieldName("scratch");
+            jsonGenerator.writeStartObject();       // depth=1
+            jsonGenerator.writeStringField("_name", graph.name());
+            jsonGenerator.writeStringField("_pan", graph.variables().get("pan").orElse("{x:0,y:0}").toString());
+            jsonGenerator.writeStringField("_zoom", graph.variables().get("zoom").orElse("0.1").toString());
+            jsonGenerator.writeEndObject();       // depth=1
 
-            jsonGenerator.writeFieldName(GraphSONTokens.VERTICES);
+            // cytoscape.js :: elements
+            jsonGenerator.writeFieldName("elements");
+            jsonGenerator.writeStartObject();       // depth=1
+
+            jsonGenerator.writeFieldName("nodes");
             jsonGenerator.writeStartArray();
-
             final Iterator<Vertex> vertices = graph.vertices();
             while (vertices.hasNext()) {
-                serializerProvider.defaultSerializeValue(vertices.next(), jsonGenerator);
+                serializerProvider.defaultSerializeValue((AgensVertex)vertices.next(), jsonGenerator);
             }
-
             jsonGenerator.writeEndArray();
 
-            jsonGenerator.writeFieldName(GraphSONTokens.EDGES);
+            jsonGenerator.writeFieldName("edges");
             jsonGenerator.writeStartArray();
-
             final Iterator<Edge> edges = graph.edges();
             while (edges.hasNext()) {
-                serializerProvider.defaultSerializeValue(edges.next(), jsonGenerator);
+                serializerProvider.defaultSerializeValue((AgensEdge)edges.next(), jsonGenerator);
             }
-
             jsonGenerator.writeEndArray();
 
-            jsonGenerator.writeEndObject();
+            jsonGenerator.writeEndObject();       // depth=1
+/*
+            // cytoscape.js :: pan (position)
+            Optional<String> pan = graph.variables().get("pan");
+            if( pan.isPresent() ){
+                jsonGenerator.writeStringField("pan", pan.get());
+            }
+            // cytoscape.js :: zoom (1.0 ~ 0.1)
+            Optional<String> zoom = graph.variables().get("zoom");
+            if( zoom.isPresent() ){
+                jsonGenerator.writeStringField("zoom", zoom.get());
+            }
+ */
+            jsonGenerator.writeEndObject();       // depth=0
         }
 
         @Override
@@ -157,6 +190,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                                       final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField(GraphSONTokens.CLASS, AgensGraph.class.getName());
+            jsonGenerator.writeStringField("name", graph.name());
 
             jsonGenerator.writeFieldName(GraphSONTokens.VERTICES);
             jsonGenerator.writeStartArray();
@@ -165,7 +199,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             final Iterator<Vertex> vertices = graph.vertices();
             while (vertices.hasNext()) {
-                GraphSONUtil.writeWithType(vertices.next(), jsonGenerator, serializerProvider, typeSerializer);
+                GraphSONUtil.writeWithType((AgensVertex)vertices.next(), jsonGenerator, serializerProvider, typeSerializer);
             }
 
             jsonGenerator.writeEndArray();
@@ -178,7 +212,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             final Iterator<Edge> edges = graph.edges();
             while (edges.hasNext()) {
-                GraphSONUtil.writeWithType(edges.next(), jsonGenerator, serializerProvider, typeSerializer);
+                GraphSONUtil.writeWithType((AgensEdge)edges.next(), jsonGenerator, serializerProvider, typeSerializer);
             }
 
             jsonGenerator.writeEndArray();
@@ -303,7 +337,22 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             this.normalize = normalize;
         }
 
+/*
+    edge: {
+        group: "edges"                  // type: "edge"
+        data:
+            id: "11.923"
+            label: "orders"
+            graph: "default"
+            properties: {discount: 0.2, quantity: 5, unitprice: 38}
+            size: 1
+            source: "9.349"
+            target: "3.56"
 
+        // 스타일 지정을 하려면 classes 이용
+        classes: ""                     // className 리스트 (공백 구분)
+    }
+ */
         @Override
         public void serialize(final AgensEdge edge, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
                 throws IOException {
@@ -319,16 +368,23 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                          final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeStartObject();
             if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
-            GraphSONUtil.writeWithType(GraphSONTokens.ID, edge.id(), jsonGenerator, serializerProvider, typeSerializer);
+            jsonGenerator.writeStringField("group", "edges");
 
-            jsonGenerator.writeStringField("datasource", edge.datasource());
+            jsonGenerator.writeFieldName("data");
+            jsonGenerator.writeStartObject();
+
+            GraphSONUtil.writeWithType(GraphSONTokens.ID, edge.id(), jsonGenerator, serializerProvider, typeSerializer);
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, edge.label());
-            jsonGenerator.writeStringField(GraphSONTokens.TYPE, GraphSONTokens.EDGE);
-            jsonGenerator.writeStringField(GraphSONTokens.IN_LABEL, edge.inVertex().label());
-            jsonGenerator.writeStringField(GraphSONTokens.OUT_LABEL, edge.outVertex().label());
-            GraphSONUtil.writeWithType(GraphSONTokens.IN, edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
-            GraphSONUtil.writeWithType(GraphSONTokens.OUT, edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
+            jsonGenerator.writeStringField("graph", ((AgensGraph)edge.graph()).name());
+            GraphSONUtil.writeWithType("target", edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
+            GraphSONUtil.writeWithType("source", edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
             writeProperties(edge, jsonGenerator, serializerProvider, typeSerializer);
+
+            jsonGenerator.writeEndObject();
+
+            // cytoscape.js :: classes
+            String classesKey = "classes";
+            jsonGenerator.writeStringField(classesKey, edge.property("__"+classesKey).orElse("").toString());
             jsonGenerator.writeEndObject();
         }
 
@@ -360,6 +416,21 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             this.normalize = normalize;
         }
 
+/*
+    node: {
+        group: "nodes"                  // type: "vertex"
+        data:
+            id: "9.673"
+            label: "order"
+            graphId: ""
+            properties: {shippostalcode: "CO7 6JX", shipcountry: "UK", orderid: 10920, freight: 29.61, …}
+            size: 1
+
+        // 스타일 지정을 하려면 classes 이용
+        classes: ""                     // className 리스트 (공백 구분)
+        position: {x: 0, y: 0}          // 위치 (nodes만 필요)
+    }
+ */
         @Override
         public void serialize(final AgensVertex vertex, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
                 throws IOException {
@@ -376,14 +447,32 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         private void ser(final AgensVertex vertex, final JsonGenerator jsonGenerator,
                          final SerializerProvider serializerProvider, final TypeSerializer typeSerializer)
                 throws IOException {
-            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStartObject();           // {
             if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
+
+            jsonGenerator.writeStringField("group", "nodes");
+
+            jsonGenerator.writeFieldName("data");
+            jsonGenerator.writeStartObject();           // data : {
+
             GraphSONUtil.writeWithType(GraphSONTokens.ID, vertex.id(), jsonGenerator, serializerProvider, typeSerializer);
-            jsonGenerator.writeStringField("datasource", vertex.datasource());
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, vertex.label());
-            jsonGenerator.writeStringField(GraphSONTokens.TYPE, GraphSONTokens.VERTEX);
+            jsonGenerator.writeStringField("graph", ((AgensGraph)vertex.graph()).name());
+
+//            GraphSONUtil.writeWithType("target", edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
+//            GraphSONUtil.writeWithType("source", edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
             writeProperties(vertex, jsonGenerator, serializerProvider, typeSerializer);
-            jsonGenerator.writeEndObject();
+
+            jsonGenerator.writeEndObject();           // }
+
+            // cytoscape.js :: classes
+            String classesKey = "classes";
+            jsonGenerator.writeStringField(classesKey, vertex.property("__"+classesKey).orElse("").toString());
+            // cytoscape.js :: position
+            String positionKey = "position";
+            jsonGenerator.writeStringField(positionKey, vertex.property("__"+positionKey).orElse("{x:0,y:0}").toString());
+
+            jsonGenerator.writeEndObject();           // }
         }
 
         private void writeProperties(final AgensVertex vertex, final JsonGenerator jsonGenerator,
@@ -399,18 +488,17 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                         : vertex.properties(key);
 
                 if (vertexProperties.hasNext()) {
-                    jsonGenerator.writeArrayFieldStart(key);
-                    if (typeSerializer != null) {
-                        jsonGenerator.writeString(ArrayList.class.getName());
-                        jsonGenerator.writeStartArray();
+                    final VertexProperty property = vertexProperties.next();
+                    if( !vertexProperties.hasNext() ) {             // only one
+                        GraphSONUtil.writeWithType(key, property.value(), jsonGenerator, serializerProvider, typeSerializer);
                     }
-
-                    while (vertexProperties.hasNext()) {
-                        serializerVertexProperty(vertexProperties.next(), jsonGenerator, serializerProvider, typeSerializer, normalize, false);
+                    else {
+                        jsonGenerator.writeArrayFieldStart(key);    // more than one
+                        while (vertexProperties.hasNext()) {
+                            serializerVertexProperty(vertexProperties.next(), jsonGenerator, serializerProvider, typeSerializer, normalize, false);
+                        }
+                        jsonGenerator.writeEndArray();
                     }
-
-                    jsonGenerator.writeEndArray();
-                    if (typeSerializer != null) jsonGenerator.writeEndArray();
                 }
             }
 
@@ -432,6 +520,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         if (includeLabel) jsonGenerator.writeStringField(GraphSONTokens.LABEL, property.label());
         tryWriteMetaProperties(property, jsonGenerator, serializerProvider, typeSerializer, normalize);
         jsonGenerator.writeEndObject();
+
     }
 
     private static void tryWriteMetaProperties(final VertexProperty property, final JsonGenerator jsonGenerator,
