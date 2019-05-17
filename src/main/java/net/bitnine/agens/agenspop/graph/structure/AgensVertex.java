@@ -1,13 +1,13 @@
 package net.bitnine.agens.agenspop.graph.structure;
 
 
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import net.bitnine.agens.agenspop.graph.structure.es.ElasticEdge;
+import net.bitnine.agens.agenspop.graph.structure.es.ElasticVertex;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
+import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.ArrayList;
@@ -23,16 +23,18 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensVertex extends AgensElement implements Vertex {
+public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertex> {
 
     protected Map<String, List<VertexProperty>> properties;
     protected Map<String, Set<Edge>> outEdges;
     protected Map<String, Set<Edge>> inEdges;
-    private final AgensGraph graph;
+
+    public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
+        super(vertex.getId(), vertex.getProperty(T.label.getAccessor()).toString(), graph);
+    }
 
     protected AgensVertex(final Object id, final String label, final AgensGraph graph) {
-        super(id, label);
-        this.graph = graph;
+        super(id, label, graph);
     }
 
     @Override
@@ -142,5 +144,12 @@ public final class AgensVertex extends AgensElement implements Vertex {
             }
         } else
             return (Iterator) this.properties.entrySet().stream().filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys)).flatMap(entry -> entry.getValue().stream()).collect(Collectors.toList()).iterator();
+    }
+
+    ////////////////////////////////
+
+    @Override
+    public ElasticVertex getBaseVertex() {
+        return (ElasticVertex) this.baseElement;
     }
 }

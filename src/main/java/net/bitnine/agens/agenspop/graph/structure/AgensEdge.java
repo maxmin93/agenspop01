@@ -1,6 +1,7 @@
 package net.bitnine.agens.agenspop.graph.structure;
 
 
+import net.bitnine.agens.agenspop.graph.structure.es.ElasticEdge;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -9,6 +10,7 @@ import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.Collections;
@@ -21,14 +23,20 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensEdge extends AgensElement implements Edge {
+public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
     protected Map<String, Property> properties;
     protected final Vertex inVertex;
     protected final Vertex outVertex;
 
+    public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
+        super(edge.getId(), edge.getProperty(T.label.getAccessor()).toString(), graph);
+        this.inVertex = null;       // 나중에
+        this.outVertex = null;      // 나중에
+    }
+
     protected AgensEdge(final Object id, final Vertex outVertex, final String label, final Vertex inVertex) {
-        super(id, label);
+        super(id, label, (AgensGraph)inVertex.graph());
         this.outVertex = outVertex;
         this.inVertex = inVertex;
         AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), this.label, null);
@@ -121,5 +129,12 @@ public final class AgensEdge extends AgensElement implements Edge {
             return null == property ? Collections.emptyIterator() : IteratorUtils.of(property);
         } else
             return (Iterator) this.properties.entrySet().stream().filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys)).map(entry -> entry.getValue()).collect(Collectors.toList()).iterator();
+    }
+
+    ////////////////////////////////
+
+    @Override
+    public ElasticEdge getBaseEdge() {
+        return (ElasticEdge) this.baseElement;
     }
 }

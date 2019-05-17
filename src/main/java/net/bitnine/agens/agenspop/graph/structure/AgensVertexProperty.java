@@ -33,7 +33,7 @@ public class AgensVertexProperty<V> extends AgensElement implements VertexProper
      * {@code Long} for its identifier.
      */
     public AgensVertexProperty(final AgensVertex vertex, final String key, final V value, final Object... propertyKeyValues) {
-        super(((AgensGraph) vertex.graph()).vertexPropertyIdManager.getNextId((AgensGraph) vertex.graph()), key);
+        super(((AgensGraph) vertex.graph()).vertexPropertyIdManager.getNextId((AgensGraph) vertex.graph()), key, vertex.graph);
         this.vertex = vertex;
         this.key = key;
         this.value = value;
@@ -46,7 +46,7 @@ public class AgensVertexProperty<V> extends AgensElement implements VertexProper
      * can be explicitly set and validated against the expected data type.
      */
     public AgensVertexProperty(final Object id, final AgensVertex vertex, final String key, final V value, final Object... propertyKeyValues) {
-        super(id, key);
+        super(id, key, vertex.graph);
         this.vertex = vertex;
         this.key = key;
         this.value = value;
