@@ -71,7 +71,7 @@ public final class AgensGraph implements Graph {
     public static final String GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY = "gremlin.agensgraph.defaultVertexPropertyCardinality";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_LOCATION = "gremlin.agensgraph.graphLocation";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_FORMAT = "gremlin.agensgraph.graphFormat";
-    public static final String GREMLIN_AGENSGRAPH_GRAPH_NAME = "gremlin.agensgraph.graphName";
+    public static final String GREMLIN_AGENSGRAPH_GRAPH_NAME = "gremlin.agensgraph.graphName";      // added
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
@@ -81,7 +81,7 @@ public final class AgensGraph implements Graph {
 
     protected final String graphName;
     protected AgensGraphVariables variables = null;
-    protected Object graphComputerView = null;
+    protected Object graphComputerView = null;                  // excluded
     protected AgensIndex<AgensVertex> vertexIndex = null;
     protected AgensIndex<AgensEdge> edgeIndex = null;
 
@@ -105,6 +105,7 @@ public final class AgensGraph implements Graph {
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.valueOf(
                 configuration.getString(GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single.name()));
 
+        // added
         graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
         graphLocation = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_LOCATION, null);
         graphFormat = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_FORMAT, null);

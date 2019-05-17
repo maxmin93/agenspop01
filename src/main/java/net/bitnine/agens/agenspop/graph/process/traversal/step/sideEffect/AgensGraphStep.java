@@ -109,11 +109,15 @@ public final class AgensGraphStep<S, E extends Element> extends GraphStep<S, E> 
 
     @Override
     public void addHasContainer(final HasContainer hasContainer) {
+        // 하나 이상이면
         if (hasContainer.getPredicate() instanceof AndP) {
             for (final P<?> predicate : ((AndP<?>) hasContainer.getPredicate()).getPredicates()) {
+                // 재귀호출
                 this.addHasContainer(new HasContainer(hasContainer.getKey(), predicate));
             }
-        } else
+        }
+        // 하나 이면
+        else
             this.hasContainers.add(hasContainer);
     }
 

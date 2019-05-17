@@ -1,7 +1,9 @@
 package net.bitnine.agens.agenspop.graph.structure;
 
-import org.apache.tinkerpop.gremlin.structure.Property;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.GraphReader;
 import org.apache.tinkerpop.gremlin.structure.io.GraphWriter;
 import org.apache.tinkerpop.gremlin.structure.io.IoRegistry;
@@ -14,8 +16,6 @@ import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.io.AbstractIoRegistry;
 import org.apache.tinkerpop.gremlin.structure.io.GraphReader;
 import org.apache.tinkerpop.gremlin.structure.io.GraphWriter;
@@ -44,6 +44,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
@@ -425,6 +426,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             graphId: ""
             properties: {shippostalcode: "CO7 6JX", shipcountry: "UK", orderid: 10920, freight: 29.61, …}
             size: 1
+            outgoers: [ vlabel1: [], vlable2: [], ... ]
+            incomers: [ vlabel3: [], vlable4: [], ... ]
 
         // 스타일 지정을 하려면 classes 이용
         classes: ""                     // className 리스트 (공백 구분)
@@ -459,8 +462,58 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, vertex.label());
             jsonGenerator.writeStringField("graph", ((AgensGraph)vertex.graph()).name());
 
-//            GraphSONUtil.writeWithType("target", edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
-//            GraphSONUtil.writeWithType("source", edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
+            // for expand : out-direction
+            jsonGenerator.writeObjectFieldStart("outgoers");
+            if( vertex.outEdges != null ) {
+                Map<String,List<Vertex>> groupByLabel = vertex.outEdges.values().stream()
+                        .flatMap(Set::stream).map(Edge::inVertex)       // all outgoers
+                        .collect(Collectors.groupingBy(Vertex::label, TreeMap::new, Collectors.toList()));
+                for( String label : groupByLabel.keySet() ){
+                    jsonGenerator.writeArrayFieldStart(label);
+                    for( Vertex outgoer : groupByLabel.get(label)){
+                        GraphSONUtil.writeWithType(outgoer.id(), jsonGenerator, serializerProvider, typeSerializer);
+                    }
+                    jsonGenerator.writeEndArray();
+                }
+            }
+            jsonGenerator.writeEndObject();
+
+            // for expand : in-direction
+            jsonGenerator.writeObjectFieldStart("incomers");
+            if( vertex.inEdges != null ) {
+                Map<String,List<Vertex>> groupByLabel = vertex.inEdges.values().stream()
+                        .flatMap(Set::stream).map(Edge::outVertex)       // all incomers
+                        .collect(Collectors.groupingBy(Vertex::label, TreeMap::new, Collectors.toList()));
+                for( String label : groupByLabel.keySet() ){
+                    jsonGenerator.writeArrayFieldStart(label);
+                    for( Vertex incomer : groupByLabel.get(label)){
+                        GraphSONUtil.writeWithType(incomer.id(), jsonGenerator, serializerProvider, typeSerializer);
+                    }
+                    jsonGenerator.writeEndArray();
+                }
+            }
+            jsonGenerator.writeEndObject();
+
+/*
+ ** 참고 : StarGraph.java - vertices() 함수
+ **
+        return null == this.starVertex ?
+                Collections.emptyIterator() :
+                Stream.concat(
+                        Stream.of(this.starVertex),
+                        Stream.concat(
+                                this.starVertex.outEdges.values()
+                                        .stream()
+                                        .flatMap(List::stream)
+                                        .map(Edge::inVertex),
+                                this.starVertex.inEdges.values()
+                                        .stream()
+                                        .flatMap(List::stream)
+                                        .map(Edge::outVertex)))
+                        .filter(vertex -> ElementHelper.idExists(vertex.id(), vertexIds))
+                        .iterator();
+ */
+
             writeProperties(vertex, jsonGenerator, serializerProvider, typeSerializer);
 
             jsonGenerator.writeEndObject();           // }

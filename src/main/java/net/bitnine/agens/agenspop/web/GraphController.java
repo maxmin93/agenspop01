@@ -51,26 +51,9 @@ public class GraphController {
         return "{ \"msg\": \"Hello, graph!\"}";
     }
 
-    @GetMapping("/test1")
+    @GetMapping("/test0")
     @ResponseStatus(HttpStatus.OK)
-    public String test1() throws Exception {
-        String tsName = gName + "_traversal";
-        GraphTraversalSource ts = (GraphTraversalSource) this.manager.getTraversalSource(tsName);
-        if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
-
-        List<Vertex> vList = ts.V().limit(5).next(5);
-        List<AgensVertex> avList = vList.stream().map(v->(AgensVertex)v).collect(Collectors.toList());
-        String json = "[]";
-        if( vList != null ){
-            json = mapperV1.writeValueAsString(avList);     // AgensIoRegistryV1
-            System.out.println(String.format("++ V(%d) ==> {%s}", avList.size(), json));
-        }
-        return json;
-    }
-
-    @GetMapping("/test2")
-    @ResponseStatus(HttpStatus.OK)
-    public String test2() throws Exception {
+    public String test0() throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(gName);
         if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", gName));
 
@@ -79,6 +62,40 @@ public class GraphController {
         // for DEBUG
         // System.out.println(String.format("++ G(%s) ==> {%s}", g.toString(), json));
 
+        return json;
+    }
+
+    @GetMapping("/test1")
+    @ResponseStatus(HttpStatus.OK)
+    public String test1() throws Exception {
+        String tsName = gName + "_traversal";
+        GraphTraversalSource ts = (GraphTraversalSource) this.manager.getTraversalSource(tsName);
+        if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
+
+        List<Vertex> vList = ts.V().hasLabel("person").next(5);
+        List<AgensVertex> avList = vList.stream().map(v->(AgensVertex)v).collect(Collectors.toList());
+        String json = "[]";
+        if( vList != null ){
+            json = mapperV1.writeValueAsString(avList);     // AgensIoRegistryV1
+//            System.out.println(String.format("++ V(%d) ==> {%s}", avList.size(), json));
+        }
+        return json;
+    }
+
+    @GetMapping("/test2")
+    @ResponseStatus(HttpStatus.OK)
+    public String test2() throws Exception {
+        String tsName = gName + "_traversal";
+        GraphTraversalSource ts = (GraphTraversalSource) this.manager.getTraversalSource(tsName);
+        if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
+
+        List<Vertex> vList = ts.V().has("person", "name","marko").next(5);
+        List<AgensVertex> avList = vList.stream().map(v->(AgensVertex)v).collect(Collectors.toList());
+        String json = "[]";
+        if( vList != null ){
+            json = mapperV1.writeValueAsString(avList);     // AgensIoRegistryV1
+//            System.out.println(String.format("++ V(%d) ==> {%s}", avList.size(), json));
+        }
         return json;
     }
 
