@@ -2,6 +2,8 @@ package net.bitnine.agenspop.elastic;
 
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.elastic.repository.ElasticEdgeRepository;
 import net.bitnine.agenspop.elastic.repository.ElasticVertexRepository;
 import org.elasticsearch.action.search.SearchResponse;
@@ -24,7 +26,7 @@ import java.util.*;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 @Service
-public class ElasticGraphService {
+public class ElasticGraphService implements ElasticGraphAPI {
 
     static final String VERTEX_INDEX_NAME = "agensvertex";
     static final String EDGE_INDEX_NAME = "agensedge";
@@ -174,36 +176,58 @@ public class ElasticGraphService {
     // common access services about ElasticElementWrapper
     //
 
+    @Override
     public long countV() {
         return vertexRepository.count();
     }
-    public void deleteV(ElasticVertexDocument vertex) {
-        if( vertex != null ) vertexRepository.delete(vertex);
+    @Override
+    public void deleteV(ElasticVertex vertex) {
+        if( vertex != null ){
+            Optional<ElasticVertexDocument> doc = vertexRepository.findById(vertex.getId());
+            if( doc.isPresent() ) vertexRepository.delete(doc.get());
+        }
     }
-    public ElasticVertexDocument saveV(ElasticVertexDocument vertex) {
-        if( vertex != null ) vertexRepository.save(vertex);
-        return vertex;
+    @Override
+    public ElasticVertex saveV(ElasticVertex vertex) {
+        if( vertex != null ){
+            ElasticVertexDocument doc = new ElasticVertexDocument(vertex);
+            vertexRepository.save(doc);
+        }
+        return (ElasticVertex)vertex;
     }
+    @Override
     public Optional<ElasticVertexDocument> vertexOne(String uid) {
         return vertexRepository.findById(uid);
     }
+    @Override
     public Iterable<ElasticVertexDocument> vertices() {
         return vertexRepository.findAll();
     }
 
+    @Override
     public long countE() {
         return edgeRepository.count();
     }
-    public void deleteE(ElasticEdgeDocument edge) {
-        if( edge != null ) edgeRepository.delete(edge);
+    @Override
+    public void deleteE(ElasticEdge edge) {
+        if( edge != null ){
+            Optional<ElasticEdgeDocument> doc = edgeRepository.findById(edge.getId());
+            if( doc.isPresent() ) edgeRepository.delete(doc.get());
+        }
     }
-    public ElasticEdgeDocument saveE(ElasticEdgeDocument edge) {
-        if( edge != null ) edgeRepository.save(edge);
-        return edge;
+    @Override
+    public ElasticEdge saveE(ElasticEdge edge) {
+        if( edge != null ){
+            ElasticEdgeDocument doc = new ElasticEdgeDocument(edge);
+            edgeRepository.save(doc);
+        }
+        return (ElasticEdge)edge;
     }
+    @Override
     public Optional<ElasticEdgeDocument> edgeOne(String uid) {
         return edgeRepository.findById(uid);
     }
+    @Override
     public Iterable<ElasticEdgeDocument> edges() {
         return edgeRepository.findAll();
     }
@@ -213,35 +237,35 @@ public class ElasticGraphService {
     // access services of Vertex
     //
 
-//    public Optional<ElasticVertexDocument> vertexByEid(Long eid) {
-//        Pageable firstOneElement = PageRequest.of(0,1);
-//        Page<ElasticVertexDocument> result = vertexRepository.findByEidUsingCustomQuery(eid, firstOneElement);
-//        if( result.hasNext() ) return result.get().findFirst();
-//        return Optional.empty();
-//    }
-
+    @Override
     public Optional<ElasticVertexDocument> vertexByEid(Long eid) {
         List<ElasticVertexDocument> result = vertexRepository.findByEid(eid);
         return result.stream().findFirst();
     }
+    @Override
     public Optional<ElasticVertexDocument> vertexByEidAndDatasource(Long eid, String datasource) {
         List<ElasticVertexDocument> result = vertexRepository.findByEidAndDatasource(eid, datasource);
         return result.stream().findFirst();
     }
 
-    public List<ElasticVertexDocument> verticesByLabel(String label) {
+    @Override
+    public Iterable<ElasticVertexDocument> verticesByLabel(String label) {
         return vertexRepository.findByLabel(label);
     }
-    public List<ElasticVertexDocument> verticesByLabelAndDatasource(String label, String datasource) {
+    @Override
+    public Iterable<ElasticVertexDocument> verticesByLabelAndDatasource(String label, String datasource) {
         return vertexRepository.findByLabelAndDatasource(label, datasource);
     }
-    public List<ElasticVertexDocument> verticesByPropsKey(String key) {
+    @Override
+    public Iterable<ElasticVertexDocument> verticesByPropsKey(String key) {
         return vertexRepository.findByPropsKeyUsingCustomQuery(key);
     }
-    public List<ElasticVertexDocument> verticesByPropsValue(String value) {
+    @Override
+    public Iterable<ElasticVertexDocument> verticesByPropsValue(String value) {
         return vertexRepository.findByPropsValueUsingCustomQuery(value);
     }
-    public List<ElasticVertexDocument> verticesByPropsKeyAndValue(String key, String value) {
+    @Override
+    public Iterable<ElasticVertexDocument> verticesByPropsKeyAndValue(String key, String value) {
         return vertexRepository.findByPropsKeyAndValueUsingCustomQuery(key, value);
     }
 
@@ -250,47 +274,60 @@ public class ElasticGraphService {
     // access services of Edge
     //
 
+    @Override
     public Optional<ElasticEdgeDocument> edgeByEid(Long eid) {
         List<ElasticEdgeDocument> result = edgeRepository.findByEid(eid);
         return result.stream().findFirst();
     }
+    @Override
     public Optional<ElasticEdgeDocument> edgeByEidAndDatasource(Long eid, String datasource) {
         List<ElasticEdgeDocument> result = edgeRepository.findByEidAndDatasource(eid, datasource);
         return result.stream().findFirst();
     }
 
-    public List<ElasticEdgeDocument> edgesBySid(Long sid) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesBySid(Long sid) {
         return edgeRepository.findBySid(sid);
     }
-    public List<ElasticEdgeDocument> edgesBySidAndDatasource(Long sid, String datasource) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesBySidAndDatasource(Long sid, String datasource) {
         return edgeRepository.findBySidAndDatasource(sid, datasource);
     }
-    public List<ElasticEdgeDocument> edgesByTid(Long tid) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByTid(Long tid) {
         return edgeRepository.findByTid(tid);
     }
-    public List<ElasticEdgeDocument> edgesByTidAndDatasource(Long tid, String datasource) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByTidAndDatasource(Long tid, String datasource) {
         return edgeRepository.findByTidAndDatasource(tid, datasource);
     }
-    public List<ElasticEdgeDocument> edgesBySidAndTid(Long sid, Long tid) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesBySidAndTid(Long sid, Long tid) {
         return edgeRepository.findBySidAndTid(sid, tid);
     }
-    public List<ElasticEdgeDocument> edgesBySidAndTidAndDatasource(Long sid, Long tid, String datasource) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesBySidAndTidAndDatasource(Long sid, Long tid, String datasource) {
         return edgeRepository.findBySidAndTidAndDatasource(sid, tid, datasource);
     }
 
-    public List<ElasticEdgeDocument> edgesByLabel(String label) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByLabel(String label) {
         return edgeRepository.findByLabel(label);
     }
-    public List<ElasticEdgeDocument> edgesByLabelAndDatasource(String label, String datasource) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByLabelAndDatasource(String label, String datasource) {
         return edgeRepository.findByLabelAndDatasource(label, datasource);
     }
-    public List<ElasticEdgeDocument> edgesByPropsKey(String key) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByPropsKey(String key) {
         return edgeRepository.findByPropsKeyUsingCustomQuery(key);
     }
-    public List<ElasticEdgeDocument> edgesByPropsValue(String value) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByPropsValue(String value) {
         return edgeRepository.findByPropsValueUsingCustomQuery(value);
     }
-    public List<ElasticEdgeDocument> edgesByPropsKeyAndValue(String key, String value) {
+    @Override
+    public Iterable<ElasticEdgeDocument> edgesByPropsKeyAndValue(String key, String value) {
         return edgeRepository.findByPropsKeyAndValueUsingCustomQuery(key, value);
     }
 

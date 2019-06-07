@@ -71,7 +71,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
         return true;
     }
 
-    public String getId(){ return id; }
+    @Override public String getId(){ return id; }
     public static final String getId(Long eid, String datasource){
         return datasource + "::" + eid.toString();
     }
@@ -89,8 +89,8 @@ public abstract class ElasticElementDocument implements ElasticElement {
     @Override public Iterable<String> keys(){
         return props.stream().map(ElasticPropertyDocument::key).collect(Collectors.toList());
     }
-    public void setProps(Set<ElasticPropertyDocument> props){ this.props = props; }
-    public Set<ElasticPropertyDocument> getProps(){ return this.props; }
+    @Override public void setProps(Set<ElasticPropertyDocument> props){ this.props = props; }
+    @Override public Set<ElasticPropertyDocument> getProps(){ return this.props; }
 
 
     // @Override

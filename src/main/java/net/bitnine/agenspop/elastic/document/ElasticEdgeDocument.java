@@ -30,6 +30,13 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
         this.sid = sid;
         this.tid = tid;
     }
+    public ElasticEdgeDocument(ElasticEdge edge){
+        super(edge.getEid(), edge.getLabel(), edge.getDatasource());
+        this.sid = edge.getSid();
+        this.tid = edge.getTid();
+        this.id = edge.getId();
+        this.props = edge.getProps();
+    }
 
     public Long getSid(){ return sid; }
     public Long getTid(){ return tid; }

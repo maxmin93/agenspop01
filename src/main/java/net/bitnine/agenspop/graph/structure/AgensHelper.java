@@ -16,8 +16,8 @@ import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 public final class AgensHelper {
-    private AgensHelper() {
-    }
+
+    private AgensHelper() { }
 
     protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
         ElementHelper.validateLabel(label);
