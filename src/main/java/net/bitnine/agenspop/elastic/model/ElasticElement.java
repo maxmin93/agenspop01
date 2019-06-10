@@ -10,11 +10,13 @@ public interface ElasticElement {
     Long getEid();
     String getLabel();
     String getDatasource();
-    Iterable<String> keys();
-//    Object getProperty(String name);
-//    Object getProperty(String name, Object defaultValue);
-//    void setProperty(String name, Object value);
-//    Object removeProperty(String name);
+    Iterable<String> getKeys();
+
+    Object getProperty(String name);
+    Object getProperty(String name, Object defaultValue);
+    boolean setProperty(String name, Object value);
+    int removeProperty(String name);
+
     boolean hasProperty(String name);
     void delete();
     boolean isDeleted();

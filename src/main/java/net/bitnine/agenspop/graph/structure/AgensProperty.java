@@ -1,6 +1,8 @@
 package net.bitnine.agenspop.graph.structure;
 
 
+import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Property;
@@ -14,10 +16,13 @@ public final class AgensProperty<V> implements Property<V> {
 
     protected final Element element;
     protected final String key;
+    protected final AgensGraph graph;
     protected V value;
+    protected boolean removed = false;
 
     public AgensProperty(final Element element, final String key, final V value) {
         this.element = element;
+        this.graph = (AgensGraph)element.graph();
         this.key = key;
         this.value = value;
     }
@@ -59,11 +64,13 @@ public final class AgensProperty<V> implements Property<V> {
 
     @Override
     public void remove() {
-        if (this.element instanceof Edge) {
-            ((AgensEdge) this.element).properties.remove(this.key);
-            AgensHelper.removeIndex((AgensEdge) this.element, this.key, this.value);
-        } else {
-            ((AgensVertexProperty) this.element).properties.remove(this.key);
+        if (this.removed) return;
+
+        this.removed = true;
+        this.graph.tx().readWrite();
+        final ElasticElement entity = ((AgensElement) this.element).getBaseElement();
+        if (entity.hasProperty(this.key)) {
+            entity.removeProperty(this.key);
         }
     }
 }

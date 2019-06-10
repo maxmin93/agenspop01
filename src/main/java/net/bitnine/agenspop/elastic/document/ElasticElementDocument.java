@@ -33,7 +33,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
     protected String label;
 
     @Field(type = FieldType.Nested, includeInParent = true)
-    protected Set<ElasticPropertyDocument> props = new HashSet<>();
+    protected Set<ElasticPropertyDocument> properties = new HashSet<>();
 
     protected ElasticElementDocument(){
         this.deleted = false;
@@ -86,43 +86,43 @@ public abstract class ElasticElementDocument implements ElasticElement {
         return datasource;
     }
 
-    @Override public Iterable<String> keys(){
-        return props.stream().map(ElasticPropertyDocument::key).collect(Collectors.toList());
+    @Override public Iterable<String> getKeys(){
+        return properties.stream().map(ElasticPropertyDocument::key).collect(Collectors.toList());
     }
-    @Override public void setProps(Set<ElasticPropertyDocument> props){ this.props = props; }
-    @Override public Set<ElasticPropertyDocument> getProps(){ return this.props; }
+    public void setProperties(Set<ElasticPropertyDocument> properties){ this.properties = properties; }
+    public Set<ElasticPropertyDocument> getProperties(){ return this.properties; }
 
 
-    // @Override
+    @Override
     public ElasticProperty getProperty(String key){
         // return props.get(name);
-        List<ElasticProperty> result = props.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
         return result.size() > 0 ? result.get(0) : ElasticEmptyProperty.instance();
     }
-    // @Override
+    @Override
     public boolean setProperty(String key, Object value){
-        List<ElasticProperty> result = props.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
-                props.stream().filter(p->p.equals(r)).forEach(props::remove);
+                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
         ElasticPropertyDocument prop = new ElasticPropertyDocument(this.id, key, value);
-        return props.add(prop);
+        return properties.add(prop);
     }
-    // @Override
+    @Override
     public int removeProperty(String key){
-        List<ElasticProperty> result = props.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
-                props.stream().filter(p->p.equals(r)).forEach(props::remove);
+                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
         return result.size();
     }
 
     @Override public boolean hasProperty(String key){
-        List<ElasticProperty> result = props.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
         return result.size() > 0;
     }
 
@@ -141,7 +141,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
                 ", eid=" + eid +
                 ", label='" + label + '\'' +
                 ", datasource='" + datasource + '\'' +
-                ", properties=[" + props.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
                 "]}";
     }
 }

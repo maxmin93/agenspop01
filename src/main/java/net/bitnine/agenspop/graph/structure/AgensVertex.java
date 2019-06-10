@@ -1,7 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
-import net.bitnine.agenspop.graph.structure.es.ElasticVertexWrapper;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -21,23 +21,37 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertexWrapper> {
+public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertex> {
+
+    public static final String LABEL_DELIMINATOR = "::";
 
     protected Map<String, List<VertexProperty>> properties;
     protected Map<String, Set<Edge>> outEdges;
     protected Map<String, Set<Edge>> inEdges;
 
-    public AgensVertex(final ElasticVertexWrapper vertex, final AgensGraph graph) {
-        super(vertex.getId(), vertex.getProperty(T.label.getAccessor()).toString(), graph);
+    public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
+        super(vertex, graph);
     }
-
-    protected AgensVertex(final Object id, final String label, final AgensGraph graph) {
-        super(id, label, graph);
-    }
+//    protected AgensVertex(final Object id, final String label, final AgensGraph graph) {
+//        super(id, label, graph);
+//    }
 
     @Override
     public Graph graph() {
         return this.graph;
+    }
+
+    @Override
+    public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
+        if (null == inVertex) throw Graph.Exceptions.argumentCanNotBeNull("inVertex");
+//        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id);
+//        return AgensHelper.addEdge(this.graph, this, (AgensVertex) vertex, label, keyValues);
+
+        this.graph.tx().readWrite();
+        final ElasticVertex vertex = (ElasticVertex) this.baseElement;
+        final AgensEdge edge = AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
+        ElementHelper.attachProperties(edge, keyValues);
+        return edge;
     }
 
     @Override
@@ -84,13 +98,6 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         return AgensHelper.inComputerMode((AgensGraph) graph()) ?
                 Vertex.super.keys() :
                 this.properties.keySet();
-    }
-
-    @Override
-    public Edge addEdge(final String label, final Vertex vertex, final Object... keyValues) {
-        if (null == vertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id);
-        return AgensHelper.addEdge(this.graph, this, (AgensVertex) vertex, label, keyValues);
     }
 
     @Override
@@ -147,7 +154,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     ////////////////////////////////
 
     @Override
-    public ElasticVertexWrapper getBaseVertex() {
-        return (ElasticVertexWrapper) this.baseElement;
+    public ElasticVertex getBaseVertex() {
+        return (ElasticVertex) this.baseElement;
     }
 }

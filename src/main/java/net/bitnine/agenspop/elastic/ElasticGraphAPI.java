@@ -1,13 +1,7 @@
 package net.bitnine.agenspop.elastic;
 
-import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
-import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
-import net.bitnine.agenspop.graph.structure.es.ElasticEdgeWrapper;
-import net.bitnine.agenspop.graph.structure.es.ElasticTextSearchMode;
-import net.bitnine.agenspop.graph.structure.es.ElasticTx;
-import net.bitnine.agenspop.graph.structure.es.ElasticVertexWrapper;
 
 import java.util.Iterator;
 import java.util.List;
@@ -16,6 +10,40 @@ import java.util.Optional;
 
 public interface ElasticGraphAPI {
 
+    ElasticVertex createVertex(String label, String datasource);
+
+    ElasticVertex getVertexById(long id);
+
+    ElasticEdge getEdgeById(long id);
+
+    void shutdown();
+
+    Iterable<ElasticVertex> allVertices();
+
+    Iterable<ElasticEdge> allEdges();
+
+    Iterable<ElasticVertex> findVertices(String label);
+
+    Iterable<ElasticVertex> findVertices(String label, String property, Object value);
+
+    Iterable<ElasticVertex> findVertices(String label, String property, String template, ElasticStringSearchMode searchMode);
+
+    ElasticTx tx();
+
+    Iterator<Map<String, Object>> execute(String query, Map<String, Object> params);
+
+    boolean hasSchemaIndex(String label, String property);
+
+    Iterable<String> getKeys();
+
+    Object getProperty(String key);
+
+    boolean hasProperty(String key);
+
+    Object removeProperty(String key);
+
+    void setProperty(String key, Object value);
+    
     //////////////////////////////////////////////////
     //
     // common access services about ElasticElementWrapper

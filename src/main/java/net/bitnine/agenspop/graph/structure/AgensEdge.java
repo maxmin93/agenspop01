@@ -1,7 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
-
-import net.bitnine.agenspop.graph.structure.es.ElasticEdgeWrapper;
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -23,50 +22,91 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdgeWrapper> {
+public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
-    protected Map<String, Property> properties;
+//    protected Map<String, Property> properties;
     protected final Vertex inVertex;
     protected final Vertex outVertex;
 
-    public AgensEdge(final ElasticEdgeWrapper edge, final AgensGraph graph) {
-        super(edge.getId(), edge.getProperty(T.label.getAccessor()).toString(), graph);
-        this.inVertex = null;       // 나중에
-        this.outVertex = null;      // 나중에
+    public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
+        super(edge, graph);
+        this.inVertex = null;       // 나중에 : vertexById 로 찾아 넣기
+        this.outVertex = null;      // 나중에 : vertexById 로 찾아 넣기
     }
 
-    protected AgensEdge(final Object id, final Vertex outVertex, final String label, final Vertex inVertex) {
-        super(id, label, (AgensGraph)inVertex.graph());
-        this.outVertex = outVertex;
-        this.inVertex = inVertex;
-        AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), this.label, null);
+//    protected AgensEdge(final Object id, final Vertex outVertex, final String label, final Vertex inVertex) {
+//        super(id, label, (AgensGraph)inVertex.graph());
+//        this.outVertex = outVertex;
+//        this.inVertex = inVertex;
+//        AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), this.label, null);
+//    }
+
+    @Override
+    public Vertex outVertex() {     // source v of edge
+//        return new AgensVertex(this.getBaseEdge().getSid(), this.graph);
+        return (Vertex)this.outVertex;
     }
 
     @Override
-    public <V> Property<V> property(final String key, final V value) {
-        if (this.removed) throw elementAlreadyRemoved(Edge.class, id);
-        ElementHelper.validateProperty(key, value);
-        final Property oldProperty = super.property(key);
-        final Property<V> newProperty = new AgensProperty<>(this, key, value);
-        if (null == this.properties) this.properties = new HashMap<>();
-        this.properties.put(key, newProperty);
-        AgensHelper.autoUpdateIndex(this, key, value, oldProperty.isPresent() ? oldProperty.value() : null);
-        return newProperty;
+    public Vertex inVertex() {      // target v of edge
+//        return new AgensVertex(this.getBaseEdge().getTid(), this.graph);
+        return (Vertex)this.inVertex;
+    }
 
+    @Override
+    public ElasticEdge getBaseEdge() {
+        return (ElasticEdge) this.baseElement;
+    }
+
+    ////////////////////////////////
+
+    @Override
+    public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
+        this.graph.tx().readWrite();
+        Iterable<String> keys = this.baseElement.getKeys();
+        Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
+                key -> ElementHelper.keyExists(key, propertyKeys));
+        return IteratorUtils.map(filter,
+                key -> new AgensProperty<>(this, key, (V) this.baseElement.getProperty(key)));
     }
 
     @Override
     public <V> Property<V> property(final String key) {
-        return null == this.properties ? Property.<V>empty() : this.properties.getOrDefault(key, Property.<V>empty());
+        this.graph.tx().readWrite();
+        if (this.baseElement.hasProperty(key))
+            return new AgensProperty<>(this, key, (V) this.baseElement.getProperty(key));
+        else
+            return Property.empty();
     }
 
     @Override
-    public Set<String> keys() {
-        return null == this.properties ? Collections.emptySet() : this.properties.keySet();
+    public <V> Property<V> property(final String key, final V value) {
+        ElementHelper.validateProperty(key, value);
+        this.graph.tx().readWrite();
+        try {
+            this.baseElement.setProperty(key, value);
+            return new AgensProperty<>(this, key, value);
+        } catch (final IllegalArgumentException e) {
+            throw Property.Exceptions.dataTypeOfPropertyValueNotSupported(value, e);
+        }
     }
+
+    ////////////////////////////////
 
     @Override
     public void remove() {
+        this.graph.tx().readWrite();
+        try {
+            this.baseElement.delete();
+        }
+        catch (IllegalStateException ignored) {
+            // NotFoundException happens if the edge is committed
+            // IllegalStateException happens if the edge is still chilling in the tx
+        }
+//        catch (RuntimeException e) {
+//            if (!AgensHelper.isNotFound(e)) throw e;
+//        }
+
         final AgensVertex outVertex = (AgensVertex) this.outVertex;
         final AgensVertex inVertex = (AgensVertex) this.inVertex;
 
@@ -83,25 +123,14 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
         AgensHelper.removeElementIndex(this);
         ((AgensGraph) this.graph()).edges.remove(this.id());
-        this.properties = null;
         this.removed = true;
     }
 
     @Override
     public String toString() {
         return StringFactory.edgeString(this);
-
     }
 
-    @Override
-    public Vertex outVertex() {
-        return this.outVertex;
-    }
-
-    @Override
-    public Vertex inVertex() {
-        return this.inVertex;
-    }
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction) {
@@ -122,19 +151,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     }
 
     @Override
-    public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
-        if (null == this.properties) return Collections.emptyIterator();
-        if (propertyKeys.length == 1) {
-            final Property<V> property = this.properties.get(propertyKeys[0]);
-            return null == property ? Collections.emptyIterator() : IteratorUtils.of(property);
-        } else
-            return (Iterator) this.properties.entrySet().stream().filter(entry -> ElementHelper.keyExists(entry.getKey(), propertyKeys)).map(entry -> entry.getValue()).collect(Collectors.toList()).iterator();
-    }
-
-    ////////////////////////////////
-
-    @Override
-    public ElasticEdgeWrapper getBaseEdge() {
-        return (ElasticEdgeWrapper) this.baseElement;
+    public String label() {
+        this.graph.tx().readWrite();
+        return this.getBaseEdge().getLabel();
     }
 }

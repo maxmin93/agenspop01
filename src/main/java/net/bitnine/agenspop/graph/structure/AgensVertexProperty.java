@@ -1,6 +1,8 @@
 package net.bitnine.agenspop.graph.structure;
 
 
+import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -22,7 +24,8 @@ import java.util.stream.Collectors;
  */
 public class AgensVertexProperty<V> extends AgensElement implements VertexProperty<V> {
 
-    protected Map<String, Property> properties;
+//    protected Map<String, Property> properties;
+    protected ElasticVertex vertexPropertyBase;
     private final AgensVertex vertex;
     private final String key;
     private final V value;

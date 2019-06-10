@@ -10,12 +10,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 public final class AgensHelper {
+
+    private static final String NOT_FOUND_EXCEPTION = "NotFoundException";
 
     private AgensHelper() { }
 
@@ -182,5 +187,31 @@ public final class AgensHelper {
 
     public static Map<Object, Edge> getEdges(final AgensGraph graph) {
         return graph.edges;
+    }
+
+    //////////////////////////////////////////
+
+    public static boolean isDeleted(final ElasticVertex vertex) {
+        try {
+            vertex.getKeys();
+            return false;
+        } catch (final RuntimeException e) {
+            if (isNotFound(e))
+                return true;
+            else
+                throw e;
+        }
+    }
+
+    public static boolean isNotFound(final RuntimeException ex) {
+        return ex.getClass().getSimpleName().equals(NOT_FOUND_EXCEPTION);
+    }
+
+    public static ElasticVertex getVertexPropertyNode(final AgensVertexProperty vertexProperty) {
+        return (ElasticVertex)vertexProperty.vertexPropertyBase;
+    }
+
+    public static void setVertexPropertyNode(final AgensVertexProperty vertexProperty, final ElasticVertex vertex) {
+        vertexProperty.vertexPropertyBase = vertex;
     }
 }

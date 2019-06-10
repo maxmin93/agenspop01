@@ -3,6 +3,7 @@ package net.bitnine.agenspop.elastic;
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.elastic.repository.ElasticEdgeRepository;
 import net.bitnine.agenspop.elastic.repository.ElasticVertexRepository;
@@ -169,6 +170,97 @@ public class ElasticGraphService implements ElasticGraphAPI {
         e = new ElasticEdgeDocument(12L, "created", 6L, 3L);
         e.setProperty("weight", "0.2d");
         edgeRepository.save(e);
+    }
+
+    //////////////////////////////////////////////////
+
+    @Override
+    public ElasticVertex createVertex(Long eid, String label, String datasource, Map<String, Object> properties){
+        ElasticVertexDocument v = new ElasticVertexDocument(eid, label, datasource);
+        for( ElasticProperty )
+        v.setProperty("name", "peter");
+        v.setProperty("age", 35);
+        vertexRepository.save(v);
+    }
+
+    @Override
+    public ElasticVertex getVertexById(long id){
+
+    }
+
+    @Override
+    public ElasticEdge getEdgeById(long id){
+
+    }
+
+    @Override
+    public void shutdown(){
+
+    }
+
+    @Override
+    public Iterable<ElasticVertex> allVertices(){
+
+    }
+
+    @Override
+    public Iterable<ElasticEdge> allEdges(){
+
+    }
+
+    @Override
+    public Iterable<ElasticVertex> findVertices(String label){
+
+    }
+
+    @Override
+    public Iterable<ElasticVertex> findVertices(String label, String property, Object value){
+
+    }
+
+    @Override
+    public Iterable<ElasticVertex> findVertices(String label, String property, String template, ElasticStringSearchMode searchMode){
+
+    }
+
+    @Override
+    public ElasticTx tx(){
+
+    }
+
+    @Override
+    public Iterator<Map<String, Object>> execute(String query, Map<String, Object> params){
+
+    }
+
+    @Override
+    public boolean hasSchemaIndex(String label, String property){
+
+    }
+
+    @Override
+    public Iterable<String> getKeys(){
+
+    }
+
+    @Override
+    public Object getProperty(String key){
+
+    }
+
+    @Override
+    public boolean hasProperty(String key){
+
+    }
+
+    @Override
+    public Object removeProperty(String key){
+
+    }
+
+    @Override
+    public void setProperty(String key, Object value){
+
     }
 
     //////////////////////////////////////////////////

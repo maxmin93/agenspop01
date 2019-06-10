@@ -8,5 +8,5 @@ public final class ElasticHelper {
 
     private ElasticHelper(){ }
 
-    public static Set<ElasticPropertyDocument> getProperties()
+//    public static Set<ElasticPropertyDocument> getProperties()
 }

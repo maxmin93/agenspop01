@@ -1,8 +1,10 @@
 package net.bitnine.agenspop.graph.structure;
 
-
+import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.elastic.ElasticTx;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
+
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
@@ -15,11 +17,11 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.io.Io;
 import org.apache.tinkerpop.gremlin.structure.io.IoCore;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-import org.apache.tinkerpop.gremlin.structure.util.GraphFactory;
-import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-//import org.apache.tinkerpop.gremlin.tinkergraph.structure.*;
+import org.apache.tinkerpop.gremlin.structure.util.*;
+import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedGraph;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Arrays;
@@ -47,8 +49,9 @@ import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphson;
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_STANDARD)
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_INTEGRATE)
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
-public final class AgensGraph implements Graph {
+public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(AgensGraph.class);
     static {
         TraversalStrategies.GlobalCache.registerStrategies(AgensGraph.class
                 , TraversalStrategies.GlobalCache.getStrategies(Graph.class).clone().addStrategies(
@@ -71,30 +74,35 @@ public final class AgensGraph implements Graph {
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
+    protected ElasticGraphAPI baseGraph;
+    protected BaseConfiguration configuration = new BaseConfiguration();
+
+    private final AgensTransaction transaction = new AgensTransaction();
+    protected AgensGraphVariables graphVariables;
+
     protected AtomicLong currentId = new AtomicLong(-1L);
     protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
     protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
 
-    protected final String graphName;
-    protected AgensGraphVariables variables = null;
     protected Object graphComputerView = null;                  // excluded
     protected AgensIndex<AgensVertex> vertexIndex = null;
     protected AgensIndex<AgensEdge> edgeIndex = null;
 
-    protected final IdManager<?> vertexIdManager;
-    protected final IdManager<?> edgeIdManager;
-    protected final IdManager<?> vertexPropertyIdManager;
-    protected final VertexProperty.Cardinality defaultVertexPropertyCardinality;
+    protected IdManager<?> vertexIdManager;
+    protected IdManager<?> edgeIdManager;
+    protected IdManager<?> vertexPropertyIdManager;
+    protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
-    private final Configuration configuration;
-    private final String graphLocation;
-    private final String graphFormat;
+    protected String graphName;
+    private String graphLocation;
+    private String graphFormat;
 
-    /**
-     * An empty private constructor that initializes {@link AgensGraph}.
-     */
-    private AgensGraph(final Configuration configuration) {
-        this.configuration = configuration;
+    private void initialize(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+        this.configuration.copy(configuration);
+        this.baseGraph = baseGraph;
+        this.graphVariables = new AgensGraphVariables(this);
+        this.tx().readWrite();
+
         vertexIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, Vertex.class);
         edgeIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, Edge.class);
         vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
@@ -106,73 +114,46 @@ public final class AgensGraph implements Graph {
         graphLocation = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_LOCATION, null);
         graphFormat = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_FORMAT, null);
 
-        if ((graphLocation != null && null == graphFormat) || (null == graphLocation && graphFormat != null))
+        if ((graphLocation != null && null == graphFormat) || (null == graphLocation && graphFormat != null)) {
             throw new IllegalStateException(String.format("The %s and %s must both be specified if either is present",
                     GREMLIN_AGENSGRAPH_GRAPH_LOCATION, GREMLIN_AGENSGRAPH_GRAPH_FORMAT));
-
-        if (graphLocation != null) loadGraph();
-    }
-
-    /**
-     * Open a new {@link AgensGraph} instance.
-     * <p/>
-     * <b>Reference Implementation Help:</b> If a {@link Graph} implementation does not require a {@code Configuration}
-     * (or perhaps has a default configuration) it can choose to implement a zero argument
-     * {@code open()} method. This is an optional constructor method for AgensGraph. It is not enforced by the Gremlin
-     * Test Suite.
-     */
-    public static AgensGraph open() {
-        return open(EMPTY_CONFIGURATION);
-    }
-
-    /**
-     * Open a new {@code AgensGraph} instance.
-     * <p/>
-     * <b>Reference Implementation Help:</b> This method is the one use by the {@link GraphFactory} to instantiate
-     * {@link Graph} instances.  This method must be overridden for the Structure Test Suite to pass. Implementers have
-     * latitude in terms of how exceptions are handled within this method.  Such exceptions will be considered
-     * implementation specific by the test suite as all test generate graph instances by way of
-     * {@link GraphFactory}. As such, the exceptions get generalized behind that facade and since
-     * {@link GraphFactory} is the preferred method to opening graphs it will be consistent at that level.
-     *
-     * @param configuration the configuration for the instance
-     * @return a newly opened {@link Graph}
-     */
-    public static AgensGraph open(final Configuration configuration) {
-        return new AgensGraph(configuration);
-    }
-    public static AgensGraph open(final Configuration configuration, final String gName) {
-        if( gName != null ) configuration.setProperty(GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
-        return new AgensGraph(configuration);
-    }
-
-    ////////////// STRUCTURE API METHODS //////////////////
-
-    @Override
-    public Vertex addVertex(final Object... keyValues) {
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
-        final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
-
-        if (null != idValue) {
-            if (this.vertices.containsKey(idValue))
-                throw Exceptions.vertexWithIdAlreadyExists(idValue);
-        } else {
-            idValue = vertexIdManager.getNextId(this);
         }
+        if (graphLocation != null) loadGraph();
 
-        final Vertex vertex = new AgensVertex(idValue, label, this);
-        this.vertices.put(vertex.id(), vertex);
-
-        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.list, keyValues);
-        return vertex;
+        this.tx().commit();
     }
+
+    protected AgensGraph(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+        this.initialize(baseGraph, configuration);
+    }
+
+    // @Todo AgensFactory.Builder() : with specific config
+    protected AgensGraph(final Configuration configuration) {
+        this.baseGraph = null;      // AgensFactory.Builder() : with specific config
+        this.initialize(baseGraph, configuration);
+    }
+
+    public static AgensGraph open(final ElasticGraphAPI baseGraph, String graphName){
+        final Configuration config = new BaseConfiguration();
+        config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, graphName);
+        return new AgensGraph(baseGraph, config);
+    }
+
+//    public static AgensGraph open() { return open(EMPTY_CONFIGURATION); }
+//    public static AgensGraph open(final Configuration configuration) {
+//        return new AgensGraph(configuration);
+//    }
+//    public static AgensGraph open(final Configuration configuration, final String gName) {
+//        if( gName != null ) configuration.setProperty(GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
+//        return new AgensGraph(configuration);
+//    }
+
+    ///////////////////////////////////////////////////////
 
     @Override
     public <C extends GraphComputer> C compute(final Class<C> graphComputerClass) throws IllegalArgumentException {
         throw Exceptions.graphComputerNotSupported();
     }
-
     @Override
     public GraphComputer compute() throws IllegalArgumentException {
         throw Exceptions.graphComputerNotSupported();
@@ -180,9 +161,9 @@ public final class AgensGraph implements Graph {
 
     @Override
     public Variables variables() {
-        if (null == this.variables)
-            this.variables = new AgensGraphVariables();
-        return this.variables;
+        if (null == this.graphVariables)
+            this.graphVariables = new AgensGraphVariables(this);
+        return this.graphVariables;
     }
 
     @Override
@@ -202,7 +183,7 @@ public final class AgensGraph implements Graph {
     public void clear() {
         this.vertices.clear();
         this.edges.clear();
-        this.variables = null;
+        this.graphVariables = null;
         this.currentId.set(-1L);
         this.vertexIndex = null;
         this.edgeIndex = null;
@@ -221,7 +202,13 @@ public final class AgensGraph implements Graph {
 
     @Override
     public Transaction tx() {
-        throw Exceptions.transactionsNotSupported();
+//        throw Exceptions.transactionsNotSupported();
+        return this.transaction;
+    }
+
+    @Override
+    public ElasticGraphAPI getBaseGraph() {
+        return this.baseGraph;
     }
 
     @Override
@@ -230,14 +217,11 @@ public final class AgensGraph implements Graph {
     }
 
     @Override
-    public Iterator<Vertex> vertices(final Object... vertexIds) {
-        return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
+    public Features features() {
+        return features;
     }
 
-    @Override
-    public Iterator<Edge> edges(final Object... edgeIds) {
-        return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
-    }
+    ///////////////////////////////////////////////////////
 
     private void loadGraph() {
         final File f = new File(graphLocation);
@@ -286,6 +270,41 @@ public final class AgensGraph implements Graph {
         }
     }
 
+    ///////////////////////////////////////////////////////
+
+    ////////////// STRUCTURE API METHODS //////////////////
+
+    @Override
+    public Vertex addVertex(final Object... keyValues) {
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
+        final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
+
+        if (null != idValue) {
+            if (this.vertices.containsKey(idValue))
+                throw Exceptions.vertexWithIdAlreadyExists(idValue);
+        } else {
+            idValue = vertexIdManager.getNextId(this);
+        }
+
+        // @Todo createVertex()
+        final Vertex vertex = new AgensVertex(this.baseGraph.createVertex(idValue, label), this);
+        this.vertices.put(vertex.id(), vertex);
+
+        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.list, keyValues);
+        return vertex;
+    }
+
+    @Override
+    public Iterator<Vertex> vertices(final Object... vertexIds) {
+        return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
+    }
+
+    @Override
+    public Iterator<Edge> edges(final Object... edgeIds) {
+        return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
+    }
+
     private <T extends Element> Iterator<T> createElementIterator(final Class<T> clazz, final Map<Object, T> elements,
                                                                   final IdManager idManager,
                                                                   final Object... ids) {
@@ -307,18 +326,6 @@ public final class AgensGraph implements Graph {
         return iterator;
     }
 
-    /**
-     * Return AgensGraph feature set.
-     * <p/>
-     * <b>Reference Implementation Help:</b> Implementers only need to implement features for which there are
-     * negative or instance configured features.  By default, all
-     * {@link org.apache.tinkerpop.gremlin.structure.Graph.Features} return true.
-     */
-    @Override
-    public Features features() {
-        return features;
-    }
-
     private void validateHomogenousIds(final List<Object> ids) {
         final Iterator<Object> iterator = ids.iterator();
         Object id = iterator.next();
@@ -331,6 +338,8 @@ public final class AgensGraph implements Graph {
                 throw Graph.Exceptions.idArgsMustBeEitherIdOrElement();
         }
     }
+
+    ///////////////////////////////////////////////////////
 
     public class AgensGraphFeatures implements Features {
 
@@ -657,6 +666,49 @@ public final class AgensGraph implements Graph {
             public boolean allow(final Object id) {
                 return true;
             }
+        }
+    }
+
+    ///////////////////////////////////////////////
+
+    class AgensTransaction extends AbstractThreadLocalTransaction {
+
+        protected final ThreadLocal<ElasticTx> threadLocalTx = ThreadLocal.withInitial(() -> null);
+
+        public AgensTransaction() {
+            super(AgensGraph.this);
+        }
+
+        @Override
+        public void doOpen() {
+            threadLocalTx.set(getBaseGraph().tx());
+        }
+
+        @Override
+        public void doCommit() throws TransactionException {
+            try (ElasticTx tx = threadLocalTx.get()) {
+                tx.success();
+            } catch (Exception ex) {
+                throw new TransactionException(ex);
+            } finally {
+                threadLocalTx.remove();
+            }
+        }
+
+        @Override
+        public void doRollback() throws TransactionException {
+            try (ElasticTx tx = threadLocalTx.get()) {
+                tx.failure();
+            } catch (Exception e) {
+                throw new TransactionException(e);
+            } finally {
+                threadLocalTx.remove();
+            }
+        }
+
+        @Override
+        public boolean isOpen() {
+            return (threadLocalTx.get() != null);
         }
     }
 }

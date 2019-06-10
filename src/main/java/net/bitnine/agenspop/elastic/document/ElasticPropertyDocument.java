@@ -5,7 +5,7 @@ import net.bitnine.agenspop.elastic.model.ElasticProperty;
 public class ElasticPropertyDocument implements ElasticProperty {
 
     // **NOTE: private 설정시 SerializationFeature.FAIL_ON_EMPTY_BEANS
-    public String element;
+    public String element;      // ID ==> datasource + "::" + eid
     public String key;
     public String type;
     public String value;

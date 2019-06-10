@@ -1,5 +1,8 @@
 package net.bitnine.agenspop.elastic.model;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface ElasticProperty {
@@ -8,24 +11,24 @@ public interface ElasticProperty {
     public String type();
     public String value() throws NoSuchElementException;
 
-//    public default String type(){
-//        Object v = (Object) value();
-//
-//        if( v instanceof String ) return String.class.getSimpleName();
-//
-//        else if( v instanceof Integer ) return Integer.class.getSimpleName();
-//        else if( v instanceof Long ) return Long.class.getSimpleName();
-//        else if( v instanceof Float ) return Float.class.getSimpleName();
-//        else if( v instanceof Double ) return Double.class.getSimpleName();
-//        else if( v instanceof Boolean ) return Boolean.class.getSimpleName();
-//
-//        else if( v instanceof Date ) return Date.class.getSimpleName();
-//
-//        else if( v instanceof List) return List.class.getSimpleName();
-//        else if( v instanceof Map) return Map.class.getSimpleName();
-//
-//        return "null";        // Exception is better
-//    }
+    public default String guessType(){
+        Object v = (Object) value();
+
+        if( v instanceof String ) return String.class.getSimpleName();
+
+        else if( v instanceof Integer ) return Integer.class.getSimpleName();
+        else if( v instanceof Long ) return Long.class.getSimpleName();
+        else if( v instanceof Float ) return Float.class.getSimpleName();
+        else if( v instanceof Double ) return Double.class.getSimpleName();
+        else if( v instanceof Boolean ) return Boolean.class.getSimpleName();
+
+        else if( v instanceof Date) return Date.class.getSimpleName();
+
+        else if( v instanceof List) return List.class.getSimpleName();
+        else if( v instanceof Map) return Map.class.getSimpleName();
+
+        return "null";        // Exception is better
+    }
 
     public String element();
     public static ElasticProperty empty() {
