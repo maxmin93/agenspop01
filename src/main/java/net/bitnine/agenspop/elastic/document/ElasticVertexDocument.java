@@ -20,18 +20,12 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
         super(eid, label, datasource);
     }
 
-/*
-    @Override
-    public void remove() {
-        final List<Edge> edges = new ArrayList<>();
-        this.edges(Direction.BOTH).forEachRemaining(edges::add);
-        edges.stream().filter(edge -> !((TinkerEdge) edge).removed).forEach(Edge::remove);
-        this.properties = null;
-        TinkerHelper.removeElementIndex(this);
-        this.graph.vertices.remove(this.id);
-        this.removed = true;
+    public ElasticVertexDocument(ElasticVertex vertex){
+        super(vertex.getEid(), vertex.getLabel(), vertex.getDatasource());
+        this.id = vertex.getId();
+        this.setProperties(vertex.getProperties());
     }
-*/
+
 
     @Override
     public String toString() {
@@ -41,7 +35,7 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
                 ", eid=" + eid +
                 ", label='" + label + '\'' +
                 ", datasource='" + datasource + '\'' +
-                ", properties=[" + props.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
                 "]}";
     }
 }

@@ -2,6 +2,7 @@ package net.bitnine.agenspop.elastic.document;
 
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -35,11 +36,11 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
         this.sid = edge.getSid();
         this.tid = edge.getTid();
         this.id = edge.getId();
-        this.props = edge.getProps();
+        this.setProperties(edge.getProperties());
     }
 
-    public Long getSid(){ return sid; }
-    public Long getTid(){ return tid; }
+    @Override public Long getSid(){ return sid; }
+    @Override public Long getTid(){ return tid; }
 
     @Override
     public String toString() {
@@ -51,7 +52,21 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
                 ", datasource='" + datasource + '\'' +
                 ", sid='" + sid + '\'' +
                 ", tid='" + tid + '\'' +
-                ", properties=[" + props.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
                 "]}";
     }
+
+    ////////////////////////////////////
+
+//    @Override public ElasticVertex start(){
+//        return ElasticVertexDocument()
+//    }
+//
+//    @Override public ElasticVertex end(){
+//
+//    }
+//
+//    @Override public ElasticVertex other(ElasticVertex node){
+//
+//    }
 }

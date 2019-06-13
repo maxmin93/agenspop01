@@ -287,11 +287,12 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
             idValue = vertexIdManager.getNextId(this);
         }
 
-        // @Todo createVertex()
-        final Vertex vertex = new AgensVertex(this.baseGraph.createVertex(idValue, label), this);
+        // @Todo : type of idValue must be Long!!
+        final Vertex vertex = new AgensVertex(
+                this.baseGraph.createVertex(new Long(idValue.toString()), label, graphName), this);
         this.vertices.put(vertex.id(), vertex);
 
-        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.list, keyValues);
+        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality. .Cardinality.list, keyValues);
         return vertex;
     }
 

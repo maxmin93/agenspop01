@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.elastic;
 
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
+import net.bitnine.agenspop.elastic.document.ElasticElementDocument;
 import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
@@ -9,10 +10,13 @@ import net.bitnine.agenspop.elastic.repository.ElasticEdgeRepository;
 import net.bitnine.agenspop.elastic.repository.ElasticVertexRepository;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ResultsExtractor;
@@ -23,14 +27,16 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 @Service
 public class ElasticGraphService implements ElasticGraphAPI {
 
     static final String VERTEX_INDEX_NAME = "agensvertex";
     static final String EDGE_INDEX_NAME = "agensedge";
+    static final AtomicLong eidSeq = new AtomicLong(1L);
 
     private final ElasticVertexRepository vertexRepository;
     private final ElasticEdgeRepository edgeRepository;
@@ -52,36 +58,16 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @PreDestroy
     public void deleteIndices() {
-        template.deleteIndex(ElasticVertexDocument.class);
-        System.out.println("** Delete index before destory : "+ElasticVertexDocument.class.getSimpleName());
-        template.deleteIndex(ElasticEdgeDocument.class);
-        System.out.println("** Delete index before destory : "+ElasticEdgeDocument.class.getSimpleName());
+        this.shutdown();
     }
 
     @PostConstruct
     public void insertDataSample() {
-
-        // re-create all Vertex documents
-        //
-        template.deleteIndex(ElasticVertexDocument.class);
-        template.createIndex(ElasticVertexDocument.class);
-        template.putMapping(ElasticVertexDocument.class);
-        template.refresh(ElasticVertexDocument.class);
-        System.out.println("** Remove all Vertex documents : " + ElasticVertexDocument.class.getSimpleName());
-        // vertexRepository.deleteAll();
-
-        // re-create all Edge documents
-        //
-        template.deleteIndex(ElasticEdgeDocument.class);
-        template.createIndex(ElasticEdgeDocument.class);
-        template.putMapping(ElasticEdgeDocument.class);
-        template.refresh(ElasticEdgeDocument.class);
-        System.out.println("** Remove all Edge documents : " + ElasticEdgeDocument.class.getSimpleName());
-        // edgeRepository.deleteAll();
+        this.startup();
 
         // Save data sample
-        insertMordernVertices();
-        insertMordernEdges();
+//        insertMordernVertices();
+//        insertMordernEdges();
     }
 
     /*
@@ -175,92 +161,117 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //////////////////////////////////////////////////
 
     @Override
-    public ElasticVertex createVertex(Long eid, String label, String datasource, Map<String, Object> properties){
+    public ElasticVertex createVertex(Long eid, String label, String datasource){
         ElasticVertexDocument v = new ElasticVertexDocument(eid, label, datasource);
-        for( ElasticProperty )
-        v.setProperty("name", "peter");
-        v.setProperty("age", 35);
-        vertexRepository.save(v);
+        return v;
+    }
+    @Override public ElasticVertex saveVertex(ElasticVertex vertex){
+        return vertexRepository.save((ElasticVertexDocument)vertex);
     }
 
     @Override
-    public ElasticVertex getVertexById(long id){
-
+    public ElasticEdge createEdge(Long eid, String datasource, String label, Long sid, Long tid){
+        ElasticEdgeDocument e = new ElasticEdgeDocument(eid, label, datasource, sid, tid);
+        return e;
+    }
+    @Override public ElasticEdge saveEdge(ElasticEdge edge){
+        return edgeRepository.save((ElasticEdgeDocument)edge);
     }
 
     @Override
-    public ElasticEdge getEdgeById(long id){
+    public ElasticVertex getVertexById(String datasource, long eid){
+        List<ElasticVertexDocument> list = vertexRepository.findByEidAndDatasource(eid, datasource);
+        return list.size() > 0 ? list.get(0) : null;
+    }
 
+    @Override
+    public ElasticEdge getEdgeById(String datasource, long eid){
+        List<ElasticEdgeDocument> list = edgeRepository.findByEidAndDatasource(eid, datasource);
+        return list.size() > 0 ? list.get(0) : null;
     }
 
     @Override
     public void shutdown(){
-
+        template.deleteIndex(ElasticVertexDocument.class);
+        System.out.println("** Delete index before destory : "+ElasticVertexDocument.class.getSimpleName());
+        template.deleteIndex(ElasticEdgeDocument.class);
+        System.out.println("** Delete index before destory : "+ElasticEdgeDocument.class.getSimpleName());
     }
 
     @Override
-    public Iterable<ElasticVertex> allVertices(){
+    public void startup(){
+        // create index of Vertex documents
+        template.createIndex(ElasticVertexDocument.class);
+        template.putMapping(ElasticVertexDocument.class);
+        template.refresh(ElasticVertexDocument.class);
+        System.out.println("** create index of Vertex documents : " + ElasticVertexDocument.class.getSimpleName());
 
+        // create index of Edge documents
+        template.createIndex(ElasticEdgeDocument.class);
+        template.putMapping(ElasticEdgeDocument.class);
+        template.refresh(ElasticEdgeDocument.class);
+        System.out.println("** create index of Edge documents : " + ElasticEdgeDocument.class.getSimpleName());
     }
 
     @Override
-    public Iterable<ElasticEdge> allEdges(){
-
+    public Iterable<? extends ElasticVertex> allVertices(String datasource){
+        return vertexRepository.findByDatasource(datasource);
     }
 
     @Override
-    public Iterable<ElasticVertex> findVertices(String label){
-
+    public Iterable<? extends ElasticEdge> allEdges(String datasource){
+        return edgeRepository.findByDatasource(datasource);
     }
 
     @Override
-    public Iterable<ElasticVertex> findVertices(String label, String property, Object value){
-
+    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label){
+        return vertexRepository.findByLabelAndDatasource(label, datasource);
     }
-
     @Override
-    public Iterable<ElasticVertex> findVertices(String label, String property, String template, ElasticStringSearchMode searchMode){
-
+    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key){
+        return vertexRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+    }
+    @Override
+    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key, Object value){
+        String strValue = value != null ? value.toString() : "";
+        return vertexRepository.findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(datasource, label, key, strValue);
     }
 
     @Override
     public ElasticTx tx(){
-
+        return new ElasticTx() {
+            @Override public void failure() {
+            }
+            @Override public void success() {
+            }
+            @Override public void close() {
+            }
+        };
     }
 
     @Override
-    public Iterator<Map<String, Object>> execute(String query, Map<String, Object> params){
-
+    public boolean hasSchemaIndex(String label){
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withIndices(VERTEX_INDEX_NAME).withTypes(VERTEX_INDEX_NAME) //
+                .withSearchType(SearchType.DEFAULT) //
+                .withQuery(QueryBuilders
+                        .matchQuery("label", label)
+                ).build();
+        long count = template.count(searchQuery);
+        return count > 0L;
     }
 
     @Override
-    public boolean hasSchemaIndex(String label, String property){
-
-    }
-
-    @Override
-    public Iterable<String> getKeys(){
-
-    }
-
-    @Override
-    public Object getProperty(String key){
-
-    }
-
-    @Override
-    public boolean hasProperty(String key){
-
-    }
-
-    @Override
-    public Object removeProperty(String key){
-
-    }
-
-    @Override
-    public void setProperty(String key, Object value){
-
+    public boolean hasSchemaIndex(String label, String key){
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withIndices(VERTEX_INDEX_NAME).withTypes(VERTEX_INDEX_NAME) //
+                .withSearchType(SearchType.DEFAULT) //
+                .withQuery(QueryBuilders.boolQuery()
+                        .should(matchQuery("label", label))
+                        .should(matchQuery("properties.key", key))
+                ).build();
+        long count = template.count(searchQuery);
+        return count > 0L;
     }
 
     //////////////////////////////////////////////////

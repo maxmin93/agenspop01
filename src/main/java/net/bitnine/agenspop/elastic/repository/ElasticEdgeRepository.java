@@ -2,6 +2,7 @@ package net.bitnine.agenspop.elastic.repository;
 
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 
+import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,8 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
 //    Page<ElasticEdgeDocument> findByLabel(String label, Pageable pageable);
 //    Page<ElasticEdgeDocument> findByDatasource(String datasource, Pageable pageable);
 
+    List<ElasticEdgeDocument> findByDatasource(String datasource);
+
     List<ElasticEdgeDocument> findByEid(Long eid);
     List<ElasticEdgeDocument> findByEidAndDatasource(Long eid, String datasource);
 
@@ -25,6 +28,9 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
 
     List<ElasticEdgeDocument> findByLabel(String label);
     List<ElasticEdgeDocument> findByLabelAndDatasource(String label, String datasource);
+
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"props.key\": \"?2\"}}]}}")
+    List<ElasticEdgeDocument> findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(String datasource, String label, String key);
 
     List<ElasticEdgeDocument> findBySid(Long sid);
     List<ElasticEdgeDocument> findBySidAndDatasource(Long sid, String datasource);

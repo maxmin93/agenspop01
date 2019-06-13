@@ -10,39 +10,38 @@ import java.util.Optional;
 
 public interface ElasticGraphAPI {
 
-    ElasticVertex createVertex(String label, String datasource);
+    ElasticVertex createVertex(Long eid, String datasource, String label);
+    ElasticEdge createEdge(Long eid, String datasource, String label, Long sid, Long tid);
 
-    ElasticVertex getVertexById(long id);
+    ElasticVertex saveVertex(ElasticVertex vertex);
+    ElasticEdge saveEdge(ElasticEdge edge);
 
-    ElasticEdge getEdgeById(long id);
+    ElasticVertex getVertexById(String datasource, long id);
+    ElasticEdge getEdgeById(String datasource, long id);
 
-    void shutdown();
-
-    Iterable<ElasticVertex> allVertices();
-
-    Iterable<ElasticEdge> allEdges();
-
-    Iterable<ElasticVertex> findVertices(String label);
-
-    Iterable<ElasticVertex> findVertices(String label, String property, Object value);
-
-    Iterable<ElasticVertex> findVertices(String label, String property, String template, ElasticStringSearchMode searchMode);
+    boolean hasSchemaIndex(String label);
+    boolean hasSchemaIndex(String label, String key);
 
     ElasticTx tx();
+    void shutdown();
+    void startup();
 
-    Iterator<Map<String, Object>> execute(String query, Map<String, Object> params);
 
-    boolean hasSchemaIndex(String label, String property);
+    Iterable<? extends ElasticVertex> allVertices(String datasource);
+    Iterable<? extends ElasticEdge> allEdges(String datasource);
 
-    Iterable<String> getKeys();
+    Iterable<? extends ElasticVertex> findVertices(String datasource, String label);
+    Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key);
+    Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key, Object value);
 
-    Object getProperty(String key);
+    // Iterable<ElasticVertex> findVertices(String label, String property, String template, ElasticStringSearchMode searchMode);
+    // Iterator<Map<String, Object>> execute(String query, Map<String, Object> params);
 
-    boolean hasProperty(String key);
-
-    Object removeProperty(String key);
-
-    void setProperty(String key, Object value);
+    // Iterable<String> getKeys();
+    // Object getProperty(String key);
+    // boolean hasProperty(String key);
+    // Object removeProperty(String key);
+    // void setProperty(String key, Object value);
     
     //////////////////////////////////////////////////
     //

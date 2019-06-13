@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface ElasticVertexRepository extends ElasticsearchRepository<ElasticVertexDocument, String> {
 
+    List<ElasticVertexDocument> findByDatasource(String datasource);
+
     List<ElasticVertexDocument> findByEid(Long eid);
     List<ElasticVertexDocument> findByEidAndDatasource(Long eid, String datasource);
 
@@ -22,6 +24,11 @@ public interface ElasticVertexRepository extends ElasticsearchRepository<Elastic
 
     List<ElasticVertexDocument> findByLabel(String label);
     List<ElasticVertexDocument> findByLabelAndDatasource(String label, String datasource);
+
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}]}}")
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(String datasource, String label, String key);
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}, {\"match\": {\"properties.value\": \"?3\"}}]}}")
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(String datasource, String label, String key, String value);
 
     /////////////////////////////
 

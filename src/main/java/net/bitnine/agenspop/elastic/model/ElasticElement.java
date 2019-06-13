@@ -1,7 +1,5 @@
 package net.bitnine.agenspop.elastic.model;
 
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-
 import java.util.Set;
 
 public interface ElasticElement {
@@ -21,8 +19,8 @@ public interface ElasticElement {
     void delete();
     boolean isDeleted();
 
-    Set<? extends ElasticProperty> getProps();
-    void setProps(Set<? extends ElasticProperty> props);
+    Set<ElasticProperty> getProperties();
+    void setProperties(Set<ElasticProperty> properties);
 
 /*
     public default <V> Iterator<V> values(final String... propertyKeys) {

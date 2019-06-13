@@ -8,9 +8,10 @@ public interface ElasticEdge extends ElasticElement {
     Long getTid();
 
     // String type();       // ??
-    ElasticVertex start();
-    ElasticVertex end();
-    ElasticVertex other(ElasticVertex node);
+
+//    ElasticVertex start();
+//    ElasticVertex end();
+//    ElasticVertex other(ElasticVertex node);
 
 /*
     public Iterator<ElasticVertexWrapper> vertices(final Direction direction);
