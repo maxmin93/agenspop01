@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
+import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
@@ -9,6 +10,8 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.gryo;
 
@@ -20,30 +23,46 @@ import static org.apache.tinkerpop.gremlin.structure.io.IoCore.gryo;
  */
 public final class AgensFactory {
 
+    public static final AtomicInteger graphSeq = new AtomicInteger(1);
+    public static final String GREMLIN_DEFAULT_GRAPH_NAME = "default";
+
+    public static String defaultGraphName(){
+        return String.format("%s::%04d", GREMLIN_DEFAULT_GRAPH_NAME, graphSeq.getAndIncrement());
+    }
+
+    private static Configuration getNumberIdManagerConfiguration() {
+        final Configuration conf = new BaseConfiguration();
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
+        return conf;
+    }
+
     private AgensFactory() {}
 
-    public static AgensGraph createEmpty(String gName) {
+    /////////////////////////////////////
+
+    public static AgensGraph createEmpty(ElasticGraphAPI baseGraph, String gName) {
         final Configuration conf = new BaseConfiguration();
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
-        return AgensGraph.open(conf);
+        return AgensGraph.open(baseGraph, conf);
     }
 
     /**
      * Create the "modern" graph which has the same structure as the "classic" graph from AgensPop 2.x but includes
      * 3.x features like vertex labels.
      */
-    public static AgensGraph createModern() {
-        final AgensGraph g = getAgensGraphWithNumberManager();
+    public static AgensGraph createModern(ElasticGraphAPI baseGraph) {
+        final Configuration conf = getNumberIdManagerConfiguration();
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, defaultGraphName());
+        final AgensGraph g = AgensGraph.open(baseGraph, conf);
         generateModern(g);
         return g;
     }
 
-    /**
-     * Generate the graph in {@link #createModern()} into an existing graph.
-     */
     public static void generateModern(final AgensGraph g) {
         final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29);
         final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27);
@@ -63,17 +82,15 @@ public final class AgensFactory {
      * Create the "the crew" graph which is a AgensPop 3.x toy graph showcasing many 3.x features like meta-properties,
      * multi-properties and graph variables.
      */
-    public static AgensGraph createTheCrew() {
+    public static AgensGraph createTheCrew(ElasticGraphAPI baseGraph) {
         final Configuration conf = getNumberIdManagerConfiguration();
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.list.name());
-        final AgensGraph g = AgensGraph.open(conf);
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, defaultGraphName());
+        final AgensGraph g = AgensGraph.open(baseGraph, conf);
         generateTheCrew(g);
         return g;
     }
 
-    /**
-     * Generate the graph in {@link #createTheCrew()} into an existing graph.
-     */
     public static void generateTheCrew(final AgensGraph g) {
         final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko");
         final Vertex stephen = g.addVertex(T.id, 7, T.label, "person", "name", "stephen");
@@ -124,62 +141,4 @@ public final class AgensFactory {
         g.variables().set("comment", "this graph was created to provide examples and test coverage for tinkerpop3 api advances");
     }
 
-    /**
-     * Creates the "kitchen sink" graph which is a collection of structures (e.g. self-loops) that aren't represented
-     * in other graphs and are useful for various testing scenarios.
-     */
-    public static AgensGraph createKitchenSink() {
-        final AgensGraph g = getAgensGraphWithNumberManager();
-        generateKitchenSink(g);
-        return g;
-    }
-
-    /**
-     * Generate the graph in {@link #createKitchenSink()} into an existing graph.
-     */
-    public static void generateKitchenSink(final AgensGraph graph) {
-        final GraphTraversalSource g = graph.traversal();
-        g.addV("loops").property(T.id, 1000).property("name", "loop").as("me").
-                addE("self").to("me").property(T.id, 1001).
-                iterate();
-        g.addV("message").property(T.id, 2000).property("name", "a").as("a").
-                addV("message").property(T.id, 2001).property("name", "b").as("b").
-                addE("link").from("a").to("b").property(T.id, 2002).
-                addE("link").from("a").to("a").property(T.id, 2003).iterate();
-    }
-
-    /**
-     * Creates the "grateful dead" graph which is a larger graph than most of the toy graphs but has real-world
-     * structure and application and is therefore useful for demonstrating more complex traversals.
-     */
-    public static AgensGraph createGratefulDead() {
-        final AgensGraph g = getAgensGraphWithNumberManager();
-        generateGratefulDead(g);
-        return g;
-    }
-
-    /**
-     * Generate the graph in {@link #createGratefulDead()} into an existing graph.
-     */
-    public static void generateGratefulDead(final AgensGraph graph) {
-        final InputStream stream = AgensFactory.class.getResourceAsStream("grateful-dead.kryo");
-        try {
-            graph.io(gryo()).reader().create().readGraph(stream, graph);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
-    private static AgensGraph getAgensGraphWithNumberManager() {
-        final Configuration conf = getNumberIdManagerConfiguration();
-        return AgensGraph.open(conf);
-    }
-
-    private static Configuration getNumberIdManagerConfiguration() {
-        final Configuration conf = new BaseConfiguration();
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
-        return conf;
-    }
 }

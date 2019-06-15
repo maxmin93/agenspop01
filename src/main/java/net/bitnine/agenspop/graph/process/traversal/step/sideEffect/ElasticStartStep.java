@@ -1,6 +1,6 @@
 package net.bitnine.agenspop.graph.process.traversal.step.sideEffect;
 
-import net.bitnine.agenspop.graph.process.util.AgnesElasticIterator;
+import net.bitnine.agenspop.graph.process.util.AgensElasticIterator;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.step.sideEffect.StartStep;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -13,7 +13,7 @@ public class ElasticStartStep extends StartStep<Map<String, Object>> {
 
     private final String query;
 
-    public ElasticStartStep(final Traversal.Admin traversal, final String query, final AgnesElasticIterator<?> elasticIterator) {
+    public ElasticStartStep(final Traversal.Admin traversal, final String query, final AgensElasticIterator<?> elasticIterator) {
         super(traversal, elasticIterator);
         this.query = query;
     }

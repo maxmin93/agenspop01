@@ -17,14 +17,14 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
 
     List<ElasticEdgeDocument> findByDatasource(String datasource);
 
-    List<ElasticEdgeDocument> findByEid(Long eid);
-    List<ElasticEdgeDocument> findByEidAndDatasource(Long eid, String datasource);
+    List<ElasticEdgeDocument> findByEid(Integer eid);
+    List<ElasticEdgeDocument> findByEidAndDatasource(Integer eid, String datasource);
 
-    List<ElasticEdgeDocument> findByEidIn(List<Long> eid);
-    List<ElasticEdgeDocument> findByEidInAndDatasource(List<Long> eid, String datasource);
-    List<ElasticEdgeDocument> findByEidNotInAndLabel(List<Long> eid, String label);
-    List<ElasticEdgeDocument> findByEidNotInAndDatasource(List<Long> eid, String datasource);
-    List<ElasticEdgeDocument> findByEidNotInAndLabelAndDatasource(List<Long> eid, String label, String datasource);
+    List<ElasticEdgeDocument> findByEidIn(List<Integer> eid);
+    List<ElasticEdgeDocument> findByEidInAndDatasource(List<Integer> eid, String datasource);
+    List<ElasticEdgeDocument> findByEidNotInAndLabel(List<Integer> eid, String label);
+    List<ElasticEdgeDocument> findByEidNotInAndDatasource(List<Integer> eid, String datasource);
+    List<ElasticEdgeDocument> findByEidNotInAndLabelAndDatasource(List<Integer> eid, String label, String datasource);
 
     List<ElasticEdgeDocument> findByLabel(String label);
     List<ElasticEdgeDocument> findByLabelAndDatasource(String label, String datasource);
@@ -32,12 +32,12 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
     @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"props.key\": \"?2\"}}]}}")
     List<ElasticEdgeDocument> findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(String datasource, String label, String key);
 
-    List<ElasticEdgeDocument> findBySid(Long sid);
-    List<ElasticEdgeDocument> findBySidAndDatasource(Long sid, String datasource);
-    List<ElasticEdgeDocument> findByTid(Long tid);
-    List<ElasticEdgeDocument> findByTidAndDatasource(Long tid, String datasource);
-    List<ElasticEdgeDocument> findBySidAndTid(Long sid, Long tid);
-    List<ElasticEdgeDocument> findBySidAndTidAndDatasource(Long sid, Long tid, String datasource);
+    List<ElasticEdgeDocument> findBySid(Integer sid);
+    List<ElasticEdgeDocument> findBySidAndDatasource(Integer sid, String datasource);
+    List<ElasticEdgeDocument> findByTid(Integer tid);
+    List<ElasticEdgeDocument> findByTidAndDatasource(Integer tid, String datasource);
+    List<ElasticEdgeDocument> findBySidAndTid(Integer sid, Integer tid);
+    List<ElasticEdgeDocument> findBySidAndTidAndDatasource(Integer sid, Integer tid, String datasource);
 
     /////////////////////////////
 

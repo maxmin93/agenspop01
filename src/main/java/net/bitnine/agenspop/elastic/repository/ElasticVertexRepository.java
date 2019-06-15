@@ -13,14 +13,14 @@ public interface ElasticVertexRepository extends ElasticsearchRepository<Elastic
 
     List<ElasticVertexDocument> findByDatasource(String datasource);
 
-    List<ElasticVertexDocument> findByEid(Long eid);
-    List<ElasticVertexDocument> findByEidAndDatasource(Long eid, String datasource);
+    List<ElasticVertexDocument> findByEid(Integer eid);
+    List<ElasticVertexDocument> findByEidAndDatasource(Integer eid, String datasource);
 
-    List<ElasticVertexDocument> findByEidIn(List<Long> eid);
-    List<ElasticVertexDocument> findByEidInAndDatasource(List<Long> eid, String datasource);
-    List<ElasticVertexDocument> findByEidNotInAndLabel(List<Long> eid, String label);
-    List<ElasticVertexDocument> findByEidNotInAndDatasource(List<Long> eid, String datasource);
-    List<ElasticVertexDocument> findByEidNotInAndLabelAndDatasource(List<Long> eid, String label, String datasource);
+    List<ElasticVertexDocument> findByEidIn(List<Integer> eid);
+    List<ElasticVertexDocument> findByEidInAndDatasource(List<Integer> eid, String datasource);
+    List<ElasticVertexDocument> findByEidNotInAndLabel(List<Integer> eid, String label);
+    List<ElasticVertexDocument> findByEidNotInAndDatasource(List<Integer> eid, String datasource);
+    List<ElasticVertexDocument> findByEidNotInAndLabelAndDatasource(List<Integer> eid, String label, String datasource);
 
     List<ElasticVertexDocument> findByLabel(String label);
     List<ElasticVertexDocument> findByLabelAndDatasource(String label, String datasource);

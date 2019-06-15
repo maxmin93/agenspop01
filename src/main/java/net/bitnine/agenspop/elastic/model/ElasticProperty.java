@@ -60,11 +60,11 @@ public interface ElasticProperty {
         }
 
         public static IllegalStateException propertyDoesNotExist() {
-            return new IllegalStateException("The property does not exist as it has no key, value, or associated element");
+            return new IllegalStateException("The property does not exist as it has no key, value, or associated elementId");
         }
 
         public static IllegalStateException propertyDoesNotExist(final String element, final String key) {
-            return new IllegalStateException("The property does not exist as the key has no associated value for the provided element: " + element + ":" + key);
+            return new IllegalStateException("The property does not exist as the key has no associated value for the provided elementId: " + element + ":" + key);
         }
 
         public static IllegalArgumentException dataTypeOfPropertyValueNotSupported(final Object val) {

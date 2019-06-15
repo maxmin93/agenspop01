@@ -1,5 +1,7 @@
 package net.bitnine.agenspop.graph;
 
+import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.elastic.ElasticGraphService;
 import net.bitnine.agenspop.graph.exception.AgensGraphManagerException;
 import net.bitnine.agenspop.graph.structure.AgensFactory;
 
@@ -17,6 +19,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -36,6 +39,7 @@ public class AgensGraphManager implements GraphManager {
     private final Object instantiateGraphLock = new Object();
     private GremlinExecutor gremlinExecutor = null;
 
+    private final ElasticGraphAPI baseGraph;
     private static AgensGraphManager instance = null;
 
     /**
@@ -45,7 +49,9 @@ public class AgensGraphManager implements GraphManager {
      * any graph defined at server start, i.e. in the server's YAML file, will go through this
      * AgensGraphManager.
      */
-    public AgensGraphManager( /* Settings settings */) {
+    @Autowired
+    public AgensGraphManager(ElasticGraphService baseGraph) {
+        this.baseGraph = baseGraph;
         initialize();
     }
 
@@ -62,7 +68,7 @@ public class AgensGraphManager implements GraphManager {
     @PostConstruct
     private synchronized void ready(){
         String gName = "modern";
-        AgensGraph g = AgensFactory.createEmpty(gName);
+        AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
         AgensFactory.generateModern(g);
         putGraph(gName, g);
         updateTraversalSource(gName, g);
@@ -74,14 +80,6 @@ public class AgensGraphManager implements GraphManager {
         return instance;
     }
 
-    // To be used for testing purposes only, so we can run tests in parallel
-    public static AgensGraphManager getInstance(boolean forceCreate) {
-        if (forceCreate) {
-            return new AgensGraphManager();
-        } else {
-            return instance;
-        }
-    }
 /*
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
         this.gremlinExecutor = gremlinExecutor;

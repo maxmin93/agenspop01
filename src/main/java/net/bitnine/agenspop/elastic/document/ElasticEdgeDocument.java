@@ -13,20 +13,20 @@ import java.util.stream.Collectors;
         , shards = 1, replicas = 0, refreshInterval = "-1")
 public class ElasticEdgeDocument extends ElasticElementDocument implements ElasticEdge {
 
-    @Field(type = FieldType.Long)
-    protected Long sid;
-    @Field(type = FieldType.Long)
-    protected Long tid;
+    @Field(type = FieldType.Integer)
+    protected Integer sid;
+    @Field(type = FieldType.Integer)
+    protected Integer tid;
 
     public ElasticEdgeDocument(){
         super();
     }
-    public ElasticEdgeDocument(Long eid, String label, Long sid, Long tid){
+    public ElasticEdgeDocument(Integer eid, String label, Integer sid, Integer tid){
         super(eid, label);
         this.sid = sid;
         this.tid = tid;
     }
-    public ElasticEdgeDocument(Long eid, String label, String datasource, Long sid, Long tid){
+    public ElasticEdgeDocument(Integer eid, String label, String datasource, Integer sid, Integer tid){
         super(eid, label, datasource);
         this.sid = sid;
         this.tid = tid;
@@ -39,8 +39,8 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
         this.setProperties(edge.getProperties());
     }
 
-    @Override public Long getSid(){ return sid; }
-    @Override public Long getTid(){ return tid; }
+    @Override public Integer getSid(){ return sid; }
+    @Override public Integer getTid(){ return tid; }
 
     @Override
     public String toString() {

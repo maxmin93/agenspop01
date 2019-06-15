@@ -5,6 +5,8 @@ import net.bitnine.agenspop.elastic.ElasticTx;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
+import net.bitnine.agenspop.graph.structure.trait.AgensTrait;
+import net.bitnine.agenspop.graph.structure.trait.SimpleAgensTrait;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
@@ -76,6 +78,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     protected ElasticGraphAPI baseGraph;
     protected BaseConfiguration configuration = new BaseConfiguration();
+    protected AgensTrait trait;
 
     private final AgensTransaction transaction = new AgensTransaction();
     protected AgensGraphVariables graphVariables;
@@ -101,6 +104,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.configuration.copy(configuration);
         this.baseGraph = baseGraph;
         this.graphVariables = new AgensGraphVariables(this);
+        this.trait = SimpleAgensTrait.instance();
+
         this.tx().readWrite();
 
         vertexIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, Vertex.class);
@@ -108,6 +113,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.valueOf(
                 configuration.getString(GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single.name()));
+
 
         // added
         graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
@@ -127,26 +133,18 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.initialize(baseGraph, configuration);
     }
 
-    // @Todo AgensFactory.Builder() : with specific config
-    protected AgensGraph(final Configuration configuration) {
-        this.baseGraph = null;      // AgensFactory.Builder() : with specific config
-        this.initialize(baseGraph, configuration);
-    }
-
-    public static AgensGraph open(final ElasticGraphAPI baseGraph, String graphName){
+    public static AgensGraph open(final ElasticGraphAPI baseGraph){
         final Configuration config = new BaseConfiguration();
-        config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, graphName);
+        config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
         return new AgensGraph(baseGraph, config);
     }
 
-//    public static AgensGraph open() { return open(EMPTY_CONFIGURATION); }
-//    public static AgensGraph open(final Configuration configuration) {
-//        return new AgensGraph(configuration);
-//    }
-//    public static AgensGraph open(final Configuration configuration, final String gName) {
-//        if( gName != null ) configuration.setProperty(GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
-//        return new AgensGraph(configuration);
-//    }
+    public static AgensGraph open(final ElasticGraphAPI baseGraph, final Configuration config){
+        if( !config.containsKey( GREMLIN_AGENSGRAPH_GRAPH_NAME )){
+            config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
+        }
+        return new AgensGraph(baseGraph, config);
+    }
 
     ///////////////////////////////////////////////////////
 
@@ -289,10 +287,10 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         // @Todo : type of idValue must be Long!!
         final Vertex vertex = new AgensVertex(
-                this.baseGraph.createVertex(new Long(idValue.toString()), label, graphName), this);
+                this.baseGraph.createVertex(new Integer(idValue.toString()), label, graphName), this);
         this.vertices.put(vertex.id(), vertex);
 
-        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality. .Cardinality.list, keyValues);
+        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.list, keyValues);
         return vertex;
     }
 

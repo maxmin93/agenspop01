@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
+import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.GraphReader;
 import org.apache.tinkerpop.gremlin.structure.io.GraphWriter;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
     private static final AgensIoRegistryV1 INSTANCE = new AgensIoRegistryV1();
+    protected static ElasticGraphAPI baseGraph = null;
 
     private AgensIoRegistryV1() {
         register(GryoIo.class, AgensGraph.class, new AgensGraphGryoSerializer());
@@ -50,6 +52,10 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
     public static AgensIoRegistryV1 instance() {
         return INSTANCE;
+    }
+
+    public void setBaseGraph(ElasticGraphAPI baseGraph){
+        this.baseGraph = baseGraph;
     }
 
     /**
@@ -71,9 +77,12 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
         @Override
         public AgensGraph read(final Kryo kryo, final Input input, final Class<AgensGraph> tinkerGraphClass) {
-            final Configuration conf = new BaseConfiguration();
-            conf.setProperty("gremlin.tinkergraph.defaultVertexPropertyCardinality", "list");
-            final AgensGraph graph = AgensGraph.open(conf);
+//            final Configuration conf = new BaseConfiguration();
+//            conf.setProperty("gremlin.tinkergraph.defaultVertexPropertyCardinality", "list");
+//            if( !conf.containsKey( AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME )){
+//                conf.setProperty( AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
+//            }
+            final AgensGraph graph = AgensGraph.open(baseGraph);
             final int len = input.readInt();
             final byte[] bytes = input.readBytes(len);
             try (final ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
@@ -226,9 +235,9 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
         @Override
         public AgensGraph deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-            final Configuration conf = new BaseConfiguration();
-            conf.setProperty("gremlin.tinkergraph.defaultVertexPropertyCardinality", "list");
-            final AgensGraph graph = AgensGraph.open(conf);
+//            final Configuration conf = new BaseConfiguration();
+//            conf.setProperty("gremlin.tinkergraph.defaultVertexPropertyCardinality", "list");
+            final AgensGraph graph = AgensGraph.open(baseGraph);
 
             final List<Map<String, Object>> edges;
             final List<Map<String, Object>> vertices;

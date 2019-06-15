@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.elastic.document;
 
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -13,10 +14,10 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
     public ElasticVertexDocument(){
         super();
     }
-    public ElasticVertexDocument(Long eid, String label){
+    public ElasticVertexDocument(Integer eid, String label){
         super(eid, label);
     }
-    public ElasticVertexDocument(Long eid, String label, String datasource){
+    public ElasticVertexDocument(Integer eid, String label, String datasource){
         super(eid, label, datasource);
     }
 
@@ -25,7 +26,6 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
         this.id = vertex.getId();
         this.setProperties(vertex.getProperties());
     }
-
 
     @Override
     public String toString() {

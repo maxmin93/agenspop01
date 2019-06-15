@@ -27,8 +27,8 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     @Field(type = FieldType.Keyword)
     protected String datasource;
-    @Field(type = FieldType.Long)
-    protected Long eid;
+    @Field(type = FieldType.Integer)
+    protected Integer eid;
     @Field(type = FieldType.Keyword)
     protected String label;
 
@@ -39,14 +39,14 @@ public abstract class ElasticElementDocument implements ElasticElement {
         this.deleted = false;
         this.version = System.currentTimeMillis();
     }
-    protected ElasticElementDocument(Long eid, String label){
+    protected ElasticElementDocument(Integer eid, String label){
         this();
         this.datasource = DEFAULT_DATASOURCE;
         this.eid = eid;
         this.label = label;
         this.id = getId(eid, datasource);
     }
-    protected ElasticElementDocument(Long eid, String label, String datasource) {
+    protected ElasticElementDocument(Integer eid, String label, String datasource) {
         this();
         this.datasource = datasource;
         this.eid = eid;
@@ -72,13 +72,13 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override public String getId(){ return id; }
-    public static final String getId(Long eid, String datasource){
+    public static final String getId(Integer eid, String datasource){
         return datasource + "::" + eid.toString();
     }
 
     public Long getVersion(){ return version; }
 
-    @Override public Long getEid(){ return eid; }
+    @Override public Integer getEid(){ return eid; }
     @Override public String getLabel(){
         return label;
     }

@@ -10,14 +10,14 @@ import java.util.Optional;
 
 public interface ElasticGraphAPI {
 
-    ElasticVertex createVertex(Long eid, String datasource, String label);
-    ElasticEdge createEdge(Long eid, String datasource, String label, Long sid, Long tid);
+    ElasticVertex createVertex(Integer eid, String datasource, String label);
+    ElasticEdge createEdge(Integer eid, String datasource, String label, Integer sid, Integer tid);
 
     ElasticVertex saveVertex(ElasticVertex vertex);
     ElasticEdge saveEdge(ElasticEdge edge);
 
-    ElasticVertex getVertexById(String datasource, long id);
-    ElasticEdge getEdgeById(String datasource, long id);
+    ElasticVertex getVertexById(String datasource, Integer id);
+    ElasticEdge getEdgeById(String datasource, Integer id);
 
     boolean hasSchemaIndex(String label);
     boolean hasSchemaIndex(String label, String key);
@@ -65,8 +65,8 @@ public interface ElasticGraphAPI {
     // access services of Vertex
     //
 
-    Optional<? extends ElasticVertex> vertexByEid(Long eid);
-    Optional<? extends ElasticVertex> vertexByEidAndDatasource(Long eid, String datasource);
+    Optional<? extends ElasticVertex> vertexByEid(Integer eid);
+    Optional<? extends ElasticVertex> vertexByEidAndDatasource(Integer eid, String datasource);
 
     Iterable<? extends ElasticVertex> verticesByLabel(String label);
     Iterable<? extends ElasticVertex> verticesByLabelAndDatasource(String label, String datasource);
@@ -79,15 +79,15 @@ public interface ElasticGraphAPI {
     // access services of Edge
     //
 
-    Optional<? extends ElasticEdge> edgeByEid(Long eid);
-    Optional<? extends ElasticEdge> edgeByEidAndDatasource(Long eid, String datasource);
+    Optional<? extends ElasticEdge> edgeByEid(Integer eid);
+    Optional<? extends ElasticEdge> edgeByEidAndDatasource(Integer eid, String datasource);
 
-    Iterable<? extends ElasticEdge> edgesBySid(Long sid);
-    Iterable<? extends ElasticEdge> edgesBySidAndDatasource(Long sid, String datasource);
-    Iterable<? extends ElasticEdge> edgesByTid(Long tid);
-    Iterable<? extends ElasticEdge> edgesByTidAndDatasource(Long tid, String datasource);
-    Iterable<? extends ElasticEdge> edgesBySidAndTid(Long sid, Long tid);
-    Iterable<? extends ElasticEdge> edgesBySidAndTidAndDatasource(Long sid, Long tid, String datasource);
+    Iterable<? extends ElasticEdge> edgesBySid(Integer sid);
+    Iterable<? extends ElasticEdge> edgesBySidAndDatasource(Integer sid, String datasource);
+    Iterable<? extends ElasticEdge> edgesByTid(Integer tid);
+    Iterable<? extends ElasticEdge> edgesByTidAndDatasource(Integer tid, String datasource);
+    Iterable<? extends ElasticEdge> edgesBySidAndTid(Integer sid, Integer tid);
+    Iterable<? extends ElasticEdge> edgesBySidAndTidAndDatasource(Integer sid, Integer tid, String datasource);
 
     Iterable<? extends ElasticEdge> edgesByLabel(String label);
     Iterable<? extends ElasticEdge> edgesByLabelAndDatasource(String label, String datasource);

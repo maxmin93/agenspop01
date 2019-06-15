@@ -24,32 +24,35 @@ import java.util.stream.Collectors;
  */
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
-//    protected Map<String, Property> properties;
-    protected final Vertex inVertex;
-    protected final Vertex outVertex;
+    protected final Vertex outVertex;       // sourceV
+    protected final Vertex inVertex;        // targetV
 
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
-        this.inVertex = null;       // 나중에 : vertexById 로 찾아 넣기
-        this.outVertex = null;      // 나중에 : vertexById 로 찾아 넣기
+        this.outVertex = graph.vertices.get(edge.getSid());    // source
+        this.inVertex = graph.vertices.get(edge.getTid());     // target
     }
 
-//    protected AgensEdge(final Object id, final Vertex outVertex, final String label, final Vertex inVertex) {
-//        super(id, label, (AgensGraph)inVertex.graph());
-//        this.outVertex = outVertex;
-//        this.inVertex = inVertex;
-//        AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), this.label, null);
-//    }
+    public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
+        super(
+            outVertex.graph.baseGraph.createEdge(
+                (Integer)id, outVertex.graph.graphName, label
+                , outVertex.baseElement.getEid(), inVertex.baseElement.getEid()
+            )                           // elasticedge
+            , outVertex.graph           // graph
+        );
+        this.outVertex = outVertex;     // sourceV
+        this.inVertex = inVertex;       // targetV
+        AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), label, null);
+    }
 
     @Override
     public Vertex outVertex() {     // source v of edge
-//        return new AgensVertex(this.getBaseEdge().getSid(), this.graph);
         return (Vertex)this.outVertex;
     }
 
     @Override
     public Vertex inVertex() {      // target v of edge
-//        return new AgensVertex(this.getBaseEdge().getTid(), this.graph);
         return (Vertex)this.inVertex;
     }
 

@@ -24,29 +24,6 @@ public final class AgensHelper {
 
     private AgensHelper() { }
 
-    protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
-        ElementHelper.validateLabel(label);
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
-
-        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
-
-        final Edge edge;
-        if (null != idValue) {
-            if (graph.edges.containsKey(idValue))
-                throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
-        } else {
-            idValue = graph.edgeIdManager.getNextId(graph);
-        }
-
-        edge = new AgensEdge(idValue, outVertex, label, inVertex);
-        ElementHelper.attachProperties(edge, keyValues);
-        graph.edges.put(edge.id(), edge);
-        AgensHelper.addOutEdge(outVertex, label, edge);
-        AgensHelper.addInEdge(inVertex, label, edge);
-        return edge;
-
-    }
-
     protected static void addOutEdge(final AgensVertex vertex, final String label, final Edge edge) {
         if (null == vertex.outEdges) vertex.outEdges = new HashMap<>();
         Set<Edge> edges = vertex.outEdges.get(label);

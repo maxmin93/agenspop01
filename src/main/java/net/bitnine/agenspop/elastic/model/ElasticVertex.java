@@ -10,6 +10,6 @@ public interface ElasticVertex extends ElasticElement {
 
 //    int degree(Direction direction, String type);
 //    Iterable<ElasticEdge> relationships(Direction direction, String...types);
-//    ElasticEdge connectTo(ElasticVertex node, String type);
-    
+//    ElasticEdge connectTo(ElasticVertex vertex, String label);
+
 }

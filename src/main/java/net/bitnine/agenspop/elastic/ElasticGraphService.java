@@ -36,7 +36,6 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     static final String VERTEX_INDEX_NAME = "agensvertex";
     static final String EDGE_INDEX_NAME = "agensedge";
-    static final AtomicLong eidSeq = new AtomicLong(1L);
 
     private final ElasticVertexRepository vertexRepository;
     private final ElasticEdgeRepository edgeRepository;
@@ -83,38 +82,38 @@ public class ElasticGraphService implements ElasticGraphAPI {
         System.out.println("** create ElasticVertexWrapper index : " +
                 Arrays.asList(ElasticVertexDocument.class.getAnnotations()).toString());
 
-        ElasticVertexDocument v = new ElasticVertexDocument(1L, "person");
+        ElasticVertexDocument v = new ElasticVertexDocument(1, "person");
         v.setProperty("name", "marko");
         v.setProperty("age", 29);
         ElasticVertexDocument tmp = vertexRepository.save(v);
 //        System.out.println("vertex saved: "+tmp.toString());
 
-        v = new ElasticVertexDocument(2L, "person");
+        v = new ElasticVertexDocument(2, "person");
         v.setProperty("name", "vadas");
         v.setProperty("age", 27);
         vertexRepository.save(v);
 
-        v = new ElasticVertexDocument(3L, "software");
+        v = new ElasticVertexDocument(3, "software");
         v.setProperty("name", "lop");
         v.setProperty("lang", "java");
         vertexRepository.save(v);
 
-        v = new ElasticVertexDocument(4L, "person");
+        v = new ElasticVertexDocument(4, "person");
         v.setProperty("name", "josh");
         v.setProperty("age", 32);
         vertexRepository.save(v);
 
-        v = new ElasticVertexDocument(5L, "software");
+        v = new ElasticVertexDocument(5, "software");
         v.setProperty("name", "ripple");
         v.setProperty("lang", "java");
         vertexRepository.save(v);
 
-        v = new ElasticVertexDocument(6L, "person");
+        v = new ElasticVertexDocument(6, "person");
         v.setProperty("name", "peter");
         v.setProperty("age", 35);
         vertexRepository.save(v);
 
-        v = new ElasticVertexDocument(6L, "person", "mysql");
+        v = new ElasticVertexDocument(6, "person", "mysql");
         v.setProperty("name", "peter1");
         v.setProperty("age", 35);
         vertexRepository.save(v);
@@ -132,28 +131,28 @@ public class ElasticGraphService implements ElasticGraphAPI {
         System.out.println("** create ElasticEdgeWrapper index : " +
                 Arrays.asList(ElasticEdgeDocument.class.getAnnotations()).toString());
 
-        ElasticEdgeDocument e = new ElasticEdgeDocument(7L, "knows", 1L, 2L);
+        ElasticEdgeDocument e = new ElasticEdgeDocument(7, "knows", 1, 2);
         e.setProperty("weight", "0.5d");
         ElasticEdgeDocument tmp = edgeRepository.save(e);
 //        System.out.println("edge saved: "+tmp.toString());
 
-        e = new ElasticEdgeDocument(8L, "knows", 1L, 4L);
+        e = new ElasticEdgeDocument(8, "knows", 1, 4);
         e.setProperty("weight", "1.0d");
         edgeRepository.save(e);
 
-        e = new ElasticEdgeDocument(9L, "created", 1L, 3L);
+        e = new ElasticEdgeDocument(9, "created", 1, 3);
         e.setProperty("weight", "0.4d");
         edgeRepository.save(e);
 
-        e = new ElasticEdgeDocument(10L, "created", 4L, 5L);
+        e = new ElasticEdgeDocument(10, "created", 4, 5);
         e.setProperty("weight", "1.0d");
         edgeRepository.save(e);
 
-        e = new ElasticEdgeDocument(11L, "created", 4L, 3L);
+        e = new ElasticEdgeDocument(11, "created", 4, 3);
         e.setProperty("weight", "0.4d");
         edgeRepository.save(e);
 
-        e = new ElasticEdgeDocument(12L, "created", 6L, 3L);
+        e = new ElasticEdgeDocument(12, "created", 6, 3);
         e.setProperty("weight", "0.2d");
         edgeRepository.save(e);
     }
@@ -161,7 +160,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //////////////////////////////////////////////////
 
     @Override
-    public ElasticVertex createVertex(Long eid, String label, String datasource){
+    public ElasticVertex createVertex(Integer eid, String label, String datasource){
         ElasticVertexDocument v = new ElasticVertexDocument(eid, label, datasource);
         return v;
     }
@@ -170,7 +169,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
     }
 
     @Override
-    public ElasticEdge createEdge(Long eid, String datasource, String label, Long sid, Long tid){
+    public ElasticEdge createEdge(Integer eid, String datasource, String label, Integer sid, Integer tid){
         ElasticEdgeDocument e = new ElasticEdgeDocument(eid, label, datasource, sid, tid);
         return e;
     }
@@ -179,13 +178,13 @@ public class ElasticGraphService implements ElasticGraphAPI {
     }
 
     @Override
-    public ElasticVertex getVertexById(String datasource, long eid){
+    public ElasticVertex getVertexById(String datasource, Integer eid){
         List<ElasticVertexDocument> list = vertexRepository.findByEidAndDatasource(eid, datasource);
         return list.size() > 0 ? list.get(0) : null;
     }
 
     @Override
-    public ElasticEdge getEdgeById(String datasource, long eid){
+    public ElasticEdge getEdgeById(String datasource, Integer eid){
         List<ElasticEdgeDocument> list = edgeRepository.findByEidAndDatasource(eid, datasource);
         return list.size() > 0 ? list.get(0) : null;
     }
@@ -341,12 +340,12 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
 
     @Override
-    public Optional<ElasticVertexDocument> vertexByEid(Long eid) {
+    public Optional<ElasticVertexDocument> vertexByEid(Integer eid) {
         List<ElasticVertexDocument> result = vertexRepository.findByEid(eid);
         return result.stream().findFirst();
     }
     @Override
-    public Optional<ElasticVertexDocument> vertexByEidAndDatasource(Long eid, String datasource) {
+    public Optional<ElasticVertexDocument> vertexByEidAndDatasource(Integer eid, String datasource) {
         List<ElasticVertexDocument> result = vertexRepository.findByEidAndDatasource(eid, datasource);
         return result.stream().findFirst();
     }
@@ -378,38 +377,38 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
 
     @Override
-    public Optional<ElasticEdgeDocument> edgeByEid(Long eid) {
+    public Optional<ElasticEdgeDocument> edgeByEid(Integer eid) {
         List<ElasticEdgeDocument> result = edgeRepository.findByEid(eid);
         return result.stream().findFirst();
     }
     @Override
-    public Optional<ElasticEdgeDocument> edgeByEidAndDatasource(Long eid, String datasource) {
+    public Optional<ElasticEdgeDocument> edgeByEidAndDatasource(Integer eid, String datasource) {
         List<ElasticEdgeDocument> result = edgeRepository.findByEidAndDatasource(eid, datasource);
         return result.stream().findFirst();
     }
 
     @Override
-    public Iterable<ElasticEdgeDocument> edgesBySid(Long sid) {
+    public Iterable<ElasticEdgeDocument> edgesBySid(Integer sid) {
         return edgeRepository.findBySid(sid);
     }
     @Override
-    public Iterable<ElasticEdgeDocument> edgesBySidAndDatasource(Long sid, String datasource) {
+    public Iterable<ElasticEdgeDocument> edgesBySidAndDatasource(Integer sid, String datasource) {
         return edgeRepository.findBySidAndDatasource(sid, datasource);
     }
     @Override
-    public Iterable<ElasticEdgeDocument> edgesByTid(Long tid) {
+    public Iterable<ElasticEdgeDocument> edgesByTid(Integer tid) {
         return edgeRepository.findByTid(tid);
     }
     @Override
-    public Iterable<ElasticEdgeDocument> edgesByTidAndDatasource(Long tid, String datasource) {
+    public Iterable<ElasticEdgeDocument> edgesByTidAndDatasource(Integer tid, String datasource) {
         return edgeRepository.findByTidAndDatasource(tid, datasource);
     }
     @Override
-    public Iterable<ElasticEdgeDocument> edgesBySidAndTid(Long sid, Long tid) {
+    public Iterable<ElasticEdgeDocument> edgesBySidAndTid(Integer sid, Integer tid) {
         return edgeRepository.findBySidAndTid(sid, tid);
     }
     @Override
-    public Iterable<ElasticEdgeDocument> edgesBySidAndTidAndDatasource(Long sid, Long tid, String datasource) {
+    public Iterable<ElasticEdgeDocument> edgesBySidAndTidAndDatasource(Integer sid, Integer tid, String datasource) {
         return edgeRepository.findBySidAndTidAndDatasource(sid, tid, datasource);
     }
 

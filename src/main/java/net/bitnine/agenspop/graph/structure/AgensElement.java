@@ -12,18 +12,11 @@ import java.util.Set;
 
 public abstract class AgensElement implements Element, WrappedElement<ElasticElement> {
 
-//    protected final Object id;
-//    protected final String label;
     protected boolean removed = false;
 
     protected final AgensGraph graph;
     protected final ElasticElement baseElement;
 
-//    protected AgensElement(final Object id, final String label, AgensGraph graph) {
-//        this.id = id;
-//        this.label = label;
-//        this.graph = graph;
-//    }
     protected AgensElement(final ElasticElement baseElement, final AgensGraph graph) {
         this.baseElement = baseElement;
         this.graph = graph;
@@ -40,6 +33,12 @@ public abstract class AgensElement implements Element, WrappedElement<ElasticEle
     public Object id() {
         this.graph.tx().readWrite();
         return this.baseElement.getId();
+    }
+
+    @Override
+    public String label() {
+        this.graph.tx().readWrite();
+        return this.baseElement.getLabel();
     }
 
     @Override

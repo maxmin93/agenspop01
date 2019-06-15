@@ -4,8 +4,8 @@ public interface ElasticEdge extends ElasticElement {
 
     public static final String DEFAULT_LABEL = "edge";
 
-    Long getSid();
-    Long getTid();
+    Integer getSid();
+    Integer getTid();
 
     // String type();       // ??
 
