@@ -97,6 +97,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         return this.property(VertexProperty.Cardinality.single, key, value);
     }
 
+    // @Todo remove trait codes about VertexProperty
     @Override
     public <V> VertexProperty<V> property(final String key) {
         this.graph.tx().readWrite();

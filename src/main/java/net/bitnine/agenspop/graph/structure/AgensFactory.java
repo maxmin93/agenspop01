@@ -63,6 +63,15 @@ public final class AgensFactory {
         return g;
     }
 
+    public static void generateSample(final AgensGraph g) {
+        final Vertex marko = g.addVertex(T.id, 1, T.label, "person");
+        final Vertex vadas = g.addVertex(T.id, 2, T.label, "person");
+        final Vertex lop = g.addVertex(T.id, 3, T.label, "software");
+        final Vertex josh = g.addVertex(T.id, 4, T.label, "person");
+        final Vertex ripple = g.addVertex(T.id, 5, T.label, "software");
+        final Vertex peter = g.addVertex(T.id, 6, T.label, "person");
+    }
+
     public static void generateModern(final AgensGraph g) {
         final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29);
         final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27);

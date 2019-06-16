@@ -2,6 +2,7 @@ package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import net.bitnine.agenspop.elastic.ElasticTx;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
@@ -287,11 +288,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         }
 
         // @Todo : type of idValue must be Long!!
-        final Vertex vertex = new AgensVertex(
-                this.baseGraph.createVertex(new Integer(idValue.toString()), label, graphName), this);
+        final ElasticVertex baseElement = this.baseGraph.createVertex(new Integer(idValue.toString()), label, graphName);
+        final Vertex vertex = new AgensVertex( baseElement, this);
         this.vertices.put(vertex.id(), vertex);
 
-        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.list, keyValues);
+        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.single, keyValues);
+
+        this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
         return vertex;
     }
 

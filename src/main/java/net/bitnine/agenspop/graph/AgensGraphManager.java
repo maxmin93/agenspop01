@@ -69,11 +69,21 @@ public class AgensGraphManager implements GraphManager {
     private synchronized void ready(){
         String gName = "modern";
         AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
-        AgensFactory.generateModern(g);
+        // AgensFactory.generateModern(g);
+        AgensFactory.generateSample(g);
         putGraph(gName, g);
         updateTraversalSource(gName, g);
         // for DEBUG
         System.out.println("AgensGraphManager ready: "+g.toString());
+
+        // for Verify
+        // http://localhost:9200/elasticvertex/_search?pretty=true&q=*:*
+    }
+
+    public void insertSampleData(){
+        String gName = "modern";
+        AgensGraph g = (AgensGraph)this.graphs.get(gName);
+        AgensFactory.generateSample(g);
     }
 
     public static AgensGraphManager getInstance() {
