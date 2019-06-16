@@ -112,8 +112,9 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         edgeIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, Edge.class);
         vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.valueOf(
-                configuration.getString(GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single.name()));
-
+                configuration.getString(
+                        GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY
+                        , VertexProperty.Cardinality.single.name()));
 
         // added
         graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");

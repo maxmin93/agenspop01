@@ -19,7 +19,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public static final String LABEL_DELIMINATOR = "::";
 
-    // protected Map<String, List<VertexProperty>> properties;
+    protected Map<String, List<VertexProperty>> properties;
     protected Map<String, Set<Edge>> outEdges;
     protected Map<String, Set<Edge>> inEdges;
 
@@ -72,11 +72,6 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     }
 
     @Override
-    public <V> VertexProperty<V> property(final String key, final V value) {
-        return this.property(VertexProperty.Cardinality.single, key, value);
-    }
-
-    @Override
     public void remove() {
         this.graph.tx().readWrite();
         this.graph.trait.removeVertex(this);
@@ -84,11 +79,22 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     @Override
     public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality, final String key, final V value, final Object... keyValues) {
+        if (keyValues != null && keyValues.length > 0)
+            throw VertexProperty.Exceptions.metaPropertiesNotSupported();
+        if (cardinality.equals(VertexProperty.Cardinality.single))
+            properties.remove(key);
         ElementHelper.validateProperty(key, value);
-        if (ElementHelper.getIdValue(keyValues).isPresent())
-            throw Vertex.Exceptions.userSuppliedIdsNotSupported();
         this.graph.tx().readWrite();
-        return this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
+        return this.property(key, value);
+
+//        if (ElementHelper.getIdValue(keyValues).isPresent())
+//            throw Vertex.Exceptions.userSuppliedIdsNotSupported();
+//        return this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
+    }
+
+    @Override
+    public <V> VertexProperty<V> property(final String key, final V value) {
+        return this.property(VertexProperty.Cardinality.single, key, value);
     }
 
     @Override
@@ -105,8 +111,8 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction, final String... edgeLabels) {
-        // return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
-
+        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
+        /*
         this.graph.tx().readWrite();
         return new Iterator<Vertex>() {
             final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(0 == edgeLabels.length ?
@@ -129,13 +135,14 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
                 return new AgensVertex(this.relationshipIterator.next().other(getBaseVertex()), graph);
             }
         };
+        */
     }
 
     @Override
     public Iterator<Edge> edges(final Direction direction, final String... edgeLabels) {
-//        final Iterator<Edge> edgeIterator = (Iterator) AgensHelper.getEdges(this, direction, edgeLabels);
-//        return edgeIterator;
-
+        final Iterator<Edge> edgeIterator = (Iterator) AgensHelper.getEdges(this, direction, edgeLabels);
+        return edgeIterator;
+        /*
         this.graph.tx().readWrite();
         return new Iterator<Edge>() {
             final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(0 == edgeLabels.length ?
@@ -158,6 +165,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
                 return new AgensEdge(this.relationshipIterator.next(), graph);
             }
         };
+        */
     }
 
     //////////////////////////////////////////////////////////////////////////////////////

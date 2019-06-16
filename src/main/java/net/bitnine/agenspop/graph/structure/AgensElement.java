@@ -32,7 +32,7 @@ public abstract class AgensElement implements Element, WrappedElement<ElasticEle
     @Override
     public Object id() {
         this.graph.tx().readWrite();
-        return this.baseElement.getId();
+        return this.baseElement.getEid();
     }
 
     @Override
