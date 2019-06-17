@@ -52,7 +52,7 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
                 ", datasource='" + datasource + '\'' +
                 ", sid='" + sid + '\'' +
                 ", tid='" + tid + '\'' +
-                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }
 

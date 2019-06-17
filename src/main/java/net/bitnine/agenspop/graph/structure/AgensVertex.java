@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
+import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
@@ -78,14 +79,24 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     }
 
     @Override
-    public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality, final String key, final V value, final Object... keyValues) {
-        if (keyValues != null && keyValues.length > 0)
-            throw VertexProperty.Exceptions.metaPropertiesNotSupported();
-        if (cardinality.equals(VertexProperty.Cardinality.single))
-            properties.remove(key);
+    public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality
+            , final String key, final V value, final Object... keyValues) {
+
+        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateProperty(key, value);
+        if (cardinality.equals(VertexProperty.Cardinality.single) && properties != null )
+            properties.remove(key);
+
         this.graph.tx().readWrite();
-        return this.property(key, value);
+        final AgensVertexProperty<V> vertexProperty = new AgensVertexProperty<V>(this, key, value);
+
+        if (null == this.properties) this.properties = new HashMap<>();
+        final List<VertexProperty> list = this.properties.getOrDefault(key, new ArrayList<>());
+        list.add(vertexProperty);
+        this.properties.put(key, list);
+        AgensHelper.autoUpdateIndex(this, key, value, null);
+
 
 //        if (ElementHelper.getIdValue(keyValues).isPresent())
 //            throw Vertex.Exceptions.userSuppliedIdsNotSupported();

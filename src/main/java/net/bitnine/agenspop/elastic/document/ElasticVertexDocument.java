@@ -35,7 +35,7 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
                 ", eid=" + eid +
                 ", label='" + label + '\'' +
                 ", datasource='" + datasource + '\'' +
-                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }
 }

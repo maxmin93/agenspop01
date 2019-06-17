@@ -8,8 +8,10 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import javax.swing.text.html.Option;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -87,7 +89,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override public Iterable<String> getKeys(){
-        return properties.stream().map(ElasticProperty::key).collect(Collectors.toList());
+        return properties.stream().map(ElasticProperty::getKey).collect(Collectors.toList());
     }
     @Override public void setProperties(Set<ElasticProperty> properties){
         this.properties = properties;
@@ -97,32 +99,37 @@ public abstract class ElasticElementDocument implements ElasticElement {
     /////////////////////////////////////////
 
     @Override
-    public ElasticProperty getProperty(String key){
-        // return props.get(name);
-        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
-        return result.size() > 0 ? result.get(0) : ElasticEmptyProperty.instance();
-    }
-    @Override
-    public ElasticProperty getProperty(String key, Object defaultValue){
-        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
-        return result.size() > 0 ? result.get(0) : new ElasticPropertyDocument(this.id, key, defaultValue);
+    public Optional<Object> getProperty(String key){
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
+        if( result.size() == 0 ) return Optional.empty();
+
+        Optional<Object> value = Optional.of(result.get(0).value()) ;
+        return value;
     }
 
     @Override
-    public boolean setProperty(String key, Object value){
-        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+    public Object getProperty(String key, Object defaultValue){
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
+        if( result.size() == 0 ) return defaultValue;
+        Optional<Object> value = Optional.of(result.get(0).value());
+        return value.orElse(defaultValue);
+    }
+
+    @Override
+    public boolean setProperty(String key, String type, Object value){
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
                 properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
-        ElasticProperty prop = new ElasticPropertyDocument(this.id, key, value);
+        ElasticProperty prop = new ElasticPropertyDocument(this.id, key, type, value);
         return properties.add(prop);
     }
 
     @Override
     public int removeProperty(String key){
-        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
                 properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
@@ -132,7 +139,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override public boolean hasProperty(String key){
-        List<ElasticProperty> result = properties.stream().filter(p->p.key().equals(key)).collect(Collectors.toList());
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         return result.size() > 0;
     }
 
@@ -151,7 +158,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
                 ", eid=" + eid +
                 ", label='" + label + '\'' +
                 ", datasource='" + datasource + '\'' +
-                ", properties=[" + properties.stream().map(ElasticProperty::key).collect(Collectors.joining(",")) +
+                ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }
 }

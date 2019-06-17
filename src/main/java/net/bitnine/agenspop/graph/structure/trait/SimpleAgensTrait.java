@@ -1,5 +1,8 @@
 package net.bitnine.agenspop.graph.structure.trait;
 
+import com.google.common.collect.Iterables;
+import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.graph.process.traversal.LabelP;
@@ -13,6 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -21,22 +25,18 @@ import java.util.function.Predicate;
 public class SimpleAgensTrait implements AgensTrait {
 
     private static final SimpleAgensTrait INSTANCE = new SimpleAgensTrait();
-
-    private final static Predicate TRUE_PREDICATE = x -> true;
-
     public static SimpleAgensTrait instance() {
         return INSTANCE;
     }
 
-    private SimpleAgensTrait() {
+    private SimpleAgensTrait() { }
 
-    }
+    private final static Predicate TRUE_PREDICATE = x -> true;
 
     @Override
     public Predicate<ElasticVertex> getVertexPredicate() {
         return TRUE_PREDICATE;
     }
-
     @Override
     public Predicate<ElasticEdge> getEdgePredicate() {
         return TRUE_PREDICATE;
@@ -44,13 +44,19 @@ public class SimpleAgensTrait implements AgensTrait {
 
     @Override
     public void removeVertex(final AgensVertex vertex) {
+        ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
         try {
             final ElasticVertex node = vertex.getBaseVertex();
+
             // @Todo node.relationships(Direction.BOTH)
-//            for (final ElasticEdge relationship : node.relationships(Direction.BOTH)) {
-//                relationship.delete();
-//            }
-            node.delete();
+            final ArrayList<ElasticEdge> relationships = new ArrayList<>();
+            Iterables.addAll(relationships, api.edgesBySid(node.getEid()));
+            Iterables.addAll(relationships, api.edgesByTid(node.getEid()));
+            for (final ElasticEdge relationship : relationships) {
+                api.deleteE( relationship );
+            }
+            api.deleteV( node );
+
         } catch (final IllegalStateException ignored) {
             // this one happens if the vertex is still chilling in the tx
         } catch (final RuntimeException ex) {

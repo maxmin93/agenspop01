@@ -12,12 +12,7 @@ import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Element;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Transaction;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.Io;
 import org.apache.tinkerpop.gremlin.structure.io.IoCore;
 import org.apache.tinkerpop.gremlin.structure.util.*;
@@ -289,11 +284,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         // @Todo : type of idValue must be Long!!
         final ElasticVertex baseElement = this.baseGraph.createVertex(new Integer(idValue.toString()), label, graphName);
-        final Vertex vertex = new AgensVertex( baseElement, this);
+        final AgensVertex vertex = new AgensVertex( baseElement, this);
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label))
+                vertex.property((String) keyValues[i], keyValues[i + 1]);
+        }
+
         this.vertices.put(vertex.id(), vertex);
-
-        ElementHelper.attachProperties(vertex, VertexProperty.Cardinality.single, keyValues);
-
         this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
         return vertex;
     }

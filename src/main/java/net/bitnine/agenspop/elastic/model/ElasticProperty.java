@@ -1,37 +1,47 @@
 package net.bitnine.agenspop.elastic.model;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.apache.commons.collections.list.UnmodifiableList;
+
+import java.lang.reflect.Constructor;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 public interface ElasticProperty {
 
-    public String key();
-    public String type();
-    public String value() throws NoSuchElementException;
+    static List<String> whiteList = Arrays.asList(
+            String.class.getName(), Integer.class.getName(), Long.class.getName()
+            , Float.class.getName(), Double.class.getName(), Boolean.class.getName()
+            // ** excpetions
+            // List.class.getName(), Map.class.getName(), Set.class.getName()
+    );
 
-    public default String guessType(){
-        Object v = (Object) value();
+    String elementId();
 
-        if( v instanceof String ) return String.class.getSimpleName();
+    String getKey();
+    String getType();
+    String getValue() throws NoSuchElementException;
 
-        else if( v instanceof Integer ) return Integer.class.getSimpleName();
-        else if( v instanceof Long ) return Long.class.getSimpleName();
-        else if( v instanceof Float ) return Float.class.getSimpleName();
-        else if( v instanceof Double ) return Double.class.getSimpleName();
-        else if( v instanceof Boolean ) return Boolean.class.getSimpleName();
+    default Object value() throws NoSuchElementException {
+        Object value = null;
+        if( !whiteList.contains(getType()) )
+            throw new NoSuchElementException("Collection Types cannot be supported in Property");
 
-        else if( v instanceof Date) return Date.class.getSimpleName();
-
-        else if( v instanceof List) return List.class.getSimpleName();
-        else if( v instanceof Map) return Map.class.getSimpleName();
-
-        return "null";        // Exception is better
+        try{
+            Class cls = Class.forName( getType() );
+            Constructor cons = cls.getDeclaredConstructor( String.class );
+            value = cons.newInstance( getValue() );
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
+                | IllegalAccessException | InvocationTargetException ex){
+            throw new NoSuchElementException(String.format("property.value(\"%s\")<%s> exception: %s"
+                    , getValue(), getType(), ex.toString()));
+        }
+        return value;
     }
 
-    public String element();
-    public static ElasticProperty empty() {
+    static ElasticProperty empty() {
         return ElasticEmptyProperty.instance();
     }
 

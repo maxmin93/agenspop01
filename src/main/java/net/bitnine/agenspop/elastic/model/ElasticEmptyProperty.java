@@ -11,12 +11,16 @@ public final class ElasticEmptyProperty implements ElasticProperty {
     }
 
     @Override
-    public String key() {
+    public String getKey() {
         throw Exceptions.propertyDoesNotExist();
     }
 
     @Override
-    public String type() throws NoSuchElementException {
+    public String getType() throws NoSuchElementException {
+        throw Exceptions.propertyDoesNotExist();
+    }
+    @Override
+    public String getValue() throws NoSuchElementException {
         throw Exceptions.propertyDoesNotExist();
     }
     @Override
@@ -25,7 +29,7 @@ public final class ElasticEmptyProperty implements ElasticProperty {
     }
 
     @Override
-    public String element() {
+    public String elementId() {
         throw Exceptions.propertyDoesNotExist();
     }
 

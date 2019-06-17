@@ -116,7 +116,7 @@ public class ElasticConfig {
         article.setTag("software", "elasticsearch");
         service.save(article);
 
-        System.out.println("** Save data sample : 4");
+        System.out.println("** Save Article data samples (4)");
     }
 
     @Bean

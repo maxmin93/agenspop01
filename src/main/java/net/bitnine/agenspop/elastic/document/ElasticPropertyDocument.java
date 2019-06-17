@@ -5,23 +5,23 @@ import net.bitnine.agenspop.elastic.model.ElasticProperty;
 public class ElasticPropertyDocument implements ElasticProperty {
 
     // **NOTE: private 설정시 SerializationFeature.FAIL_ON_EMPTY_BEANS
-    public String elementId;      // ID ==> datasource + "::" + eid
-    public String key;
-    public String type;
-    public String value;
+    private String elementId;      // ID ==> datasource + "::" + eid
+    private String key;
+    private String type;
+    private String value;
 
     public ElasticPropertyDocument(){}
-    public ElasticPropertyDocument(final String element, final String key, final Object value) {
-        this.elementId = element;
+    public ElasticPropertyDocument(final String elementId, final String key, final String type, final Object value) {
+        this.elementId = elementId;
         this.key = key;
-        this.type = value.getClass().getSimpleName();
+        this.type = type;
         this.value = value.toString();
     }
 
-    @Override public String element() { return this.elementId; }
-    @Override public String key() { return this.key; }
-    @Override public String type() { return this.type; }
-    @Override public String value() { return this.value; }
+    @Override public String elementId() { return this.elementId; }
+    @Override public String getKey() { return this.key; }
+    @Override public String getType() { return this.type; }
+    @Override public String getValue() { return this.value; }
 
     @Override
     public String toString() {
@@ -35,12 +35,11 @@ public class ElasticPropertyDocument implements ElasticProperty {
         if (this == obj) return true;
 
         ElasticPropertyDocument that = (ElasticPropertyDocument) obj;
-        if (this.key == null || that.key() == null || !this.key.equals(that.key()) )
+        if (this.key == null || that.getKey() == null || !this.key.equals(that.getKey()) )
             return false;
-        if (this.value == null || that.value() == null || !this.type().equals(that.type())
-                || !this.value.equals(that.value()) )
+        if (this.value == null || that.getValue() == null || !this.value.equals(that.getValue()))
             return false;
-        if (this.type == null || that.type() == null || !this.type.equals(that.type()) )
+        if (this.type == null || that.getType() == null || !this.type.equals(that.getType()) )
             return false;
 
         return true;
@@ -48,7 +47,7 @@ public class ElasticPropertyDocument implements ElasticProperty {
 
     @Override
     public int hashCode() {
-        return 31*value.hashCode() + 43*type().hashCode() + 59*key.hashCode();
+        return 31*value.hashCode() + 43*type.hashCode() + 59*key.hashCode();
     }
 
 }

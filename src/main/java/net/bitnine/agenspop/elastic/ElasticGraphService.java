@@ -63,12 +63,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
     @PostConstruct
     public void insertDataSample() {
         this.startup();
-
-        // Save data sample
-//        insertMordernVertices();
-//        insertMordernEdges();
     }
-
     /*
             final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29);
             final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27);
@@ -77,85 +72,6 @@ public class ElasticGraphService implements ElasticGraphAPI {
             final Vertex ripple = g.addVertex(T.id, 5, T.label, "software", "name", "ripple", "lang", "java");
             final Vertex peter = g.addVertex(T.id, 6, T.label, "person", "name", "peter", "age", 35);
      */
-    private void insertMordernVertices(){
-        // http://localhost:9200/elasticvertex/_search?pretty=true&q=*:*
-        System.out.println("** create ElasticVertexWrapper index : " +
-                Arrays.asList(ElasticVertexDocument.class.getAnnotations()).toString());
-
-        ElasticVertexDocument v = new ElasticVertexDocument(1, "person");
-        v.setProperty("name", "marko");
-        v.setProperty("age", 29);
-        ElasticVertexDocument tmp = vertexRepository.save(v);
-//        System.out.println("vertex saved: "+tmp.toString());
-
-        v = new ElasticVertexDocument(2, "person");
-        v.setProperty("name", "vadas");
-        v.setProperty("age", 27);
-        vertexRepository.save(v);
-
-        v = new ElasticVertexDocument(3, "software");
-        v.setProperty("name", "lop");
-        v.setProperty("lang", "java");
-        vertexRepository.save(v);
-
-        v = new ElasticVertexDocument(4, "person");
-        v.setProperty("name", "josh");
-        v.setProperty("age", 32);
-        vertexRepository.save(v);
-
-        v = new ElasticVertexDocument(5, "software");
-        v.setProperty("name", "ripple");
-        v.setProperty("lang", "java");
-        vertexRepository.save(v);
-
-        v = new ElasticVertexDocument(6, "person");
-        v.setProperty("name", "peter");
-        v.setProperty("age", 35);
-        vertexRepository.save(v);
-
-        v = new ElasticVertexDocument(6, "person", "mysql");
-        v.setProperty("name", "peter1");
-        v.setProperty("age", 35);
-        vertexRepository.save(v);
-    }
-    /*
-            marko.addEdge("knows", vadas, T.id, 7, "weight", 0.5d);     // 1 -> 2
-            marko.addEdge("knows", josh, T.id, 8, "weight", 1.0d);      // 1 -> 4
-            marko.addEdge("created", lop, T.id, 9, "weight", 0.4d);     // 1 -> 3
-            josh.addEdge("created", ripple, T.id, 10, "weight", 1.0d);  // 4 -> 5
-            josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);     // 4 -> 3
-            peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);    // 6 -> 3
-     */
-    private void insertMordernEdges(){
-        // http://localhost:9200/elasticedge/_search?pretty=true&q=*:*
-        System.out.println("** create ElasticEdgeWrapper index : " +
-                Arrays.asList(ElasticEdgeDocument.class.getAnnotations()).toString());
-
-        ElasticEdgeDocument e = new ElasticEdgeDocument(7, "knows", 1, 2);
-        e.setProperty("weight", "0.5d");
-        ElasticEdgeDocument tmp = edgeRepository.save(e);
-//        System.out.println("edge saved: "+tmp.toString());
-
-        e = new ElasticEdgeDocument(8, "knows", 1, 4);
-        e.setProperty("weight", "1.0d");
-        edgeRepository.save(e);
-
-        e = new ElasticEdgeDocument(9, "created", 1, 3);
-        e.setProperty("weight", "0.4d");
-        edgeRepository.save(e);
-
-        e = new ElasticEdgeDocument(10, "created", 4, 5);
-        e.setProperty("weight", "1.0d");
-        edgeRepository.save(e);
-
-        e = new ElasticEdgeDocument(11, "created", 4, 3);
-        e.setProperty("weight", "0.4d");
-        edgeRepository.save(e);
-
-        e = new ElasticEdgeDocument(12, "created", 6, 3);
-        e.setProperty("weight", "0.2d");
-        edgeRepository.save(e);
-    }
 
     //////////////////////////////////////////////////
 

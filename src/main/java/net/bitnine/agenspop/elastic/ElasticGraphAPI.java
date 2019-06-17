@@ -82,6 +82,9 @@ public interface ElasticGraphAPI {
     Optional<? extends ElasticEdge> edgeByEid(Integer eid);
     Optional<? extends ElasticEdge> edgeByEidAndDatasource(Integer eid, String datasource);
 
+//    Iterable<ElasticEdge> edgesBySourceId(String sourceId);
+//    Iterable<ElasticEdge> edgesByTargetId(String targetId);
+
     Iterable<? extends ElasticEdge> edgesBySid(Integer sid);
     Iterable<? extends ElasticEdge> edgesBySidAndDatasource(Integer sid, String datasource);
     Iterable<? extends ElasticEdge> edgesByTid(Integer tid);
