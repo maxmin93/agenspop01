@@ -44,14 +44,6 @@ public final class AgensHelper {
         edges.add(edge);
     }
 
-    public static List<AgensVertex> queryVertexIndex(final AgensGraph graph, final String key, final Object value) {
-        return null == graph.vertexIndex ? Collections.emptyList() : graph.vertexIndex.get(key, value);
-    }
-
-    public static List<AgensEdge> queryEdgeIndex(final AgensGraph graph, final String key, final Object value) {
-        return null == graph.edgeIndex ? Collections.emptyList() : graph.edgeIndex.get(key, value);
-    }
-
     public static boolean inComputerMode(final AgensGraph graph) {
         return null != graph.graphComputerView;
     }
@@ -68,44 +60,8 @@ public final class AgensHelper {
         graph.graphComputerView = null;
     }
 
-    public static Map<String, List<VertexProperty>> getProperties(final AgensVertex vertex) {
+    public static Map<String, VertexProperty> getProperties(final AgensVertex vertex) {
         return null == vertex.properties ? Collections.emptyMap() : vertex.properties;
-    }
-
-    public static void autoUpdateIndex(final AgensEdge edge, final String key, final Object newValue, final Object oldValue) {
-        final AgensGraph graph = (AgensGraph) edge.graph();
-        if (graph.edgeIndex != null)
-            graph.edgeIndex.autoUpdate(key, newValue, oldValue, edge);
-    }
-
-    public static void autoUpdateIndex(final AgensVertex vertex, final String key, final Object newValue, final Object oldValue) {
-        final AgensGraph graph = (AgensGraph) vertex.graph();
-        if (graph.vertexIndex != null)
-            graph.vertexIndex.autoUpdate(key, newValue, oldValue, vertex);
-    }
-
-    public static void removeElementIndex(final AgensVertex vertex) {
-        final AgensGraph graph = (AgensGraph) vertex.graph();
-        if (graph.vertexIndex != null)
-            graph.vertexIndex.removeElement(vertex);
-    }
-
-    public static void removeElementIndex(final AgensEdge edge) {
-        final AgensGraph graph = (AgensGraph) edge.graph();
-        if (graph.edgeIndex != null)
-            graph.edgeIndex.removeElement(edge);
-    }
-
-    public static void removeIndex(final AgensVertex vertex, final String key, final Object value) {
-        final AgensGraph graph = (AgensGraph) vertex.graph();
-        if (graph.vertexIndex != null)
-            graph.vertexIndex.remove(key, value, vertex);
-    }
-
-    public static void removeIndex(final AgensEdge edge, final String key, final Object value) {
-        final AgensGraph graph = (AgensGraph) edge.graph();
-        if (graph.edgeIndex != null)
-            graph.edgeIndex.remove(key, value, edge);
     }
 
     public static Iterator<AgensEdge> getEdges(final AgensVertex vertex, final Direction direction, final String... edgeLabels) {
@@ -185,10 +141,11 @@ public final class AgensHelper {
     }
 
     public static ElasticVertex getVertexPropertyNode(final AgensVertexProperty vertexProperty) {
-        return (ElasticVertex)vertexProperty.vertexPropertyBase;
+        return (ElasticVertex)vertexProperty.vertex.baseElement;
     }
 
-    public static void setVertexPropertyNode(final AgensVertexProperty vertexProperty, final ElasticVertex vertex) {
-        vertexProperty.vertexPropertyBase = vertex;
-    }
+    // **Dangerous function : What for?
+//    public static void setVertexPropertyNode(final AgensVertexProperty vertexProperty, final ElasticVertex vertex) {
+//        vertexProperty.vertex.baseElement = vertex;
+//    }
 }

@@ -67,14 +67,17 @@ public class SimpleAgensTrait implements AgensTrait {
 
     @Override
     public <V> VertexProperty<V> getVertexProperty(final AgensVertex vertex, final String key) {
-        return vertex.getBaseVertex().hasProperty(key) ? new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key)) : VertexProperty.<V>empty();
+        return vertex.getBaseVertex().hasProperty(key) ?
+                new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key))
+                : VertexProperty.<V>empty();
     }
 
     @Override
     public <V> Iterator<VertexProperty<V>> getVertexProperties(final AgensVertex vertex, final String... keys) {
         return (Iterator) IteratorUtils.stream(vertex.getBaseVertex().getKeys())
                 .filter(key -> ElementHelper.keyExists(key, keys))
-                .map(key -> new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key))).iterator();
+                .map(key -> new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key)))
+                .iterator();
     }
 
     @Override

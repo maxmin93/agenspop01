@@ -84,8 +84,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
 
     protected Object graphComputerView = null;                  // excluded
-    protected AgensIndex<AgensVertex> vertexIndex = null;
-    protected AgensIndex<AgensEdge> edgeIndex = null;
+//    protected AgensIndex<AgensVertex> vertexIndex = null;
+//    protected AgensIndex<AgensEdge> edgeIndex = null;
 
     protected IdManager<?> vertexIdManager;
     protected IdManager<?> edgeIdManager;
@@ -180,8 +180,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.edges.clear();
         this.graphVariables = null;
         this.currentId.set(-1L);
-        this.vertexIndex = null;
-        this.edgeIndex = null;
         this.graphComputerView = null;
     }
 
@@ -455,61 +453,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     ///////////// GRAPH SPECIFIC INDEXING METHODS ///////////////
-
-    /**
-     * Create an index for said element class ({@link Vertex} or {@link Edge}) and said property key.
-     * Whenever an element has the specified key mutated, the index is updated.
-     * When the index is created, all existing elements are indexed to ensure that they are captured by the index.
-     *
-     * @param key          the property key to index
-     * @param elementClass the element class to index
-     * @param <E>          The type of the element class
-     */
-    public <E extends Element> void createIndex(final String key, final Class<E> elementClass) {
-        if (Vertex.class.isAssignableFrom(elementClass)) {
-            if (null == this.vertexIndex) this.vertexIndex = new AgensIndex<>(this, AgensVertex.class);
-            this.vertexIndex.createKeyIndex(key);
-        } else if (Edge.class.isAssignableFrom(elementClass)) {
-            if (null == this.edgeIndex) this.edgeIndex = new AgensIndex<>(this, AgensEdge.class);
-            this.edgeIndex.createKeyIndex(key);
-        } else {
-            throw new IllegalArgumentException("Class is not indexable: " + elementClass);
-        }
-    }
-
-    /**
-     * Drop the index for the specified element class ({@link Vertex} or {@link Edge}) and key.
-     *
-     * @param key          the property key to stop indexing
-     * @param elementClass the element class of the index to drop
-     * @param <E>          The type of the element class
-     */
-    public <E extends Element> void dropIndex(final String key, final Class<E> elementClass) {
-        if (Vertex.class.isAssignableFrom(elementClass)) {
-            if (null != this.vertexIndex) this.vertexIndex.dropKeyIndex(key);
-        } else if (Edge.class.isAssignableFrom(elementClass)) {
-            if (null != this.edgeIndex) this.edgeIndex.dropKeyIndex(key);
-        } else {
-            throw new IllegalArgumentException("Class is not indexable: " + elementClass);
-        }
-    }
-
-    /**
-     * Return all the keys currently being index for said element class  ({@link Vertex} or {@link Edge}).
-     *
-     * @param elementClass the element class to get the indexed keys for
-     * @param <E>          The type of the element class
-     * @return the set of keys currently being indexed
-     */
-    public <E extends Element> Set<String> getIndexedKeys(final Class<E> elementClass) {
-        if (Vertex.class.isAssignableFrom(elementClass)) {
-            return null == this.vertexIndex ? Collections.emptySet() : this.vertexIndex.getIndexedKeys();
-        } else if (Edge.class.isAssignableFrom(elementClass)) {
-            return null == this.edgeIndex ? Collections.emptySet() : this.edgeIndex.getIndexedKeys();
-        } else {
-            throw new IllegalArgumentException("Class is not indexable: " + elementClass);
-        }
-    }
 
     /**
      * Construct an {@link AgensGraph.IdManager} from the AgensGraph {@code Configuration}.

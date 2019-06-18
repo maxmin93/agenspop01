@@ -5,20 +5,20 @@ import net.bitnine.agenspop.elastic.model.ElasticProperty;
 public class ElasticPropertyDocument implements ElasticProperty {
 
     // **NOTE: private 설정시 SerializationFeature.FAIL_ON_EMPTY_BEANS
-    private String elementId;      // ID ==> datasource + "::" + eid
+    // private String elementId;      // ID ==> datasource + "::" + eid
     private String key;
     private String type;
     private String value;
 
     public ElasticPropertyDocument(){}
-    public ElasticPropertyDocument(final String elementId, final String key, final String type, final Object value) {
-        this.elementId = elementId;
+    public ElasticPropertyDocument(final String key, final String type, final Object value) {
+        // this.elementId = elementId;
         this.key = key;
         this.type = type;
         this.value = value.toString();
     }
 
-    @Override public String elementId() { return this.elementId; }
+    // @Override public String elementId() { return this.elementId; }
     @Override public String getKey() { return this.key; }
     @Override public String getType() { return this.type; }
     @Override public String getValue() { return this.value; }

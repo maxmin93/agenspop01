@@ -1,12 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import org.apache.tinkerpop.gremlin.structure.T;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Property;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
@@ -24,6 +19,7 @@ import java.util.stream.Collectors;
  */
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
+    protected Map<String, Property> properties;
     protected final Vertex outVertex;       // sourceV
     protected final Vertex inVertex;        // targetV
 
@@ -43,7 +39,6 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
         );
         this.outVertex = outVertex;     // sourceV
         this.inVertex = inVertex;       // targetV
-        AgensHelper.autoUpdateIndex(this, T.label.getAccessor(), label, null);
     }
 
     @Override
@@ -124,7 +119,6 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
                 edges.remove(this);
         }
 
-        AgensHelper.removeElementIndex(this);
         ((AgensGraph) this.graph()).edges.remove(this.id());
         this.removed = true;
     }

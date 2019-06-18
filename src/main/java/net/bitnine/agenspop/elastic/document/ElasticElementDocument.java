@@ -116,6 +116,12 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override
+    public boolean setProperty(String key, Object value) {
+        String type = String.class.getName();
+        return setProperty(key, type, value);
+    }
+
+    @Override
     public boolean setProperty(String key, String type, Object value){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
@@ -123,7 +129,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
                 properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
-        ElasticProperty prop = new ElasticPropertyDocument(this.id, key, type, value);
+        ElasticProperty prop = new ElasticPropertyDocument(key, type, value);
         return properties.add(prop);
     }
 

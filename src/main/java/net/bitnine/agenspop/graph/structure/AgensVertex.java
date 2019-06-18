@@ -20,7 +20,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public static final String LABEL_DELIMINATOR = "::";
 
-    protected Map<String, List<VertexProperty>> properties;
+    protected Map<String, VertexProperty> properties;
     protected Map<String, Set<Edge>> outEdges;
     protected Map<String, Set<Edge>> inEdges;
 
@@ -92,15 +92,9 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         final AgensVertexProperty<V> vertexProperty = new AgensVertexProperty<V>(this, key, value);
 
         if (null == this.properties) this.properties = new HashMap<>();
-        final List<VertexProperty> list = this.properties.getOrDefault(key, new ArrayList<>());
-        list.add(vertexProperty);
-        this.properties.put(key, list);
-        AgensHelper.autoUpdateIndex(this, key, value, null);
+        this.properties.put(key, vertexProperty);
 
-
-//        if (ElementHelper.getIdValue(keyValues).isPresent())
-//            throw Vertex.Exceptions.userSuppliedIdsNotSupported();
-//        return this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
+        return vertexProperty;
     }
 
     @Override

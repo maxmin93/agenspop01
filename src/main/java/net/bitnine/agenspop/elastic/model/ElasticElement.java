@@ -12,6 +12,7 @@ public interface ElasticElement {
 
     Object getProperty(String name);
     Object getProperty(String name, Object defaultValue);
+    boolean setProperty(String name, Object value);
     boolean setProperty(String name, String type, Object value);
     int removeProperty(String name);
 

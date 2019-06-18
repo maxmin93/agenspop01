@@ -1,11 +1,14 @@
 package net.bitnine.agenspop.graph.structure;
 
 
+import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertexProperty;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
@@ -15,32 +18,25 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public class AgensVertexProperty<V> implements VertexProperty<V> {
+public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexProperty<ElasticProperty> {
 
-    protected ElasticVertex vertexPropertyBase;
-    private final AgensVertex vertex;
-    private final String key;
-    private final V value;
+    protected final ElasticProperty propertyBase;
+    protected final AgensVertex vertex;
 
     public AgensVertexProperty(final AgensVertex vertex, final String key, final V value) {
+        Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
         this.vertex = vertex;
-        this.key = key;
-        this.value = value;
-        this.vertexPropertyBase = null;
+        this.propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), (Object)value );
     }
 
-    public AgensVertexProperty(final AgensVertex vertex, final String key, final V value, final ElasticVertex vertexPropertyBase) {
+    public AgensVertexProperty(final AgensVertex vertex, final ElasticProperty propertyBase) {
         this.vertex = vertex;
-        this.key = key;
-        this.value = value;
-        this.vertexPropertyBase = vertexPropertyBase;
+        this.propertyBase = propertyBase;
     }
 
-    public AgensVertexProperty(final AgensVertex vertex, final ElasticVertex vertexPropertyBase) {
-        this.vertex = vertex;
-        this.key = (String) vertexPropertyBase.getProperty(T.key.getAccessor());
-        this.value = (V) vertexPropertyBase.getProperty(T.value.getAccessor());
-        this.vertexPropertyBase = vertexPropertyBase;
+    @Override
+    public ElasticProperty getBaseVertexProperty(){
+        return this.propertyBase;
     }
 
     ////////////////////////////////////
@@ -51,27 +47,25 @@ public class AgensVertexProperty<V> implements VertexProperty<V> {
     @Override
     public Object id() {
         // TODO: ElasticVertex needs a better ID system for VertexProperties
-        return (long) (this.key.hashCode() + this.value.hashCode() + this.vertex.id().hashCode());
+        return (long) (this.key().hashCode() + this.vertex.id().hashCode());
     }
 
     @Override
-    public String key() { return this.key; }
+    public String key() { return this.propertyBase.getKey(); }
+
     @Override
     public Set<String> keys() {
-        if(null == this.vertexPropertyBase) return Collections.emptySet();
+        if(null == this.propertyBase) return Collections.emptySet();
         final Set<String> keys = new HashSet<>();
-        for (final String key : this.vertexPropertyBase.getKeys()) {
-            if (!Graph.Hidden.isHidden(key) && !key.equals(this.key))
-                keys.add(key);
-        }
+        keys.add(this.propertyBase.getKey());
         return Collections.unmodifiableSet(keys);
     }
 
     @Override
-    public V value() throws NoSuchElementException { return this.value; }
+    public V value() throws NoSuchElementException { return (V)this.propertyBase.value(); }
 
     @Override
-    public boolean isPresent() { return null != this.value; }
+    public boolean isPresent() { return this.propertyBase.isPresent(); }
 
     @Override
     public <U> Iterator<Property<U>> properties(final String... propertyKeys) {
@@ -90,7 +84,6 @@ public class AgensVertexProperty<V> implements VertexProperty<V> {
     public void remove() {
         this.vertex.graph.tx().readWrite();
         this.vertex.graph.trait.removeVertexProperty(this);
-        this.vertexPropertyBase= null;
     }
 
 

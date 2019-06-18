@@ -18,11 +18,19 @@ public interface ElasticProperty {
             // List.class.getName(), Map.class.getName(), Set.class.getName()
     );
 
-    String elementId();
-
+    // String elementId();
     String getKey();
     String getType();
     String getValue() throws NoSuchElementException;
+
+    default boolean isPresent() {
+        try{
+            Object value = this.value();
+            return value != null;
+        }catch (NoSuchElementException ex){
+            return false;
+        }
+    }
 
     default Object value() throws NoSuchElementException {
         Object value = null;
