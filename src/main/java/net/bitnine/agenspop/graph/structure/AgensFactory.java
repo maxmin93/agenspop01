@@ -76,6 +76,10 @@ public final class AgensFactory {
         josh.addEdge("created", ripple, T.id, 10, "weight", 1.0d);
         josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
+        // remove test ==> vertex{1}, edge{7,8,9}
+        System.out.println("  - before remove V(marko): "+g.toString());
+        // marko.remove();
+        System.out.println("  - after remove V(marko): "+g.toString());
     }
 
     /**

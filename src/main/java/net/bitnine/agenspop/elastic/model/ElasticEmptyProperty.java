@@ -28,11 +28,6 @@ public final class ElasticEmptyProperty implements ElasticProperty {
         throw Exceptions.propertyDoesNotExist();
     }
 
-//    @Override
-//    public String elementId() {
-//        throw Exceptions.propertyDoesNotExist();
-//    }
-
     @Override
     public String toString() {
         return EMPTY_PROPERTY;

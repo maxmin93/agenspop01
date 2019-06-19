@@ -47,22 +47,10 @@ public class SimpleAgensTrait implements AgensTrait {
     public void removeVertex(final AgensVertex vertex) {
         ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
         try {
-            final ElasticVertex vertexBase = vertex.getBaseVertex();
-
-            // @Todo node.relationships(Direction.BOTH)
-            final ArrayList<ElasticEdge> edges = new ArrayList<>();
-            Iterables.addAll(edges, api.edgesBySid(vertexBase.getEid()));
-            Iterables.addAll(edges, api.edgesByTid(vertexBase.getEid()));
-            for (final ElasticEdge edge : edges) { // remove connected ElasticEdges
-                api.deleteE( edge );
-            }
-            api.deleteV( vertexBase );              // remove ElasticVertex
-
-        } catch (final IllegalStateException ignored) {
-            // this one happens if the vertex is still chilling in the tx
+            api.deleteV( vertex.getBaseVertex() );  // remove ElasticVertex
+            // vertex 의 elementBase 는 null 처리 안해도 될까?
         } catch (final RuntimeException ex) {
             if (!AgensHelper.isNotFound(ex)) throw ex;
-            // this one happens if the vertex is committed
         }
     }
 

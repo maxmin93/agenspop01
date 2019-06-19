@@ -29,7 +29,7 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
 
     @Override
     public String toString() {
-        return "ElasticVertexDocument{" +
+        return "ElasticVertex{" +
                 " id='" + id + '\'' +
                 ", deleted=" + deleted +
                 ", eid=" + eid +

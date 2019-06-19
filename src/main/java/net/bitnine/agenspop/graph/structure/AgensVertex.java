@@ -48,42 +48,24 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     @Override
     public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
-        if (null == inVertex) throw Graph.Exceptions.argumentCanNotBeNull("inVertex");
-        ElementHelper.validateLabel(label);
-        ElementHelper.legalPropertyKeyValueArray(keyValues);
-
-        final Edge edge;
-
-        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
-        if (null != idValue) {
-            if (graph.edges.containsKey(idValue))
-                throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
-        } else {
-            idValue = graph.edgeIdManager.getNextId(graph);
-        }
-        
-        this.graph.tx().readWrite();
-        final ElasticEdge elasticEdge = graph.baseGraph.createEdge(
-                (Integer)idValue, graph.graphName, label
-                , (Integer)this.id(), (Integer)inVertex.id()
-        );
-        edge = new AgensEdge(elasticEdge, this.graph);              
-        ElementHelper.attachProperties(edge, keyValues);
-
-        this.graph.baseGraph.saveEdge(elasticEdge);     // write to elasticsearch index
-        this.graph.edges.put(edge.id(), edge);          // register to graph map
-        return edge;
+        if (null == inVertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        return AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
     }
 
     @Override
     public void remove() {
         this.graph.tx().readWrite();
-        this.graph.trait.removeVertex(this);    // remove ElasticVertex and connected ElasticEdges
-        // remove connected edges
-        // this.inEdges
-        // this.outEdges
-        // remove vertex of itself
-        this.graph.vertices.remove(this);
+        // remove connected AgensEdges and AgensVertex
+        final List<Edge> edges = new ArrayList<>();
+        this.edges(Direction.BOTH).forEachRemaining(edges::add);
+        edges.stream().filter(edge -> !((AgensEdge) edge).removed).forEach(Edge::remove);
+        // post processes of remove vertex : properties, graph, marking
+        this.properties = null;
+        this.graph.vertices.remove(id());
+        this.removed = true;
+        // remove connected ElasticEdges and ElasticVertex
+        this.graph.trait.removeVertex(this);
     }
 
     @Override

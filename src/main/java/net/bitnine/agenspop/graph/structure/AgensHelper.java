@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticElement;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
@@ -23,6 +24,36 @@ public final class AgensHelper {
     private static final String NOT_FOUND_EXCEPTION = "NotFoundException";
 
     private AgensHelper() { }
+
+    protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
+        ElementHelper.validateLabel(label);
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+
+        final Edge edge;    // if throw exception, then null
+
+        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
+        if (null != idValue) {
+            if (graph.edges.containsKey(idValue))
+                throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
+        } else {
+            idValue = graph.edgeIdManager.getNextId(graph);
+        }
+
+        graph.tx().readWrite();
+        final ElasticEdge elasticEdge = graph.baseGraph.createEdge(
+                (Integer)idValue, graph.graphName, label
+                , (Integer)outVertex.id(), (Integer)inVertex.id()
+        );
+        edge = new AgensEdge(elasticEdge, graph);
+        ElementHelper.attachProperties(edge, keyValues);
+        graph.baseGraph.saveEdge(elasticEdge);     // write to elasticsearch index
+
+        graph.edges.put(edge.id(), edge);
+        AgensHelper.addOutEdge(outVertex, label, edge);
+        AgensHelper.addInEdge(inVertex, label, edge);
+        return edge;
+    }
+
 
     protected static void addOutEdge(final AgensVertex vertex, final String label, final Edge edge) {
         if (null == vertex.outEdges) vertex.outEdges = new HashMap<>();
