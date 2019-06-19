@@ -4,6 +4,7 @@ import com.google.common.collect.Iterables;
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.graph.process.traversal.LabelP;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
@@ -46,16 +47,16 @@ public class SimpleAgensTrait implements AgensTrait {
     public void removeVertex(final AgensVertex vertex) {
         ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
         try {
-            final ElasticVertex node = vertex.getBaseVertex();
+            final ElasticVertex vertexBase = vertex.getBaseVertex();
 
             // @Todo node.relationships(Direction.BOTH)
-            final ArrayList<ElasticEdge> relationships = new ArrayList<>();
-            Iterables.addAll(relationships, api.edgesBySid(node.getEid()));
-            Iterables.addAll(relationships, api.edgesByTid(node.getEid()));
-            for (final ElasticEdge relationship : relationships) {
-                api.deleteE( relationship );
+            final ArrayList<ElasticEdge> edges = new ArrayList<>();
+            Iterables.addAll(edges, api.edgesBySid(vertexBase.getEid()));
+            Iterables.addAll(edges, api.edgesByTid(vertexBase.getEid()));
+            for (final ElasticEdge edge : edges) { // remove connected ElasticEdges
+                api.deleteE( edge );
             }
-            api.deleteV( node );
+            api.deleteV( vertexBase );              // remove ElasticVertex
 
         } catch (final IllegalStateException ignored) {
             // this one happens if the vertex is still chilling in the tx
@@ -82,15 +83,18 @@ public class SimpleAgensTrait implements AgensTrait {
 
     @Override
     public <V> VertexProperty<V> setVertexProperty(final AgensVertex vertex, final VertexProperty.Cardinality cardinality, final String key, final V value, final Object... keyValues) {
+        // 하나의 property 는 하나의 객체만 담는다 (collection 아님) ==> single
         if (cardinality != VertexProperty.Cardinality.single)
             throw VertexProperty.Exceptions.multiPropertiesNotSupported();
         if (keyValues.length > 0)
             throw VertexProperty.Exceptions.metaPropertiesNotSupported();
+        // ElasticElement 를 통해 ElasticProperty 생성, 추가하고 AgensVertexProperty 를 반환
         try {
-            vertex.getBaseVertex().setProperty(key, value);
+            // 지원하지 않는 value.getClass() 에 대해 NoSuchElementException 발생 가능
+            // add property to ElasticVertex by setProperty(key, value)
             return new AgensVertexProperty<>(vertex, key, value);
-        } catch (final IllegalArgumentException iae) {
-            throw Property.Exceptions.dataTypeOfPropertyValueNotSupported(value, iae);
+        } catch (final Exception ex) {
+            throw Property.Exceptions.dataTypeOfPropertyValueNotSupported(value, ex);
         }
     }
 

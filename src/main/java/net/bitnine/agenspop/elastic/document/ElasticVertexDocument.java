@@ -7,7 +7,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.stream.Collectors;
 
-@Document(indexName = "elasticvertex", type = "elasticvertex", shards = 1, replicas = 0,
+@Document(indexName = "agensvertex", type = "agensvertex", shards = 1, replicas = 0,
         refreshInterval = "-1")
 public class ElasticVertexDocument extends ElasticElementDocument implements ElasticVertex {
 

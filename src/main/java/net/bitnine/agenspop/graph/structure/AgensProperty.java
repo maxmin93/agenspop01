@@ -27,6 +27,8 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Elas
         Objects.requireNonNull(value, "AgensProperty.value might be null");
         this.element = element;
         this.propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), value );
+        // add property to ElasticElement
+        ((AgensElement)this.element).getBaseElement().setProperty(this.propertyBase);
     }
 
     @Override

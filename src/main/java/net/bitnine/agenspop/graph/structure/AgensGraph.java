@@ -288,8 +288,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                 vertex.property((String) keyValues[i], keyValues[i + 1]);
         }
 
-        this.vertices.put(vertex.id(), vertex);
         this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
+        this.vertices.put(vertex.id(), vertex);     // register to graph map
         return vertex;
     }
 

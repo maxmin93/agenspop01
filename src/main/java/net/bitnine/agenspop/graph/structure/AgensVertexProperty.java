@@ -27,11 +27,14 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
         Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
         this.vertex = vertex;
         this.propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), (Object)value );
+        // add property to ElasticVertex
+        this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
     public AgensVertexProperty(final AgensVertex vertex, final ElasticProperty propertyBase) {
         this.vertex = vertex;
         this.propertyBase = propertyBase;
+        this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
     @Override

@@ -116,13 +116,22 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override
-    public boolean setProperty(String key, Object value) {
-        String type = String.class.getName();
-        return setProperty(key, type, value);
+    public ElasticProperty setProperty(String key, Object value) {
+        return setProperty(key, value.getClass().getName(), value);
+    }
+    @Override
+    public boolean setProperty(ElasticProperty property) {
+        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(property.getKey())).collect(Collectors.toList());
+        if( result.size() > 0 ){
+            result.forEach(r->{
+                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
+            });
+        }
+        return properties.add(property);
     }
 
     @Override
-    public boolean setProperty(String key, String type, Object value){
+    public ElasticProperty setProperty(String key, String type, Object value){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
@@ -130,18 +139,18 @@ public abstract class ElasticElementDocument implements ElasticElement {
             });
         }
         ElasticProperty prop = new ElasticPropertyDocument(key, type, value);
-        return properties.add(prop);
+        return properties.add(prop) ? prop : null;
     }
 
     @Override
-    public int removeProperty(String key){
+    public boolean removeProperty(String key){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() > 0 ){
             result.forEach(r->{
                 properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
-        return result.size();
+        return result.size() > 0;
     }
 
     @Override public boolean hasProperty(String key){
@@ -158,7 +167,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     @Override
     public String toString() {
-        return "ElasticElementDocument{" +
+        return "ElasticElement{" +
                 " id='" + id + '\'' +
                 ", deleted=" + deleted +
                 ", eid=" + eid +

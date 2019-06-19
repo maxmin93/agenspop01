@@ -3,6 +3,7 @@ package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -68,14 +69,21 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         );
         edge = new AgensEdge(elasticEdge, this.graph);              
         ElementHelper.attachProperties(edge, keyValues);
-        
+
+        this.graph.baseGraph.saveEdge(elasticEdge);     // write to elasticsearch index
+        this.graph.edges.put(edge.id(), edge);          // register to graph map
         return edge;
     }
 
     @Override
     public void remove() {
         this.graph.tx().readWrite();
-        this.graph.trait.removeVertex(this);
+        this.graph.trait.removeVertex(this);    // remove ElasticVertex and connected ElasticEdges
+        // remove connected edges
+        // this.inEdges
+        // this.outEdges
+        // remove vertex of itself
+        this.graph.vertices.remove(this);
     }
 
     @Override
@@ -89,11 +97,9 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
             properties.remove(key);
 
         this.graph.tx().readWrite();
-        final AgensVertexProperty<V> vertexProperty = new AgensVertexProperty<V>(this, key, value);
-
+        final VertexProperty<V> vertexProperty = this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
         if (null == this.properties) this.properties = new HashMap<>();
         this.properties.put(key, vertexProperty);
-
         return vertexProperty;
     }
 
