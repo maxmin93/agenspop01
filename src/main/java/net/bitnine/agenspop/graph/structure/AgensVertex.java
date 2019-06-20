@@ -30,10 +30,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     }
 
     public AgensVertex(final Object id, final String label, final AgensGraph graph) {
-        super(
-            graph.baseGraph.createVertex((Integer)id, graph.graphName, label)
-            , graph
-        );
+        super(graph.baseGraph.createVertex(id.toString(), label), graph);
     }
 
     @Override
@@ -57,19 +54,15 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public void remove() {
         this.graph.tx().readWrite();
         // remove connected AgensEdges and AgensVertex
-        System.out.println("  ... vertex.remove(0)");
         final List<Edge> edges = new ArrayList<>();
         this.edges(Direction.BOTH).forEachRemaining(edges::add);
         edges.stream().filter(edge -> !((AgensEdge) edge).removed).forEach(Edge::remove);
         // post processes of remove vertex : properties, graph, marking
-        System.out.println("  ... vertex.remove(1)");
         this.properties = null;
         this.graph.vertices.remove(id());
         this.removed = true;
         // remove connected ElasticEdges and ElasticVertex
-        System.out.println("  ... vertex.remove(2)");
         this.graph.trait.removeVertex(this);
-        System.out.println("  ... vertex.remove(4)");
     }
 
     @Override

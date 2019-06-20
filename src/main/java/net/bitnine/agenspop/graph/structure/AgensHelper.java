@@ -31,7 +31,7 @@ public final class AgensHelper {
 
         final Edge edge;    // if throw exception, then null
 
-        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
+        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), graph);
         if (null != idValue) {
             if (graph.edges.containsKey(idValue))
                 throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
@@ -41,8 +41,7 @@ public final class AgensHelper {
 
         graph.tx().readWrite();
         final ElasticEdge elasticEdge = graph.baseGraph.createEdge(
-                (Integer)idValue, graph.graphName, label
-                , (Integer)outVertex.id(), (Integer)inVertex.id()
+                idValue.toString(), label, outVertex.id().toString(), inVertex.id().toString()
         );
         edge = new AgensEdge(elasticEdge, graph);
         ElementHelper.attachProperties(edge, keyValues);
@@ -53,7 +52,6 @@ public final class AgensHelper {
         AgensHelper.addInEdge(inVertex, label, edge);
         return edge;
     }
-
 
     protected static void addOutEdge(final AgensVertex vertex, final String label, final Edge edge) {
         if (null == vertex.outEdges) vertex.outEdges = new HashMap<>();

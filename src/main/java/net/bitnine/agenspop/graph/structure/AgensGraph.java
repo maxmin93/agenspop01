@@ -88,8 +88,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 //    protected AgensIndex<AgensVertex> vertexIndex = null;
 //    protected AgensIndex<AgensEdge> edgeIndex = null;
 
-    protected IdManager<?> vertexIdManager;
-    protected IdManager<?> edgeIdManager;
+    protected AgensIdManager vertexIdManager;   // IdManager<?>
+    protected AgensIdManager edgeIdManager;     // IdManager<?>
 //    protected IdManager<?> vertexPropertyIdManager;
     protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
@@ -105,8 +105,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         this.tx().readWrite();
 
-        vertexIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, Vertex.class);
-        edgeIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, Edge.class);
+        vertexIdManager = AgensIdManager.MIX_ID;
+        edgeIdManager = AgensIdManager.MIX_ID;
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.single;   // fixed!
 
         // added
@@ -267,7 +267,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     @Override
     public Vertex addVertex(final Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
+        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), this);
         final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
 
         if (null != idValue) {
@@ -278,7 +278,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         }
 
         // @Todo : type of idValue must be Long!!
-        final ElasticVertex baseElement = this.baseGraph.createVertex(new Integer(idValue.toString()), label, graphName);
+        final ElasticVertex baseElement = this.baseGraph.createVertex(idValue.toString(), label);
         final AgensVertex vertex = new AgensVertex( baseElement, this);
         for (int i = 0; i < keyValues.length; i = i + 2) {
             if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label))
@@ -461,17 +461,15 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
      */
     public interface IdManager<T> {
         static String MIX_DELIMITER = "::";
-
         /**
          * Generate an identifier which should be unique to the {@link AgensGraph} instance.
          */
         T getNextId(final AgensGraph graph);
-
         /**
          * Convert an identifier to the type required by the manager.
          */
         T convert(final Object id);
-
+        T convert(final Object id, final AgensGraph graph);
         /**
          * Determine if an identifier is allowed by this manager given its type.
          */

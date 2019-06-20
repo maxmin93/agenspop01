@@ -12,9 +12,12 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     LONG {
         @Override
         public Long getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (graph.currentId.incrementAndGet())).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet()))).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
         }
-
+        @Override
+        public Object convert(final Object id, final AgensGraph graph) {
+            return convert(id);
+        }
         @Override
         public Object convert(final Object id) {
             if (null == id)
@@ -28,7 +31,6 @@ public enum AgensIdManager implements AgensGraph.IdManager {
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to Long but received %s", id.getClass()));
         }
-
         @Override
         public boolean allow(final Object id) {
             return id instanceof Number || id instanceof String;
@@ -42,9 +44,12 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     INTEGER {
         @Override
         public Integer getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (graph.currentId.incrementAndGet())).map(Long::intValue).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (graph.currentId.incrementAndGet())).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
         }
-
+        @Override
+        public Object convert(final Object id, final AgensGraph graph) {
+            return convert(id);
+        }
         @Override
         public Object convert(final Object id) {
             if (null == id)
@@ -58,7 +63,6 @@ public enum AgensIdManager implements AgensGraph.IdManager {
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to Integer but received %s", id.getClass()));
         }
-
         @Override
         public boolean allow(final Object id) {
             return id instanceof Number || id instanceof String;
@@ -74,7 +78,10 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         public java.util.UUID getNextId(final AgensGraph graph) {
             return java.util.UUID.randomUUID();
         }
-
+        @Override
+        public Object convert(final Object id, final AgensGraph graph) {
+            return convert(id);
+        }
         @Override
         public Object convert(final Object id) {
             if (null == id)
@@ -86,7 +93,6 @@ public enum AgensIdManager implements AgensGraph.IdManager {
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to UUID but received %s", id.getClass()));
         }
-
         @Override
         public boolean allow(final Object id) {
             return id instanceof UUID || id instanceof String;
@@ -101,7 +107,6 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         private String generateId(final AgensGraph graph){
             return graph.name()+MIX_DELIMITER+graph.currentId.incrementAndGet();
         }
-
         private String generateId(final Integer index, final AgensGraph graph){
             String id = graph.name()+MIX_DELIMITER+index;
             if( !graph.vertices.containsKey(id) && !graph.edges.containsKey(id) ) return id;
@@ -115,6 +120,7 @@ public enum AgensIdManager implements AgensGraph.IdManager {
                     .findAny().get();
         }
 
+        @Override
         public Object convert(final Object id, final AgensGraph graph) {
             if (null == id)
                 return null;
@@ -127,7 +133,6 @@ public enum AgensIdManager implements AgensGraph.IdManager {
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to Mix(String) but received %s", id.getClass()));
         }
-
         @Override
         public Object convert(final Object id) {
             if (null == id)
@@ -149,23 +154,19 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         }
     },
 
-    /**
-     * Manages identifiers of any type.  This represents the default way {@link AgensGraph} has always worked.
-     * In other words, there is no identifier conversion so if the identifier of a vertex is a {@code Long}, then
-     * trying to request it with an {@code Integer} will have no effect. Also, like the original
-     * {@link AgensGraph}, it will generate {@link Long} values for identifiers.
-     */
     ANY {
         @Override
         public Long getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (graph.currentId.incrementAndGet())).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet()))).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
         }
-
+        @Override
+        public Object convert(final Object id, final AgensGraph graph) {
+            return convert(id);
+        }
         @Override
         public Object convert(final Object id) {
             return id;
         }
-
         @Override
         public boolean allow(final Object id) {
             return true;

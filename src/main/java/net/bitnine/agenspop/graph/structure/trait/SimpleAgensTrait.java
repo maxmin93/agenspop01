@@ -46,11 +46,10 @@ public class SimpleAgensTrait implements AgensTrait {
     @Override
     public void removeVertex(final AgensVertex vertex) {
         ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
-        System.out.println("  ... vertex.remove(3)");
         ElasticVertex baseVertex = vertex.getBaseVertex();
         try {
             baseVertex.delete();        // marking deleted
-            api.deleteV( baseVertex );  // remove ElasticVertex
+            api.deleteVertex( baseVertex );  // remove ElasticVertex
         } catch (final RuntimeException ex) {
             if (!AgensHelper.isNotFound(ex)) throw ex;
         }
@@ -160,7 +159,7 @@ public class SimpleAgensTrait implements AgensTrait {
 //                }
 //            }
             // find a vertex by label
-            return IteratorUtils.stream(graph.getBaseGraph().verticesByLabel(label.get()))
+            return IteratorUtils.stream(graph.getBaseGraph().findVertices(graph.name(), label.get()))
                     .map(node -> (Vertex) new AgensVertex(node, graph))
                     .filter(vertex -> HasContainer.testAll(vertex, hasContainers)).iterator();
         } else {
