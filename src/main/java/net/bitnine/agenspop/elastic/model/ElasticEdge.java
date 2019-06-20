@@ -4,14 +4,8 @@ public interface ElasticEdge extends ElasticElement {
 
     public static final String DEFAULT_LABEL = "edge";
 
-    Integer getSid();
-    Integer getTid();
-
-    // String type();       // ??
-
-//    ElasticVertex start();
-//    ElasticVertex end();
-//    ElasticVertex other(ElasticVertex node);
+    String getSid();
+    String getTid();
 
 /*
     public Iterator<ElasticVertexWrapper> vertices(final Direction direction);

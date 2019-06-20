@@ -8,8 +8,10 @@ public interface ElasticVertex extends ElasticElement {
 
     public static final String DEFAULT_LABEL = "vertex";
 
-//    int degree(Direction direction, String type);
-//    Iterable<ElasticEdge> relationships(Direction direction, String...types);
-//    ElasticEdge connectTo(ElasticVertex vertex, String label);
+    /*
+    int degree(Direction direction, String type);
+    Iterable<ElasticEdge> relationships(Direction direction, String...types);
+    ElasticEdge connectTo(ElasticVertex vertex, String label);
+     */
 
 }

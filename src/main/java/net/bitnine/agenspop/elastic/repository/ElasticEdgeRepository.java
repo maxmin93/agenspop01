@@ -12,42 +12,29 @@ import java.util.List;
 @Repository
 public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEdgeDocument, String> {
 
-//    Page<ElasticEdgeDocument> findByLabel(String label, Pageable pageable);
-//    Page<ElasticEdgeDocument> findByDatasource(String datasource, Pageable pageable);
-
-    List<ElasticEdgeDocument> findByDatasource(String datasource);
-
-    List<ElasticEdgeDocument> findByEid(Integer eid);
-    List<ElasticEdgeDocument> findByEidAndDatasource(Integer eid, String datasource);
-
-    List<ElasticEdgeDocument> findByEidIn(List<Integer> eid);
-    List<ElasticEdgeDocument> findByEidInAndDatasource(List<Integer> eid, String datasource);
-    List<ElasticEdgeDocument> findByEidNotInAndLabel(List<Integer> eid, String label);
-    List<ElasticEdgeDocument> findByEidNotInAndDatasource(List<Integer> eid, String datasource);
-    List<ElasticEdgeDocument> findByEidNotInAndLabelAndDatasource(List<Integer> eid, String label, String datasource);
+    List<ElasticEdgeDocument> findByIdIn(List<String> ids);
+    List<ElasticEdgeDocument> findByIdInAndDatasource(List<String> ids, String datasource);
+    List<ElasticEdgeDocument> findByIdNotInAndLabel(List<String> ids, String label);
+    List<ElasticEdgeDocument> findByIdNotInAndDatasource(List<String> ids, String datasource);
+    List<ElasticEdgeDocument> findByIdNotInAndLabelAndDatasource(List<String> ids, String label, String datasource);
 
     List<ElasticEdgeDocument> findByLabel(String label);
-    List<ElasticEdgeDocument> findByLabelAndDatasource(String label, String datasource);
+    List<ElasticEdgeDocument> findByDatasource(String datasource);
+    List<ElasticEdgeDocument> findByDatasourceAndLabel(String datasource, String label);
 
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"props.key\": \"?2\"}}]}}")
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}]}}")
     List<ElasticEdgeDocument> findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(String datasource, String label, String key);
-
-    List<ElasticEdgeDocument> findBySid(Integer sid);
-    List<ElasticEdgeDocument> findBySidAndDatasource(Integer sid, String datasource);
-    List<ElasticEdgeDocument> findByTid(Integer tid);
-    List<ElasticEdgeDocument> findByTidAndDatasource(Integer tid, String datasource);
-    List<ElasticEdgeDocument> findBySidAndTid(Integer sid, Integer tid);
-    List<ElasticEdgeDocument> findBySidAndTidAndDatasource(Integer sid, Integer tid, String datasource);
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}, {\"match\": {\"properties.value\": \"?3\"}}]}}")
+    List<ElasticEdgeDocument> findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(String datasource, String label, String key, String value);
 
     /////////////////////////////
 
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"props.key\": \"?0\"}}]}}")
-    List<ElasticEdgeDocument> findByPropsKeyUsingCustomQuery(String key);
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"props.value\": \"?0\"}}]}}")
-    List<ElasticEdgeDocument> findByPropsValueUsingCustomQuery(String value);
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"props.key\": \"?0\"}}, {\"match\": {\"props.value\": \"?1\"}}]}}")
-    List<ElasticEdgeDocument> findByPropsKeyAndValueUsingCustomQuery(String key, String value);
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"props.key\": \"?0\"}}, {\"match\": {\"props.value\": \"?1\"}}, {\"match\": {\"props.type\": \"?2\"}}]}}")
-    List<ElasticEdgeDocument> findByPropsKeyAndValueAndTypeUsingCustomQuery(String key, String value, String type);
+    List<ElasticEdgeDocument> findBySid(String sid);
+    List<ElasticEdgeDocument> findByTid(String tid);
+    List<ElasticEdgeDocument> findBySidAndTid(String sid, String tid);
 
+    /////////////////////////////
+
+    // Page<ElasticEdgeDocument> findByLabel(String label, Pageable pageable);
+    // Page<ElasticEdgeDocument> findByDatasource(String datasource, Pageable pageable);
 }

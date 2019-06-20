@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public abstract class ElasticElementDocument implements ElasticElement {
 
     public static final String DEFAULT_DATASOURCE = "default";
+    public static final String ID_DELIMITER = "::";
 
     @Id
     protected String id;
@@ -27,12 +28,14 @@ public abstract class ElasticElementDocument implements ElasticElement {
     @Version
     protected Long version;
 
-    @Field(type = FieldType.Keyword)
-    protected String datasource;
-    @Field(type = FieldType.Integer)
-    protected Integer eid;
+//    **NOTE: deprecated at 2019-06-20
+//    @Field(type = FieldType.Integer)
+//    protected Integer eid;
+
     @Field(type = FieldType.Keyword)
     protected String label;
+    @Field(type = FieldType.Keyword)
+    protected String datasource;
 
     @Field(type = FieldType.Nested, includeInParent = true)
     protected Set<ElasticProperty> properties = new HashSet<>();
@@ -41,23 +44,15 @@ public abstract class ElasticElementDocument implements ElasticElement {
         this.deleted = false;
         this.version = System.currentTimeMillis();
     }
-    protected ElasticElementDocument(Integer eid, String label){
+    protected ElasticElementDocument(String id, String label){
         this();
-        this.datasource = DEFAULT_DATASOURCE;
-        this.eid = eid;
+        this.id = id;
         this.label = label;
-        this.id = getId(eid, datasource);
-    }
-    protected ElasticElementDocument(Integer eid, String label, String datasource) {
-        this();
-        this.datasource = datasource;
-        this.eid = eid;
-        this.label = label;
-        this.id = getId(eid, datasource);
+        this.datasource = id.split(ID_DELIMITER)[0];
     }
 
     @Override public int hashCode() {
-        return 31*eid.hashCode() + 43*datasource.hashCode();
+        return 31*id.hashCode() + 43*label.hashCode();
     }
     @Override public boolean equals(final Object obj) {
         if (obj == null) return false;
@@ -65,22 +60,16 @@ public abstract class ElasticElementDocument implements ElasticElement {
         if (this == obj) return true;
 
         ElasticElement that = (ElasticElement) obj;
-        if (this.eid == null || that.getEid() == null || !this.eid.equals(that.getEid()) )
+        if (this.id == null || that.getId() == null || !this.id.equals(that.getId()) )
             return false;
-        if (this.datasource == null || that.getDatasource() == null || !this.datasource.equals(that.getDatasource()) )
+        if (this.label == null || that.getLabel() == null || !this.label.equals(that.getLabel()) )
             return false;
-
         return true;
-    }
-
-    @Override public String getId(){ return id; }
-    public static final String getId(Integer eid, String datasource){
-        return datasource + "::" + eid.toString();
     }
 
     public Long getVersion(){ return version; }
 
-    @Override public Integer getEid(){ return eid; }
+    @Override public String getId(){ return id; }
     @Override public String getLabel(){
         return label;
     }
@@ -168,11 +157,9 @@ public abstract class ElasticElementDocument implements ElasticElement {
     @Override
     public String toString() {
         return "ElasticElement{" +
-                " id='" + id + '\'' +
-                ", deleted=" + deleted +
-                ", eid=" + eid +
+                "deleted=" + deleted +
+                ", id='" + id + '\'' +
                 ", label='" + label + '\'' +
-                ", datasource='" + datasource + '\'' +
                 ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }

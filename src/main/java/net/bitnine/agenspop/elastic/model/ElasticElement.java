@@ -5,7 +5,6 @@ import java.util.Set;
 public interface ElasticElement {
 
     String getId();
-    Integer getEid();
     String getLabel();
     String getDatasource();
     Iterable<String> getKeys();

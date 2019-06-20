@@ -13,60 +13,38 @@ import java.util.stream.Collectors;
         , shards = 1, replicas = 0, refreshInterval = "-1")
 public class ElasticEdgeDocument extends ElasticElementDocument implements ElasticEdge {
 
-    @Field(type = FieldType.Integer)
-    protected Integer sid;
-    @Field(type = FieldType.Integer)
-    protected Integer tid;
+    @Field(type = FieldType.Keyword)
+    protected String sid;
+    @Field(type = FieldType.Keyword)
+    protected String tid;
 
     public ElasticEdgeDocument(){
         super();
     }
-    public ElasticEdgeDocument(Integer eid, String label, Integer sid, Integer tid){
-        super(eid, label);
-        this.sid = sid;
-        this.tid = tid;
-    }
-    public ElasticEdgeDocument(Integer eid, String label, String datasource, Integer sid, Integer tid){
-        super(eid, label, datasource);
+    public ElasticEdgeDocument(String id, String label, String sid, String tid){
+        super(id, label);
         this.sid = sid;
         this.tid = tid;
     }
     public ElasticEdgeDocument(ElasticEdge edge){
-        super(edge.getEid(), edge.getLabel(), edge.getDatasource());
+        super(edge.getId(), edge.getLabel());
         this.sid = edge.getSid();
         this.tid = edge.getTid();
-        this.id = edge.getId();
         this.setProperties(edge.getProperties());
     }
 
-    @Override public Integer getSid(){ return sid; }
-    @Override public Integer getTid(){ return tid; }
+    @Override public String getSid(){ return sid; }
+    @Override public String getTid(){ return tid; }
 
     @Override
     public String toString() {
         return "ElasticEdge{ " +
-                " id='" + id + '\'' +
-                ", deleted=" + deleted +
-                ", eid=" + eid +
+                " deleted=" + deleted +
+                ", id='" + id + '\'' +
                 ", label='" + label + '\'' +
-                ", datasource='" + datasource + '\'' +
                 ", sid='" + sid + '\'' +
                 ", tid='" + tid + '\'' +
                 ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }
-
-    ////////////////////////////////////
-
-//    @Override public ElasticVertex start(){
-//        return ElasticVertexDocument()
-//    }
-//
-//    @Override public ElasticVertex end(){
-//
-//    }
-//
-//    @Override public ElasticVertex other(ElasticVertex node){
-//
-//    }
 }

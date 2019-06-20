@@ -14,27 +14,21 @@ public class ElasticVertexDocument extends ElasticElementDocument implements Ela
     public ElasticVertexDocument(){
         super();
     }
-    public ElasticVertexDocument(Integer eid, String label){
-        super(eid, label);
-    }
-    public ElasticVertexDocument(Integer eid, String label, String datasource){
-        super(eid, label, datasource);
+    public ElasticVertexDocument(String id, String label){
+        super(id, label);
     }
 
     public ElasticVertexDocument(ElasticVertex vertex){
-        super(vertex.getEid(), vertex.getLabel(), vertex.getDatasource());
-        this.id = vertex.getId();
+        super(vertex.getId(), vertex.getLabel());
         this.setProperties(vertex.getProperties());
     }
 
     @Override
     public String toString() {
         return "ElasticVertex{" +
-                " id='" + id + '\'' +
-                ", deleted=" + deleted +
-                ", eid=" + eid +
+                "deleted=" + deleted +
+                ", id='" + id + '\'' +
                 ", label='" + label + '\'' +
-                ", datasource='" + datasource + '\'' +
                 ", properties=[" + properties.stream().map(ElasticProperty::getKey).collect(Collectors.joining(",")) +
                 "]}";
     }

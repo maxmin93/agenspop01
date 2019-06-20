@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -79,7 +80,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     private final AgensTransaction transaction = new AgensTransaction();
     protected AgensGraphVariables graphVariables;
 
-    protected AtomicLong currentId = new AtomicLong(-1L);
+    protected AtomicInteger currentId = new AtomicInteger(0);
     protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
     protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
 
@@ -89,10 +90,10 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     protected IdManager<?> vertexIdManager;
     protected IdManager<?> edgeIdManager;
-    protected IdManager<?> vertexPropertyIdManager;
+//    protected IdManager<?> vertexPropertyIdManager;
     protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
-    protected String graphName;
+    protected final String graphName;
     private String graphLocation;
     private String graphFormat;
 
@@ -106,14 +107,9 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         vertexIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, Vertex.class);
         edgeIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, Edge.class);
-        vertexPropertyIdManager = selectIdManager(configuration, GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, VertexProperty.class);
-        defaultVertexPropertyCardinality = VertexProperty.Cardinality.valueOf(
-                configuration.getString(
-                        GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY
-                        , VertexProperty.Cardinality.single.name()));
+        defaultVertexPropertyCardinality = VertexProperty.Cardinality.single;   // fixed!
 
         // added
-        graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
         graphLocation = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_LOCATION, null);
         graphFormat = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_FORMAT, null);
 
@@ -127,6 +123,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     protected AgensGraph(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+        this.graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
         this.initialize(baseGraph, configuration);
     }
 
@@ -179,7 +176,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.vertices.clear();
         this.edges.clear();
         this.graphVariables = null;
-        this.currentId.set(-1L);
+        this.currentId.set(0);
         this.graphComputerView = null;
     }
 
@@ -340,7 +337,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     ///////////////////////////////////////////////////////
 
     public class AgensGraphFeatures implements Features {
-
         private final AgensGraphGraphFeatures graphFeatures = new AgensGraphGraphFeatures();
         private final AgensGraphEdgeFeatures edgeFeatures = new AgensGraphEdgeFeatures();
         private final AgensGraphVertexFeatures vertexFeatures = new AgensGraphVertexFeatures();
@@ -352,26 +348,21 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         public GraphFeatures graph() {
             return graphFeatures;
         }
-
         @Override
         public EdgeFeatures edge() {
             return edgeFeatures;
         }
-
         @Override
         public VertexFeatures vertex() {
             return vertexFeatures;
         }
-
         @Override
         public String toString() {
             return StringFactory.featureString(this);
         }
-
     }
 
     public class AgensGraphVertexFeatures implements Features.VertexFeatures {
-
         private final AgensGraphVertexPropertyFeatures vertexPropertyFeatures = new AgensGraphVertexPropertyFeatures();
 
         private AgensGraphVertexFeatures() {
@@ -381,17 +372,14 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         public Features.VertexPropertyFeatures properties() {
             return vertexPropertyFeatures;
         }
-
         @Override
         public boolean supportsCustomIds() {
             return false;
         }
-
         @Override
         public boolean willAllowId(final Object id) {
             return vertexIdManager.allow(id);
         }
-
         @Override
         public VertexProperty.Cardinality getCardinality(final String key) {
             return defaultVertexPropertyCardinality;
@@ -399,7 +387,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     public class AgensGraphEdgeFeatures implements Features.EdgeFeatures {
-
         private AgensGraphEdgeFeatures() {
         }
 
@@ -407,7 +394,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         public boolean supportsCustomIds() {
             return false;
         }
-
         @Override
         public boolean willAllowId(final Object id) {
             return edgeIdManager.allow(id);
@@ -415,7 +401,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     public class AgensGraphGraphFeatures implements Features.GraphFeatures {
-
         private AgensGraphGraphFeatures() {
         }
 
@@ -423,21 +408,17 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         public boolean supportsConcurrentAccess() {
             return false;
         }
-
         @Override
         public boolean supportsTransactions() {
             return false;
         }
-
         @Override
         public boolean supportsThreadedTransactions() {
             return false;
         }
-
     }
 
     public class AgensGraphVertexPropertyFeatures implements Features.VertexPropertyFeatures {
-
         private AgensGraphVertexPropertyFeatures() {
         }
 
@@ -445,7 +426,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         public boolean supportsCustomIds() {
             return false;
         }
-
         @Override
         public boolean willAllowId(final Object id) {
             return vertexIdManager.allow(id);
@@ -480,6 +460,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
      * @param <T> the id type
      */
     public interface IdManager<T> {
+        static String MIX_DELIMITER = "::";
+
         /**
          * Generate an identifier which should be unique to the {@link AgensGraph} instance.
          */
