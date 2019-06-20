@@ -32,9 +32,9 @@ public final class AgensFactory {
 
     private static Configuration getNumberIdManagerConfiguration() {
         final Configuration conf = new BaseConfiguration();
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensIdManager.LONG.name());
         return conf;
     }
 
@@ -44,9 +44,9 @@ public final class AgensFactory {
 
     public static AgensGraph createEmpty(ElasticGraphAPI baseGraph, String gName) {
         final Configuration conf = new BaseConfiguration();
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensGraph.DefaultIdManager.INTEGER.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensGraph.DefaultIdManager.LONG.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.INTEGER.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER, AgensIdManager.LONG.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
         return AgensGraph.open(baseGraph, conf);
     }
@@ -78,7 +78,7 @@ public final class AgensFactory {
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
         // remove test ==> vertex{1}, edge{7,8,9}
         System.out.println("  - before remove V(marko): "+g.toString());
-        // marko.remove();
+        marko.remove();
         System.out.println("  - after remove V(marko): "+g.toString());
     }
 

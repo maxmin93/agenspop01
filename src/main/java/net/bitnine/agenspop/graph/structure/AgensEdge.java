@@ -95,27 +95,31 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public void remove() {
         this.graph.tx().readWrite();
+        System.out.println("  ... edge.remove(0)");
         // remove edge from connected out/in vertices
         final AgensVertex outVertex = (AgensVertex) this.outVertex;
         if (outVertex != null && outVertex.outEdges != null) {
             final Set<Edge> edges = outVertex.outEdges.get(this.label());
-            if (null != edges)
-                edges.remove(this);
+            if (null != edges) edges.remove(this);
         }
+        System.out.println("  ... edge.remove(1)");
         final AgensVertex inVertex = (AgensVertex) this.inVertex;
         if (null != inVertex && null != inVertex.inEdges) {
             final Set<Edge> edges = inVertex.inEdges.get(this.label());
-            if (null != edges)
-                edges.remove(this);
+            if (null != edges) edges.remove(this);
         }
 
         // post processes of remove vertex : properties, graph, marking
+        System.out.println("  ... edge.remove(2)");
         this.properties = null;
         this.graph.edges.remove(this.id());
         this.removed = true;
 
+        System.out.println("  ... edge.remove(3)");
+        ElasticEdge baseEdge = this.getBaseEdge();
         try {
-            this.baseElement.delete();
+            baseEdge.delete();                      // marking deleted
+            this.graph.baseGraph.deleteE(baseEdge); // delete ElasticEdgeDocument
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;

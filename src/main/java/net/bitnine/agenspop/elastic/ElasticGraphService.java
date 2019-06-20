@@ -201,8 +201,11 @@ public class ElasticGraphService implements ElasticGraphAPI {
     @Override
     public void deleteV(ElasticVertex vertex) {
         if( vertex != null ){
-            Optional<ElasticVertexDocument> doc = vertexRepository.findById(vertex.getId());
-            if( doc.isPresent() ) vertexRepository.delete(doc.get());
+            System.out.println("  ... vertex.remove(3-1)");
+            vertexRepository.deleteById(vertex.getId());
+            System.out.println("  ... vertex.remove(3-2)");
+//            Optional<ElasticVertexDocument> doc = vertexRepository.findById(vertex.getId());
+//            if( doc.isPresent() )
         }
     }
     @Override
@@ -229,8 +232,11 @@ public class ElasticGraphService implements ElasticGraphAPI {
     @Override
     public void deleteE(ElasticEdge edge) {
         if( edge != null ){
-            Optional<ElasticEdgeDocument> doc = edgeRepository.findById(edge.getId());
-            if( doc.isPresent() ) edgeRepository.delete(doc.get());
+            System.out.println("  ... edge.remove(3-1)");
+            edgeRepository.deleteById(edge.getId());
+            System.out.println("  ... edge.remove(3-2)");
+//            Optional<ElasticEdgeDocument> doc = edgeRepository.findById(edge.getId());
+//            if( doc.isPresent() ) edgeRepository.delete(doc.get());
         }
     }
     @Override

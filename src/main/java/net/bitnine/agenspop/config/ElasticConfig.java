@@ -69,6 +69,7 @@ public class ElasticConfig {
         return clusterName;
     }
 
+/*
     @PreDestroy
     public void deleteIndex() {
         operations.deleteIndex(Article.class);
@@ -118,7 +119,7 @@ public class ElasticConfig {
 
         System.out.println("** Save Article data samples (4)");
     }
-
+*/
     @Bean
     public Client client(){
         Settings settings = Settings.builder()

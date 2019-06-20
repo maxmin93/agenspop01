@@ -46,9 +46,11 @@ public class SimpleAgensTrait implements AgensTrait {
     @Override
     public void removeVertex(final AgensVertex vertex) {
         ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
+        System.out.println("  ... vertex.remove(3)");
+        ElasticVertex baseVertex = vertex.getBaseVertex();
         try {
-            api.deleteV( vertex.getBaseVertex() );  // remove ElasticVertex
-            // vertex 의 elementBase 는 null 처리 안해도 될까?
+            baseVertex.delete();        // marking deleted
+            api.deleteV( baseVertex );  // remove ElasticVertex
         } catch (final RuntimeException ex) {
             if (!AgensHelper.isNotFound(ex)) throw ex;
         }
