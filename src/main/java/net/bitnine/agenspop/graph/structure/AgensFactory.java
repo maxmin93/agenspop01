@@ -4,15 +4,20 @@ package net.bitnine.agenspop.graph.structure;
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal.Symbols.otherV;
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.gryo;
 
 /**
@@ -73,8 +78,28 @@ public final class AgensFactory {
         josh.addEdge("created", ripple, T.id, 10, "weight", 1.0d);
         josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
+
         // remove test ==> vertex{1}, edge{7,8,9}
-        System.out.println("  - before remove V(marko): "+g.toString());
-        marko.remove();
+//        System.out.println("  - before remove V(marko): "+g.toString());
+//        marko.remove();
+
+        GraphTraversalSource t = g.traversal();
+        List<Vertex> vertexList = t.V().next(100);
+        System.out.println("  - list vertices ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        List<Edge> edgeList = t.E().next(100);
+        System.out.println("  - list edges ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        vertexList = t.V("modern::5", "modern::4", "modern::3").next(100);
+        System.out.println("  - vertex ids ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        edgeList = t.V("modern::2").bothE().next(100);
+        System.out.println("  - edge bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        Vertex v1 = t.V("modern::1").next();
+        vertexList = t.V(v1).out().next(100);
+        System.out.println("  - vertex(1) out neighbors ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+
+//        List<Object> valueList = t.V().values("name").next(100);
+//        System.out.println("  - vertices.value('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
+
+//        vertexList = t.V().has("name","josh").next(100);
+//        System.out.println("  - vertex has ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
     }
 }

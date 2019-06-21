@@ -36,6 +36,7 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
         if (TraversalHelper.onGraphComputer(traversal))
             return;
 
+        // for DEBUG
         System.out.println("AgensGraphStepStrategy::traversal1 = "+traversal.toString());
 
         // 전체 traversal 에서 graphStep 들 반복
@@ -43,7 +44,6 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
             // graphStep 을 AgensGraphStep 으로 변경 (바꿔치기)
             final AgensGraphStep<?, ?> agensGraphStep = new AgensGraphStep<>(originalGraphStep);
             TraversalHelper.replaceStep(originalGraphStep, agensGraphStep, traversal);
-            System.out.println("AgensGraphStepStrategy::AgensGraphStep1 = "+agensGraphStep.toString());
 
             Step<?, ?> currentStep = agensGraphStep.getNextStep();
             while (currentStep instanceof HasStep || currentStep instanceof NoOpBarrierStep) {
@@ -53,7 +53,8 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
                     for (final HasContainer hasContainer : ((HasContainerHolder) currentStep).getHasContainers()) {
                         // 지정 id 가 있거나, eq 또는 within 연산자가 있는 경우가 아니면
                         //   agensGraphStep 에 hasContainer 를 추가(??)
-                        System.out.println("AgensGraphStepStrategy::hasContainer = "+hasContainer.toString());
+                        // for DEBUG
+                        // System.out.println("AgensGraphStepStrategy::hasContainer = "+hasContainer.toString());
                         if (!GraphStep.processHasContainerIds(agensGraphStep, hasContainer))
                             agensGraphStep.addHasContainer(hasContainer);
                     }
@@ -65,8 +66,10 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
                 currentStep = currentStep.getNextStep();
             }
 
+            // for DEBUG
             System.out.println("AgensGraphStepStrategy::AgensGraphStep2 = "+agensGraphStep.toString());
         }
+        // for DEBUG
         System.out.println("AgensGraphStepStrategy::traversal2 = "+traversal.toString());
     }
 
