@@ -88,20 +88,17 @@ public abstract class ElasticElementDocument implements ElasticElement {
     /////////////////////////////////////////
 
     @Override
-    public Optional<Object> getProperty(String key){
+    public Optional<ElasticProperty> getProperty(String key){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
         if( result.size() == 0 ) return Optional.empty();
-
-        Optional<Object> value = Optional.of(result.get(0).value()) ;
-        return value;
+        return Optional.of(result.get(0));
     }
 
     @Override
-    public Object getProperty(String key, Object defaultValue){
+    public ElasticProperty getProperty(String key, Object defaultValue){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        if( result.size() == 0 ) return defaultValue;
-        Optional<Object> value = Optional.of(result.get(0).value());
-        return value.orElse(defaultValue);
+        if( result.size() == 0 ) return new ElasticPropertyDocument(key, defaultValue.getClass().getName(), defaultValue);
+        return result.get(0);
     }
 
     @Override

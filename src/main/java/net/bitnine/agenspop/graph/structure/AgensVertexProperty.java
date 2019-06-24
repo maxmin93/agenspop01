@@ -23,6 +23,11 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     protected final ElasticProperty propertyBase;
     protected final AgensVertex vertex;
 
+    // **NOTE: new AgensVertexProperty 의 경우
+    //      ==> baseElement.properties 에 존재하지 않던 key-value 생성하는 경우
+    //      ==> 이미 존재하는 key-value 를 AgensVertex 로 가져오는 경우
+
+    // case1 : baseElement.properties 에 존재하지 않던 key-value 생성하는 경우
     public AgensVertexProperty(final AgensVertex vertex, final String key, final V value) {
         Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
         this.vertex = vertex;
@@ -31,10 +36,10 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
         this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
+    // case2 : baseElement.properties 에 이미 존재하는 key-value 를 AgensVertex 로 가져오는 경우
     public AgensVertexProperty(final AgensVertex vertex, final ElasticProperty propertyBase) {
         this.vertex = vertex;
         this.propertyBase = propertyBase;
-        this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
     @Override
@@ -60,7 +65,7 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     public Set<String> keys() {
         if(null == this.propertyBase) return Collections.emptySet();
         final Set<String> keys = new HashSet<>();
-        keys.add(this.propertyBase.getKey());
+        keys.add(this.propertyBase.getKey());       // Cardinality.single
         return Collections.unmodifiableSet(keys);
     }
 
@@ -87,6 +92,7 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     public void remove() {
         this.vertex.graph.tx().readWrite();
         this.vertex.graph.trait.removeVertexProperty(this);
+        this.vertex.properties.remove(propertyBase.getKey());
     }
 
 

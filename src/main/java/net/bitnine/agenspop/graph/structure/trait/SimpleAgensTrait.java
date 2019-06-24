@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class SimpleAgensTrait implements AgensTrait {
 
@@ -57,17 +58,26 @@ public class SimpleAgensTrait implements AgensTrait {
 
     @Override
     public <V> VertexProperty<V> getVertexProperty(final AgensVertex vertex, final String key) {
-        return vertex.getBaseVertex().hasProperty(key) ?
-                new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key))
-                : VertexProperty.<V>empty();
+        if( vertex.getBaseVertex().hasProperty(key) ){
+            Optional<ElasticProperty> pBase = vertex.getBaseVertex().getProperty(key);
+            if( !pBase.isPresent() ) VertexProperty.<V>empty();
+            VertexProperty<V> p = new AgensVertexProperty(vertex, pBase.get());
+            return p;
+        }
+        return VertexProperty.<V>empty();
     }
 
     @Override
     public <V> Iterator<VertexProperty<V>> getVertexProperties(final AgensVertex vertex, final String... keys) {
-        return (Iterator) IteratorUtils.stream(vertex.getBaseVertex().getKeys())
-                .filter(key -> ElementHelper.keyExists(key, keys))
-                .map(key -> new AgensVertexProperty<>(vertex, key, (V) vertex.getBaseVertex().getProperty(key)))
-                .iterator();
+        List<String> validKeys = IteratorUtils.stream(vertex.getBaseVertex().getKeys())
+                .filter(key -> ElementHelper.keyExists(key, keys)).collect(Collectors.toList());
+
+        List<VertexProperty<V>> properties = new ArrayList<>();
+        for( String key : validKeys ) {
+            VertexProperty<V> p = vertex.property(key);
+            properties.add(p);
+        }
+        return properties.iterator();
     }
 
     @Override
@@ -104,28 +114,34 @@ public class SimpleAgensTrait implements AgensTrait {
 
     @Override
     public void removeVertexProperty(final AgensVertexProperty vertexProperty) {
-        final ElasticVertex node = ((AgensVertex) vertexProperty.element()).getBaseVertex();
-        if (node.hasProperty(vertexProperty.key()))
-            node.removeProperty(vertexProperty.key());
+        final ElasticVertex base = ((AgensVertex) vertexProperty.element()).getBaseVertex();
+        if (base.hasProperty(vertexProperty.key()))
+            base.removeProperty(vertexProperty.key());
     }
+
+    //////////////////////////////////////////////////
 
     @Override
     public <V> Property<V> setProperty(final AgensVertexProperty vertexProperty, final String key, final V value) {
+        System.out.println("  !! setProperty() in "+this.getClass().getName());
         throw VertexProperty.Exceptions.metaPropertiesNotSupported();
     }
 
     @Override
     public <V> Property<V> getProperty(final AgensVertexProperty vertexProperty, final String key) {
+        System.out.println("  !! getProperty() in "+this.getClass().getName());
         throw VertexProperty.Exceptions.metaPropertiesNotSupported();
     }
 
     @Override
     public <V> Iterator<Property<V>> getProperties(final AgensVertexProperty vertexProperty, final String... keys) {
+        System.out.println("  - getProperties() in "+this.getClass().getName());
         throw VertexProperty.Exceptions.metaPropertiesNotSupported();
     }
 
     @Override
     public Iterator<Vertex> lookupVertices(final AgensGraph graph, final List<HasContainer> hasContainers, final Object... ids) {
+        System.out.println("  - lookupVertices() in "+this.getClass().getName());
         // ids are present, filter on them first
         if (ids.length > 0)
             return IteratorUtils.filter(graph.vertices(ids), vertex -> HasContainer.testAll(vertex, hasContainers));

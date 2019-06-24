@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.elastic.model;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface ElasticElement {
@@ -9,8 +10,9 @@ public interface ElasticElement {
     String getDatasource();
     Iterable<String> getKeys();
 
-    Object getProperty(String name);
-    Object getProperty(String name, Object defaultValue);
+    // ElasticProperty 만 반환하면 된다 ==> 실제 value 는 elasticProperty.value() 에서 처리
+    Optional<ElasticProperty> getProperty(String name);
+    ElasticProperty getProperty(String name, Object defaultValue);
     ElasticProperty setProperty(String name, Object value);
     ElasticProperty setProperty(String name, String type, Object value);
     boolean setProperty(ElasticProperty property);
