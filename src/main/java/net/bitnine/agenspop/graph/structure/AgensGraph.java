@@ -2,6 +2,7 @@ package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
 import net.bitnine.agenspop.elastic.ElasticTx;
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
@@ -22,17 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
@@ -81,8 +76,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     protected AgensGraphVariables graphVariables;
 
     protected AtomicInteger currentId = new AtomicInteger(0);
-    protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
-    protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
+    protected Map<Object, Vertex> vertices = new HashMap<>(); // new ConcurrentHashMap<>();
+    protected Map<Object, Edge> edges = new HashMap<>();
 
     protected Object graphComputerView = null;                  // excluded
 //    protected AgensIndex<AgensVertex> vertexIndex = null;
@@ -292,12 +287,82 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     @Override
     public Iterator<Vertex> vertices(final Object... vertexIds) {
+        this.tx().readWrite();
         return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
+/*
+        this.tx().readWrite();
+        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+        if (0 == vertexIds.length) {
+            return IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
+                    .filter(nodePredicate)
+                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+        } else {
+            ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
+            return Stream.of(vertexIds)
+                    .map(id -> {
+                        if (id instanceof Number)
+                            return vertexIdManager.convert(((Number) id).longValue(), this);
+                        else if (id instanceof String)
+                            return (String) id.toString();
+                        else if (id instanceof Vertex) {
+                            return (String) ((Vertex) id).id();
+                        } else
+                            throw new IllegalArgumentException("Unknown vertex id type: " + id);
+                    })
+                    .flatMap(id -> {
+                        try {
+                            return Stream.of(this.baseGraph.getVertexById(id.toString()));
+                        } catch (final RuntimeException e) {
+                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+                            throw e;
+                        }
+                    })
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(nodePredicate)
+                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+        }
+*/
     }
 
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
+        this.tx().readWrite();
         return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
+/*
+        this.tx().readWrite();
+        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+        if (0 == edgeIds.length) {
+            return IteratorUtils.stream(this.getBaseGraph().findEdges(graphName))
+                    .filter(relationshipPredicate)
+                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+        } else {
+            ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
+            return Stream.of(edgeIds)
+                    .map(id -> {
+                        if (id instanceof Number)
+                            return edgeIdManager.convert(((Number) id).longValue(), this);
+                        else if (id instanceof String)
+                            return (String) id.toString();
+                        else if (id instanceof Edge) {
+                            return (String) ((Edge) id).id();
+                        } else
+                            throw new IllegalArgumentException("Unknown edge id type: " + id);
+                    })
+                    .flatMap(id -> {
+                        try {
+                            return Stream.of(this.baseGraph.getEdgeById(id.toString()));
+                        } catch (final RuntimeException e) {
+                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+                            throw e;
+                        }
+                    })
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(relationshipPredicate)
+                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+        }
+ */
     }
 
     private <T extends Element> Iterator<T> createElementIterator(final Class<T> clazz, final Map<Object, T> elements,

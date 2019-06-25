@@ -143,6 +143,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         @Override
         public void serialize(final AgensGraph graph, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
                 throws IOException {
+            System.out.println(" !! serialize start : "+graph.toString());
+
             jsonGenerator.writeStartObject();       // depth=0
             // cytoscape.js :: elements
             jsonGenerator.writeFieldName("scratch");
@@ -166,6 +168,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             jsonGenerator.writeFieldName("edges");
             jsonGenerator.writeStartArray();
+            // java.util.ConcurrentModificationException
             final Iterator<Edge> edges = graph.edges();
             while (edges.hasNext()) {
                 serializerProvider.defaultSerializeValue((AgensEdge)edges.next(), jsonGenerator);
@@ -234,13 +237,13 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         }
 
         @Override
-        public AgensGraph deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-//            final Configuration conf = new BaseConfiguration();
-//            conf.setProperty("gremlin.tinkergraph.defaultVertexPropertyCardinality", "list");
+        public AgensGraph deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+                throws IOException, JsonProcessingException {
             final AgensGraph graph = AgensGraph.open(baseGraph);
 
             final List<Map<String, Object>> edges;
             final List<Map<String, Object>> vertices;
+
             if (!jsonParser.getCurrentToken().isStructStart()) {
                 if (!jsonParser.getCurrentName().equals(GraphSONTokens.VERTICES))
                     throw new IOException(String.format("Expected a '%s' key", GraphSONTokens.VERTICES));
@@ -254,23 +257,30 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
                 jsonParser.nextToken();
                 edges = (List<Map<String, Object>>) deserializationContext.readValue(jsonParser, ArrayList.class);
-            } else {
+            }
+            else {
                 final Map<String, Object> graphData = deserializationContext.readValue(jsonParser, HashMap.class);
                 vertices = (List<Map<String,Object>>) graphData.get(GraphSONTokens.VERTICES);
                 edges = (List<Map<String,Object>>) graphData.get(GraphSONTokens.EDGES);
             }
 
             for (Map<String, Object> vertexData : vertices) {
-                final DetachedVertex detached = new DetachedVertex(vertexData.get(GraphSONTokens.ID),
-                        vertexData.get(GraphSONTokens.LABEL).toString(), (Map<String,Object>) vertexData.get(GraphSONTokens.PROPERTIES));
+                final DetachedVertex detached = new DetachedVertex(
+                        vertexData.get(GraphSONTokens.ID)
+                        , vertexData.get(GraphSONTokens.LABEL).toString()
+                        , (Map<String,Object>) vertexData.get(GraphSONTokens.PROPERTIES));
                 detached.attach(Attachable.Method.getOrCreate(graph));
             }
 
             for (Map<String, Object> edgeData : edges) {
-                final DetachedEdge detached = new DetachedEdge(edgeData.get(GraphSONTokens.ID),
-                        edgeData.get(GraphSONTokens.LABEL).toString(), (Map<String,Object>) edgeData.get(GraphSONTokens.PROPERTIES),
-                        edgeData.get(GraphSONTokens.OUT), edgeData.get(GraphSONTokens.OUT_LABEL).toString(),
-                        edgeData.get(GraphSONTokens.IN), edgeData.get(GraphSONTokens.IN_LABEL).toString());
+                final DetachedEdge detached = new DetachedEdge(
+                        edgeData.get(GraphSONTokens.ID)
+                        , edgeData.get(GraphSONTokens.LABEL).toString()
+                        , (Map<String,Object>) edgeData.get(GraphSONTokens.PROPERTIES)
+                        , edgeData.get(GraphSONTokens.OUT)
+                        , edgeData.get(GraphSONTokens.OUT_LABEL).toString()
+                        , edgeData.get(GraphSONTokens.IN)
+                        , edgeData.get(GraphSONTokens.IN_LABEL).toString());
                 detached.attach(Attachable.Method.getOrCreate(graph));
             }
 
@@ -378,7 +388,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             GraphSONUtil.writeWithType(GraphSONTokens.ID, edge.id(), jsonGenerator, serializerProvider, typeSerializer);
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, edge.label());
-            jsonGenerator.writeStringField("graph", ((AgensGraph)edge.graph()).name());
+            jsonGenerator.writeStringField("datasource", ((AgensGraph)edge.graph()).name());
             GraphSONUtil.writeWithType("target", edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
             GraphSONUtil.writeWithType("source", edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
             writeProperties(edge, jsonGenerator, serializerProvider, typeSerializer);
@@ -462,7 +472,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             GraphSONUtil.writeWithType(GraphSONTokens.ID, vertex.id(), jsonGenerator, serializerProvider, typeSerializer);
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, vertex.label());
-            jsonGenerator.writeStringField("graph", ((AgensGraph)vertex.graph()).name());
+            jsonGenerator.writeStringField("datasource", ((AgensGraph)vertex.graph()).name());
 
             // for expand : out-direction
             jsonGenerator.writeObjectFieldStart("outgoers");

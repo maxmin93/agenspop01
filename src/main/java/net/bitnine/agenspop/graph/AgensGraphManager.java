@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.Set;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class AgensGraphManager implements GraphManager {
             LoggerFactory.getLogger(AgensGraphManager.class);
     public static final String AGENS_GRAPH_MANAGER_EXPECTED_STATE_MSG
             = "Gremlin Server must be configured to use the AgensGraphManager.";
+    public static final Function<String, String> GRAPH_TRAVERSAL_NAME = (String gName) -> gName + "_traversal";
 
     private final Map<String, Graph> graphs = new ConcurrentHashMap<>();
     private final Map<String, TraversalSource> traversalSources = new ConcurrentHashMap<>();
@@ -232,7 +234,7 @@ public class AgensGraphManager implements GraphManager {
     }
 
     private void updateTraversalSource(String graphName, Graph graph){
-        String traversalName = graphName + "_traversal";
+        String traversalName = GRAPH_TRAVERSAL_NAME.apply(graphName);
         TraversalSource traversalSource = graph.traversal();
         putTraversalSource(traversalName, traversalSource);
 //        if (null != gremlinExecutor) {
