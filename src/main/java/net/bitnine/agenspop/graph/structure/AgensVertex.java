@@ -12,6 +12,7 @@ import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -22,8 +23,8 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public static final String LABEL_DELIMINATOR = "::";
 
     protected Map<String, VertexProperty> properties;
-    protected Map<String, Set<Edge>> outEdges;
-    protected Map<String, Set<Edge>> inEdges;
+//    protected Map<String, Set<Edge>> outEdges;
+//    protected Map<String, Set<Edge>> inEdges;
 
     public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
         super(vertex, graph);
@@ -59,7 +60,6 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         edges.stream().filter(edge -> !((AgensEdge) edge).removed).forEach(Edge::remove);
         // post processes of remove vertex : properties, graph, marking
         this.properties = null;
-        this.graph.vertices.remove(id());
         this.removed = true;
         // remove connected ElasticEdges and ElasticVertex
         this.graph.trait.removeVertex(this);
@@ -77,7 +77,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
         this.graph.tx().readWrite();
         final VertexProperty<V> vertexProperty = this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
-        if (null == this.properties) this.properties = new HashMap<>();
+        if (null == this.properties) this.properties = new ConcurrentHashMap<>();
         this.properties.put(key, vertexProperty);
         return vertexProperty;
     }
@@ -100,21 +100,32 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         return this.graph.trait.getVertexProperties(this, propertyKeys);
     }
 
+    // 정점의 이웃 정점들 (방향성, 연결간선의 라벨셋)
     @Override
     public Iterator<Vertex> vertices(final Direction direction, final String... edgeLabels) {
-        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
-        /*
+//        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
+
         this.graph.tx().readWrite();
         return new Iterator<Vertex>() {
-            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(0 == edgeLabels.length ?
-                Direction.BOTH == direction ?
-                        IteratorUtils.concat(getBaseVertex().relationships(AgensHelper.mapDirection(OUT)).iterator(),
-                                getBaseVertex().relationships(AgensHelper.mapDirection(IN)).iterator()) :
-                        getBaseVertex().relationships(AgensHelper.mapDirection(direction)).iterator() :
-                Direction.BOTH == direction ?
-                        IteratorUtils.concat(getBaseVertex().relationships(AgensHelper.mapDirection(OUT), (edgeLabels)).iterator(),
-                                getBaseVertex().relationships(AgensHelper.mapDirection(IN), (edgeLabels)).iterator()) :
-                        getBaseVertex().relationships(AgensHelper.mapDirection(direction), (edgeLabels)).iterator(), graph.trait.getRelationshipPredicate());
+            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils
+                .filter(
+                    edgeLabels.length == 0
+                        ? Direction.BOTH == direction
+                            // 양방향
+                            ? IteratorUtils.concat(
+                                    getBaseVertex().relationships(Direction.OUT).iterator(),
+                                    getBaseVertex().relationships(Direction.IN).iterator())
+                            // 단방향
+                            : getBaseVertex().relationships(direction).iterator()
+                        : Direction.BOTH == direction
+                            // 양방향
+                            ? IteratorUtils.concat(
+                                    getBaseVertex().relationships(Direction.OUT, (edgeLabels)).iterator(),
+                                    getBaseVertex().relationships(Direction.IN, (edgeLabels)).iterator())
+                            // 단방향
+                            : getBaseVertex().relationships(direction, (edgeLabels)).iterator()
+                    , graph.trait.getEdgePredicate()
+                );
 
             @Override
             public boolean hasNext() {
@@ -126,25 +137,37 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
                 return new AgensVertex(this.relationshipIterator.next().other(getBaseVertex()), graph);
             }
         };
-        */
     }
 
+    // 정점의 연결간선들 (방향, 연결간선의 라벨셋)
     @Override
     public Iterator<Edge> edges(final Direction direction, final String... edgeLabels) {
-        final Iterator<Edge> edgeIterator = (Iterator) AgensHelper.getEdges(this, direction, edgeLabels);
-        return edgeIterator;
-        /*
+//        final Iterator<Edge> edgeIterator = (Iterator) AgensHelper.getEdges(this, direction, edgeLabels);
+//        return edgeIterator;
+
         this.graph.tx().readWrite();
         return new Iterator<Edge>() {
-            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(0 == edgeLabels.length ?
-                    Direction.BOTH == direction ?
-                            IteratorUtils.concat(getBaseVertex().relationships(AgensHelper.mapDirection(OUT)).iterator(),
-                                    getBaseVertex().relationships(AgensHelper.mapDirection(IN)).iterator()) :
-                            getBaseVertex().relationships(AgensHelper.mapDirection(direction)).iterator() :
-                    Direction.BOTH == direction ?
-                            IteratorUtils.concat(getBaseVertex().relationships(AgensHelper.mapDirection(OUT), (edgeLabels)).iterator(),
-                                    getBaseVertex().relationships(AgensHelper.mapDirection(IN), (edgeLabels)).iterator()) :
-                            getBaseVertex().relationships(AgensHelper.mapDirection(direction), (edgeLabels)).iterator(), graph.trait.getRelationshipPredicate());
+            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils
+                .filter(
+                    edgeLabels.length == 0
+                        // edge 라벨 지정이 없는 경우
+                        ? Direction.BOTH == direction
+                            // 양방향
+                            ? IteratorUtils.concat(
+                                    getBaseVertex().relationships(Direction.OUT).iterator(),
+                                    getBaseVertex().relationships(Direction.IN).iterator())
+                            // 단방향
+                            : getBaseVertex().relationships(direction).iterator()
+                        // edge 라벨 리스트를 지정한 경우
+                        : Direction.BOTH == direction
+                            // 양방향
+                            ? IteratorUtils.concat(
+                                    getBaseVertex().relationships(Direction.OUT, (edgeLabels)).iterator(),
+                                    getBaseVertex().relationships(Direction.IN, (edgeLabels)).iterator())
+                            // 단방향
+                            : getBaseVertex().relationships(direction, (edgeLabels)).iterator()
+                    , graph.trait.getEdgePredicate()
+                );
 
             @Override
             public boolean hasNext() {
@@ -156,7 +179,6 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
                 return new AgensEdge(this.relationshipIterator.next(), graph);
             }
         };
-        */
     }
 
     //////////////////////////////////////////////////////////////////////////////////////

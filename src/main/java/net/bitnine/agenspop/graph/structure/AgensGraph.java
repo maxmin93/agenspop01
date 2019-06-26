@@ -76,8 +76,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     protected AgensGraphVariables graphVariables;
 
     protected AtomicInteger currentId = new AtomicInteger(0);
-    protected Map<Object, Vertex> vertices = new HashMap<>(); // new ConcurrentHashMap<>();
-    protected Map<Object, Edge> edges = new HashMap<>();
+    // **NOTE: 그래프의 vertex, edge 는 모두 elastic-index 에서 가져와야 함
+    //         -- AgensVertex 의 in/out edges 들은 어떻게 관리?
+    //              => ElasticVertex 에 연결 정보 없음
+    //         -- AgensEdge 의 in/out vertex 들은 어떻게 관리?  => 자체 id 로 요청때 가져오는 방식
+    //
+//    protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
+//    protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
 
     protected Object graphComputerView = null;                  // excluded
 //    protected AgensIndex<AgensVertex> vertexIndex = null;
@@ -160,7 +165,9 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     @Override
     public String toString() {
-        return StringFactory.graphString(this, graphName + "][vertices:" + this.vertices.size() + " edges:" + this.edges.size());
+        long vSize = baseGraph.countV(graphName);
+        long eSize = baseGraph.countE(graphName);
+        return StringFactory.graphString(this, graphName + "][vertices:" + vSize + " edges:" + eSize);
     }
 
     public String name() {
@@ -168,8 +175,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     public void clear() {
-        this.vertices.clear();
-        this.edges.clear();
         this.graphVariables = null;
         this.currentId.set(0);
         this.graphComputerView = null;
@@ -266,7 +271,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
 
         if (null != idValue) {
-            if (this.vertices.containsKey(idValue))
+            if( baseGraph.existsVertex(idValue.toString()) )
                 throw Exceptions.vertexWithIdAlreadyExists(idValue);
         } else {
             idValue = vertexIdManager.getNextId(this);
@@ -281,15 +286,14 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         }
 
         this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
-        this.vertices.put(vertex.id(), vertex);     // register to graph map
         return vertex;
     }
 
     @Override
     public Iterator<Vertex> vertices(final Object... vertexIds) {
-        this.tx().readWrite();
-        return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
-/*
+//        this.tx().readWrite();
+//        return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
+
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
         if (0 == vertexIds.length) {
@@ -322,14 +326,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         }
-*/
     }
 
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
-        this.tx().readWrite();
-        return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
-/*
+//        this.tx().readWrite();
+//        return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
+
         this.tx().readWrite();
         final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
         if (0 == edgeIds.length) {
@@ -362,12 +365,11 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     .filter(relationshipPredicate)
                     .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         }
- */
     }
 
-    private <T extends Element> Iterator<T> createElementIterator(final Class<T> clazz, final Map<Object, T> elements,
-                                                                  final IdManager idManager,
-                                                                  final Object... ids) {
+    private <T extends Element> Iterator<T> createElementIterator(
+                final Class<T> clazz, final Map<Object, T> elements,
+                final IdManager idManager, final Object... ids) {
         final Iterator<T> iterator;
         if (0 == ids.length) {
             iterator = elements.values().iterator();

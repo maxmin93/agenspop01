@@ -18,6 +18,9 @@ public interface ElasticGraphAPI {
     Iterable<? extends ElasticVertex> vertices();
     Iterable<? extends ElasticEdge> edges();
 
+    boolean existsVertex(String id);
+    boolean existsEdge(String id);
+
     Optional<? extends ElasticVertex> getVertexById(String id);
     Optional<? extends ElasticEdge> getEdgeById(String id);
 

@@ -95,6 +95,8 @@ public class ElasticGraphService implements ElasticGraphAPI {
             vertexRepository.deleteById(vertex.getId());
     }
     @Override
+    public boolean existsVertex(String id){ return vertexRepository.existsById(id); }
+    @Override
     public Optional<? extends ElasticVertex> getVertexById(String id){
         return vertexRepository.findById(id);
     }
@@ -116,6 +118,8 @@ public class ElasticGraphService implements ElasticGraphAPI {
         if( edge != null )
             edgeRepository.deleteById(edge.getId());
     }
+    @Override
+    public boolean existsEdge(String id){ return edgeRepository.existsById(id); }
     @Override
     public Optional<? extends ElasticEdge> getEdgeById(String id){
         return edgeRepository.findById(id);

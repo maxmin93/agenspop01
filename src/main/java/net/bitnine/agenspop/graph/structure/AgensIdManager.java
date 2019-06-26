@@ -12,7 +12,9 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     LONG {
         @Override
         public Long getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet()))).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet())))
+                    .filter(id -> !graph.baseGraph.existsVertex(id.toString()) && !graph.baseGraph.existsEdge(id.toString()))
+                    .findAny().get();
         }
         @Override
         public Object convert(final Object id, final AgensGraph graph) {
@@ -44,7 +46,9 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     INTEGER {
         @Override
         public Integer getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (graph.currentId.incrementAndGet())).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (graph.currentId.incrementAndGet()))
+                    .filter(id -> !graph.baseGraph.existsVertex(id.toString()) && !graph.baseGraph.existsEdge(id.toString()))
+                    .findAny().get();
         }
         @Override
         public Object convert(final Object id, final AgensGraph graph) {
@@ -109,14 +113,14 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         }
         private String generateId(final Integer index, final AgensGraph graph){
             String id = graph.name()+MIX_DELIMITER+index;
-            if( !graph.vertices.containsKey(id) && !graph.edges.containsKey(id) ) return id;
+            if( !graph.baseGraph.existsVertex(id) && !graph.baseGraph.existsEdge(id) ) return id;
             else return getNextId(graph);
         }
 
         @Override
         public String getNextId(final AgensGraph graph) {
             return Stream.generate(() -> generateId(graph))
-                    .filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id))
+                    .filter(id -> !graph.baseGraph.existsVertex(id) && !graph.baseGraph.existsEdge(id))
                     .findAny().get();
         }
 
@@ -157,7 +161,9 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     ANY {
         @Override
         public Long getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet()))).filter(id -> !graph.vertices.containsKey(id) && !graph.edges.containsKey(id)).findAny().get();
+            return Stream.generate(() -> (Long.valueOf(graph.currentId.incrementAndGet())))
+                    .filter(id -> !graph.baseGraph.existsVertex(id.toString()) && !graph.baseGraph.existsEdge(id.toString()))
+                    .findAny().get();
         }
         @Override
         public Object convert(final Object id, final AgensGraph graph) {

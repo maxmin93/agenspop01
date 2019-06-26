@@ -476,8 +476,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             // for expand : out-direction
             jsonGenerator.writeObjectFieldStart("outgoers");
-            if( vertex.outEdges != null ) {
-                Map<String,List<Vertex>> groupByLabel = vertex.outEdges.values().stream()
+            if( vertex.outEdges() != null ) {
+                Map<String,List<Vertex>> groupByLabel = vertex.outEdges().values().stream()
                         .flatMap(Set::stream).map(Edge::inVertex)       // all outgoers
                         .collect(Collectors.groupingBy(Vertex::label, TreeMap::new, Collectors.toList()));
                 for( String label : groupByLabel.keySet() ){

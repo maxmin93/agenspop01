@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
@@ -54,7 +55,7 @@ public final class AgensHelper {
     }
 
     protected static void addOutEdge(final AgensVertex vertex, final String label, final Edge edge) {
-        if (null == vertex.outEdges) vertex.outEdges = new HashMap<>();
+        if (null == vertex.outEdges) vertex.outEdges = new ConcurrentHashMap<>();
         Set<Edge> edges = vertex.outEdges.get(label);
         if (null == edges) {
             edges = new HashSet<>();
@@ -64,7 +65,7 @@ public final class AgensHelper {
     }
 
     protected static void addInEdge(final AgensVertex vertex, final String label, final Edge edge) {
-        if (null == vertex.inEdges) vertex.inEdges = new HashMap<>();
+        if (null == vertex.inEdges) vertex.inEdges = new ConcurrentHashMap<>();
         Set<Edge> edges = vertex.inEdges.get(label);
         if (null == edges) {
             edges = new HashSet<>();

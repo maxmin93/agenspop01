@@ -1,18 +1,17 @@
 package net.bitnine.agenspop.graph.structure;
 
+import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
+import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -21,13 +20,11 @@ import java.util.stream.Collectors;
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
     protected Map<String, Property> properties;
-    protected final Vertex outVertex;       // sourceV
-    protected final Vertex inVertex;        // targetV
+//    protected final Vertex outVertex;       // sourceV
+//    protected final Vertex inVertex;        // targetV
 
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
-        this.outVertex = graph.vertices.get(edge.getSid());    // source
-        this.inVertex = graph.vertices.get(edge.getTid());     // target
     }
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
@@ -37,18 +34,18 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
             )                           // elasticedge
             , outVertex.graph           // graph
         );
-        this.outVertex = outVertex;     // sourceV
-        this.inVertex = inVertex;       // targetV
     }
 
     @Override
     public Vertex outVertex() {     // source v of edge
-        return (Vertex)this.outVertex;
+        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
+        return (Vertex) v.orElse(null);
     }
 
     @Override
     public Vertex inVertex() {      // target v of edge
-        return (Vertex)this.inVertex;
+        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
+        return (Vertex) v.orElse(null);
     }
 
     @Override
@@ -84,7 +81,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
         this.graph.tx().readWrite();
         final AgensProperty<V> property = new AgensProperty<V>(this, key, value);
-        if (null == this.properties) this.properties = new HashMap<>();
+        if (null == this.properties) this.properties = new ConcurrentHashMap<>();
         this.properties.put(key, property);
         return property;
     }
@@ -94,27 +91,14 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public void remove() {
         this.graph.tx().readWrite();
-        // remove edge from connected out/in vertices
-        final AgensVertex outVertex = (AgensVertex) this.outVertex;
-        if (outVertex != null && outVertex.outEdges != null) {
-            final Set<Edge> edges = outVertex.outEdges.get(this.label());
-            if (null != edges) edges.remove(this);
-        }
-        final AgensVertex inVertex = (AgensVertex) this.inVertex;
-        if (null != inVertex && null != inVertex.inEdges) {
-            final Set<Edge> edges = inVertex.inEdges.get(this.label());
-            if (null != edges) edges.remove(this);
-        }
-
         // post processes of remove vertex : properties, graph, marking
         this.properties = null;
-        this.graph.edges.remove(this.id());
         this.removed = true;
 
         ElasticEdge baseEdge = this.getBaseEdge();
         try {
-            baseEdge.delete();                      // marking deleted
-            this.graph.baseGraph.deleteEdge(baseEdge); // delete ElasticEdgeDocument
+            baseEdge.delete();                          // marking deleted
+            this.graph.baseGraph.deleteEdge(baseEdge);  // delete ElasticEdgeDocument
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;
@@ -132,17 +116,17 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
         if (removed) return Collections.emptyIterator();
         switch (direction) {
             case OUT:
-                return IteratorUtils.of(this.outVertex);
+                return IteratorUtils.of(this.outVertex());
             case IN:
-                return IteratorUtils.of(this.inVertex);
+                return IteratorUtils.of(this.inVertex());
             default:
-                return IteratorUtils.of(this.outVertex, this.inVertex);
+                return IteratorUtils.of(this.outVertex(), this.inVertex());
         }
     }
 
     @Override
     public Graph graph() {
-        return this.inVertex.graph();
+        return this.graph;
     }
 
     @Override
