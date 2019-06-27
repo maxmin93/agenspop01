@@ -12,15 +12,21 @@ import java.util.List;
 @Repository
 public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEdgeDocument, String> {
 
-    List<ElasticEdgeDocument> findByIdIn(List<String> ids);
-    List<ElasticEdgeDocument> findByIdInAndDatasource(List<String> ids, String datasource);
-    List<ElasticEdgeDocument> findByIdNotInAndLabel(List<String> ids, String label);
-    List<ElasticEdgeDocument> findByIdNotInAndDatasource(List<String> ids, String datasource);
-    List<ElasticEdgeDocument> findByIdNotInAndLabelAndDatasource(List<String> ids, String label, String datasource);
+    // https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.query-creation
+
+    List<ElasticEdgeDocument> findByDatasource(String datasource);
+
+    List<ElasticEdgeDocument> findByIdIn(final List<String> ids);
+    List<ElasticEdgeDocument> findByDatasourceAndIdIn(String datasource, final List<String> ids);
+    List<ElasticEdgeDocument> findByIdNotInAndLabel(String label, final List<String> ids);
+    List<ElasticEdgeDocument> findByIdNotInAndDatasource(String datasource, final List<String> ids);
+    List<ElasticEdgeDocument> findByIdNotInAndLabelAndDatasource(String label, String datasource, final List<String> ids);
 
     List<ElasticEdgeDocument> findByLabel(String label);
-    List<ElasticEdgeDocument> findByDatasource(String datasource);
+    List<ElasticEdgeDocument> findByLabelIn(final List<String> labels);
+
     List<ElasticEdgeDocument> findByDatasourceAndLabel(String datasource, String label);
+    List<ElasticEdgeDocument> findByDatasourceAndLabelIn(String datasource, final List<String> labels);
 
     @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}]}}")
     List<ElasticEdgeDocument> findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(String datasource, String label, String key);
@@ -32,6 +38,10 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
     List<ElasticEdgeDocument> findBySid(String sid);
     List<ElasticEdgeDocument> findByTid(String tid);
     List<ElasticEdgeDocument> findBySidAndTid(String sid, String tid);
+
+    List<ElasticEdgeDocument> findBySidAndLabelIn(String sid, final List<String> labels);
+    List<ElasticEdgeDocument> findByTidAndLabelIn(String tid, final List<String> labels);
+    List<ElasticEdgeDocument> findBySidAndTidAndLabelIn(String sid, String tid, final List<String> labels);
 
     /////////////////////////////
 

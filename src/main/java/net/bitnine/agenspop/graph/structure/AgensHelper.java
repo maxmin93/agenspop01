@@ -34,7 +34,7 @@ public final class AgensHelper {
 
         Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), graph);
         if (null != idValue) {
-            if (graph.edges.containsKey(idValue))
+            if (graph.baseGraph.existsEdge(idValue.toString()))
                 throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
         } else {
             idValue = graph.edgeIdManager.getNextId(graph);
@@ -48,30 +48,7 @@ public final class AgensHelper {
         ElementHelper.attachProperties(edge, keyValues);
         graph.baseGraph.saveEdge(elasticEdge);     // write to elasticsearch index
 
-        graph.edges.put(edge.id(), edge);
-        AgensHelper.addOutEdge(outVertex, label, edge);
-        AgensHelper.addInEdge(inVertex, label, edge);
         return edge;
-    }
-
-    protected static void addOutEdge(final AgensVertex vertex, final String label, final Edge edge) {
-        if (null == vertex.outEdges) vertex.outEdges = new ConcurrentHashMap<>();
-        Set<Edge> edges = vertex.outEdges.get(label);
-        if (null == edges) {
-            edges = new HashSet<>();
-            vertex.outEdges.put(label, edges);
-        }
-        edges.add(edge);
-    }
-
-    protected static void addInEdge(final AgensVertex vertex, final String label, final Edge edge) {
-        if (null == vertex.inEdges) vertex.inEdges = new ConcurrentHashMap<>();
-        Set<Edge> edges = vertex.inEdges.get(label);
-        if (null == edges) {
-            edges = new HashSet<>();
-            vertex.inEdges.put(label, edges);
-        }
-        edges.add(edge);
     }
 
     public static boolean inComputerMode(final AgensGraph graph) {
@@ -94,70 +71,12 @@ public final class AgensHelper {
         return null == vertex.properties ? Collections.emptyMap() : vertex.properties;
     }
 
-    public static Iterator<AgensEdge> getEdges(final AgensVertex vertex, final Direction direction, final String... edgeLabels) {
-        final List<Edge> edges = new ArrayList<>();
-        if (direction.equals(Direction.OUT) || direction.equals(Direction.BOTH)) {
-            if (vertex.outEdges != null) {
-                if (edgeLabels.length == 0)
-                    vertex.outEdges.values().forEach(edges::addAll);
-                else if (edgeLabels.length == 1)
-                    edges.addAll(vertex.outEdges.getOrDefault(edgeLabels[0], Collections.emptySet()));
-                else
-                    Stream.of(edgeLabels).map(vertex.outEdges::get).filter(Objects::nonNull).forEach(edges::addAll);
-            }
-        }
-        if (direction.equals(Direction.IN) || direction.equals(Direction.BOTH)) {
-            if (vertex.inEdges != null) {
-                if (edgeLabels.length == 0)
-                    vertex.inEdges.values().forEach(edges::addAll);
-                else if (edgeLabels.length == 1)
-                    edges.addAll(vertex.inEdges.getOrDefault(edgeLabels[0], Collections.emptySet()));
-                else
-                    Stream.of(edgeLabels).map(vertex.inEdges::get).filter(Objects::nonNull).forEach(edges::addAll);
-            }
-        }
-        return (Iterator) edges.iterator();
-    }
-
-    public static Iterator<AgensVertex> getVertices(final AgensVertex vertex, final Direction direction, final String... edgeLabels) {
-        final List<Vertex> vertices = new ArrayList<>();
-        if (direction.equals(Direction.OUT) || direction.equals(Direction.BOTH)) {
-            if (vertex.outEdges != null) {
-                if (edgeLabels.length == 0)
-                    vertex.outEdges.values().forEach(set -> set.forEach(edge -> vertices.add(((AgensEdge) edge).inVertex)));
-                else if (edgeLabels.length == 1)
-                    vertex.outEdges.getOrDefault(edgeLabels[0], Collections.emptySet()).forEach(edge -> vertices.add(((AgensEdge) edge).inVertex));
-                else
-                    Stream.of(edgeLabels).map(vertex.outEdges::get).filter(Objects::nonNull).flatMap(Set::stream).forEach(edge -> vertices.add(((AgensEdge) edge).inVertex));
-            }
-        }
-        if (direction.equals(Direction.IN) || direction.equals(Direction.BOTH)) {
-            if (vertex.inEdges != null) {
-                if (edgeLabels.length == 0)
-                    vertex.inEdges.values().forEach(set -> set.forEach(edge -> vertices.add(((AgensEdge) edge).outVertex)));
-                else if (edgeLabels.length == 1)
-                    vertex.inEdges.getOrDefault(edgeLabels[0], Collections.emptySet()).forEach(edge -> vertices.add(((AgensEdge) edge).outVertex));
-                else
-                    Stream.of(edgeLabels).map(vertex.inEdges::get).filter(Objects::nonNull).flatMap(Set::stream).forEach(edge -> vertices.add(((AgensEdge) edge).outVertex));
-            }
-        }
-        return (Iterator) vertices.iterator();
-    }
-
-    public static Map<Object, Vertex> getVertices(final AgensGraph graph) {
-        return graph.vertices;
-    }
-
-    public static Map<Object, Edge> getEdges(final AgensGraph graph) {
-        return graph.edges;
-    }
-
     //////////////////////////////////////////
 
     public static boolean isDeleted(final ElasticVertex vertex) {
         try {
             vertex.getKeys();
-            return false;
+            return vertex.isDeleted();
         } catch (final RuntimeException e) {
             if (isNotFound(e))
                 return true;
@@ -170,12 +89,4 @@ public final class AgensHelper {
         return ex.getClass().getSimpleName().equals(NOT_FOUND_EXCEPTION);
     }
 
-    public static ElasticVertex getVertexPropertyNode(final AgensVertexProperty vertexProperty) {
-        return (ElasticVertex)vertexProperty.vertex.baseElement;
-    }
-
-    // **Dangerous function : What for?
-//    public static void setVertexPropertyNode(final AgensVertexProperty vertexProperty, final ElasticVertex vertex) {
-//        vertexProperty.vertex.baseElement = vertex;
-//    }
 }

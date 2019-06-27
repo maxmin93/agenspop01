@@ -39,6 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
@@ -476,9 +477,10 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             // for expand : out-direction
             jsonGenerator.writeObjectFieldStart("outgoers");
-            if( vertex.outEdges() != null ) {
-                Map<String,List<Vertex>> groupByLabel = vertex.outEdges().values().stream()
-                        .flatMap(Set::stream).map(Edge::inVertex)       // all outgoers
+            Iterator<Vertex> outVlist = vertex.vertices(Direction.IN);
+            if( outVlist.hasNext() ) {
+                Spliterator<Vertex> spliterator = Spliterators.spliteratorUnknownSize(outVlist, 0);
+                Map<String,List<Vertex>> groupByLabel = StreamSupport.stream(spliterator, false)
                         .collect(Collectors.groupingBy(Vertex::label, TreeMap::new, Collectors.toList()));
                 for( String label : groupByLabel.keySet() ){
                     jsonGenerator.writeArrayFieldStart(label);
@@ -492,9 +494,10 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             // for expand : in-direction
             jsonGenerator.writeObjectFieldStart("incomers");
-            if( vertex.inEdges != null ) {
-                Map<String,List<Vertex>> groupByLabel = vertex.inEdges.values().stream()
-                        .flatMap(Set::stream).map(Edge::outVertex)       // all incomers
+            Iterator<Vertex> inVlist = vertex.vertices(Direction.OUT);
+            if( inVlist.hasNext() ) {
+                Spliterator<Vertex> spliterator = Spliterators.spliteratorUnknownSize(inVlist, 0);
+                Map<String,List<Vertex>> groupByLabel = StreamSupport.stream(spliterator, false)
                         .collect(Collectors.groupingBy(Vertex::label, TreeMap::new, Collectors.toList()));
                 for( String label : groupByLabel.keySet() ){
                     jsonGenerator.writeArrayFieldStart(label);

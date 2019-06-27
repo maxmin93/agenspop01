@@ -12,6 +12,7 @@ import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +26,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
+        this.properties = edge.getProperties().stream().collect(
+                Collectors.toMap(r->((ElasticProperty)r).getKey(), r->(Property)r));
     }
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {

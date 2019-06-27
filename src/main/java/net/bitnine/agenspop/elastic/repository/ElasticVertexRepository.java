@@ -12,15 +12,19 @@ import java.util.List;
 @Repository
 public interface ElasticVertexRepository extends ElasticsearchRepository<ElasticVertexDocument, String> {
 
+    // https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.query-creation
 
-    List<ElasticVertexDocument> findByIdIn(List<String> ids);
-    List<ElasticVertexDocument> findByIdInAndDatasource(List<String> ids, String datasource);
-    List<ElasticVertexDocument> findByIdNotInAndLabel(List<String> ids, String label);
-    List<ElasticVertexDocument> findByIdNotInAndDatasource(List<String> ids, String datasource);
-    List<ElasticVertexDocument> findByIdNotInAndLabelAndDatasource(List<String> ids, String label, String datasource);
+    List<ElasticVertexDocument> findByDatasource(String datasource);
+
+    List<ElasticVertexDocument> findByIdIn(final List<String> ids);
+    List<ElasticVertexDocument> findByDatasourceAndIdIn(String datasource, final List<String> ids);
+    List<ElasticVertexDocument> findByDatasourceAndIdNotIn(String datasource, final List<String> ids);
+
+    List<ElasticVertexDocument> findByLabelAndIdIn(String label, final List<String> ids);
+    List<ElasticVertexDocument> findByLabelAndIdNotIn(String label, final List<String> ids);
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndIdNotIn(String datasource, String label, final List<String> ids);
 
     List<ElasticVertexDocument> findByLabel(String label);
-    List<ElasticVertexDocument> findByDatasource(String datasource);
     List<ElasticVertexDocument> findByDatasourceAndLabel(String datasource, String label);
 
     @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}]}}")

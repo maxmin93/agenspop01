@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.elastic;
 
+import com.google.common.collect.Iterables;
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.document.ElasticElementDocument;
 import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
@@ -8,8 +9,12 @@ import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.elastic.repository.ElasticEdgeRepository;
 import net.bitnine.agenspop.elastic.repository.ElasticVertexRepository;
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -29,6 +34,9 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
@@ -294,22 +302,65 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
 
     @Override
-    public Iterable<? extends ElasticVertex> findVertices(String datasource){
-        return vertexRepository.findByDatasource(datasource);
+    public Iterable<ElasticVertex> findVertices(final String... ids){
+        List<? extends ElasticVertex> list = vertexRepository.findByIdIn(Arrays.asList(ids));
+        return (List<ElasticVertex>)list;
     }
     @Override
-    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label){
-        return vertexRepository.findByDatasourceAndLabel(datasource, label);
+    public Iterable<ElasticVertex> findVertices(String datasource){
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasource(datasource);
+        return (List<ElasticVertex>)list;
     }
     @Override
-    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key){
-        return vertexRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+    public Iterable<ElasticVertex> findVertices(String datasource, String label){
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabel(datasource, label);
+        return (Iterable<ElasticVertex>)list;
     }
     @Override
-    public Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key, Object value){
-        return vertexRepository.findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(
-                datasource, label, key, value.toString()
-        );
+    public Iterable<ElasticVertex> findVertices(String datasource, String label, String key){
+        Iterable<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+        return (Iterable<ElasticVertex>)list;
+    }
+    @Override
+    public Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value){
+        Iterable<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(
+                    datasource, label, key, value.toString()
+                );
+        return (Iterable<ElasticVertex>)list;
+    }
+
+    @Override
+    public ElasticVertex findOtherVertexOfEdge(String eid, String vid){
+        Optional<? extends ElasticEdge> edge = edgeRepository.findById(eid);
+        if( edge.isPresent() ){
+            String otherId = edge.get().getSid().equals(vid) ? edge.get().getTid() : edge.get().getSid();
+            Optional<? extends ElasticVertex> other = vertexRepository.findById(otherId);
+            if( other.isPresent() ) return (ElasticVertex)other.get();
+        }
+        return null;
+    }
+
+    @Override
+    public Iterable<ElasticVertex> findNeighborVertices(String id){
+        return findNeighborVerticesWithDirectionAndLabels(id, Direction.BOTH);
+    }
+    @Override
+    public Iterable<ElasticVertex> findNeighborVerticesWithDirection(String id, Direction direction){
+        return findNeighborVerticesWithDirectionAndLabels(id, direction);
+    }
+    @Override
+    public Iterable<ElasticVertex> findNeighborVerticesWithLabels(String id, final String... labels){
+        return findNeighborVerticesWithDirectionAndLabels(id, Direction.BOTH, labels);
+    }
+    @Override
+    public Iterable<ElasticVertex> findNeighborVerticesWithDirectionAndLabels(String id, Direction direction, final String... labels){
+        final Iterable<ElasticEdge> edges = (labels.length > 0) ?
+                findEdgesOfVertexWithDirectionAndLabels(id, direction, labels)
+                : findEdgesOfVertexWithDirection(id, direction);
+        List<String> vids = StreamSupport.stream(edges.spliterator(),false)
+                .map(s->Arrays.asList(s.getSid(),s.getTid()))
+                .flatMap(List::stream).distinct().collect(Collectors.toList());
+        return findVertices( vids.toArray(new String[vids.size()]) );
     }
 
     //////////////////////////////////////////////////
@@ -318,33 +369,76 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
 
     @Override
-    public Iterable<? extends ElasticEdge> findEdgesBySid(String sid){
-        return edgeRepository.findBySid(sid);
-    }
-    @Override
-    public Iterable<? extends ElasticEdge> findEdgesByTid(String tid){
-        return edgeRepository.findByTid(tid);
-    }
-    @Override
-    public Iterable<? extends ElasticEdge> findEdgesBySidAndTid(String sid, String tid){
-        return edgeRepository.findBySidAndTid(sid, tid);
+    public Iterable<ElasticEdge> findEdgesOfVertexWithDirection(String id, Direction direction){
+        final Iterable<? extends ElasticEdge> list;
+        if( direction.equals(Direction.OUT) )       // source vertex of edge
+            list = edgeRepository.findBySid(id);
+        else if ( direction.equals(Direction.IN) )  // target vertex of edge
+            list = edgeRepository.findByTid(id);
+        else
+            list = Sets.newHashSet( Iterables.concat(
+                    edgeRepository.findBySid(id), edgeRepository.findByTid(id)
+                ));
+        return (Iterable<ElasticEdge>) list;
     }
 
     @Override
-    public Iterable<? extends ElasticEdge> findEdges(String datasource){
-        return edgeRepository.findByDatasource(datasource);
+    public Iterable<ElasticEdge> findEdgesOfVertexWithDirectionAndLabels(String id, Direction direction, final String... labels){
+        final Iterable<? extends ElasticEdge> list;
+        if( direction.equals(Direction.OUT) )       // source vertex of edge
+            list = edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels));
+        else if ( direction.equals(Direction.IN) )  // target vertex of edge
+            list = edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels));
+        else
+            list = Sets.newHashSet( Iterables.concat(
+                    edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels))
+                    , edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels))
+                ));
+        return (Iterable<ElasticEdge>) list;
+    }
+
+    @Override
+    public Iterable<ElasticEdge> findEdgesBySid(String sid){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySid(sid);
+        return (Iterable<ElasticEdge>) list;
     }
     @Override
-    public Iterable<? extends ElasticEdge> findEdges(String datasource, String label){
-        return edgeRepository.findByDatasourceAndLabel(datasource, label);
+    public Iterable<ElasticEdge> findEdgesByTid(String tid){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByTid(tid);
+        return (Iterable<ElasticEdge>) list;
     }
     @Override
-    public Iterable<? extends ElasticEdge> findEdges(String datasource, String label, String key){
-        return edgeRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+    public Iterable<ElasticEdge> findEdgesBySidAndTid(String sid, String tid){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySidAndTid(sid, tid);
+        return (Iterable<ElasticEdge>) list;
+    }
+
+    @Override
+    public Iterable<ElasticEdge> findEdges(final String... ids){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByIdIn(Arrays.asList(ids));
+        return (Iterable<ElasticEdge>) list;
     }
     @Override
-    public Iterable<? extends ElasticEdge> findEdges(String datasource, String label, String key, Object value){
-        return edgeRepository.findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(datasource, label, key, value.toString());
+    public Iterable<ElasticEdge> findEdges(String datasource){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasource(datasource);
+        return (Iterable<ElasticEdge>) list;
+    }
+    @Override
+    public Iterable<ElasticEdge> findEdges(String datasource, String label){
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasourceAndLabel(datasource, label);
+        return (Iterable<ElasticEdge>) list;
+    }
+    @Override
+    public Iterable<ElasticEdge> findEdges(String datasource, String label, String key){
+        final Iterable<? extends ElasticEdge> list = edgeRepository
+                .findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+        return (Iterable<ElasticEdge>) list;
+    }
+    @Override
+    public Iterable<ElasticEdge> findEdges(String datasource, String label, String key, Object value){
+        final Iterable<? extends ElasticEdge> list = edgeRepository
+                .findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(datasource, label, key, value.toString());
+        return (Iterable<ElasticEdge>) list;
     }
 
     //////////////////////////////////////////////////

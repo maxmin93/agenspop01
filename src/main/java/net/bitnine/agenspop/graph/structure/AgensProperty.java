@@ -23,6 +23,11 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Elas
     protected final Element element;
     protected boolean removed = false;
 
+    public AgensProperty(final Element element, final ElasticProperty propertyBase) {
+        Objects.requireNonNull(propertyBase.getValue(), "AgensProperty.propertyBase might be null");
+        this.propertyBase = propertyBase;
+        this.element = element;
+    }
     public AgensProperty(final Element element, final String key, final V value) {
         Objects.requireNonNull(value, "AgensProperty.value might be null");
         this.element = element;

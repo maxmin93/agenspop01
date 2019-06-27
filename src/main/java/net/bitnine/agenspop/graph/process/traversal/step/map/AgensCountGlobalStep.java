@@ -32,10 +32,11 @@ public final class AgensCountGlobalStep<S extends Element> extends AbstractStep<
         if (!this.done) {
             this.done = true;
             final AgensGraph graph = (AgensGraph) this.getTraversal().getGraph().get();
-            return this.getTraversal().getTraverserGenerator().generate(Vertex.class.isAssignableFrom(this.elementClass) ?
-                            (long) AgensHelper.getVertices(graph).size() :
-                            (long) AgensHelper.getEdges(graph).size(),
-                    (Step) this, 1L);
+            return this.getTraversal().getTraverserGenerator().generate(
+                        Vertex.class.isAssignableFrom(this.elementClass) ?
+                            (long) graph.getBaseGraph().countV(graph.name())
+                            : (long) graph.getBaseGraph().countE(graph.name())
+                    , (Step) this, 1L);
         } else
             throw FastNoSuchElementException.instance();
     }

@@ -2,6 +2,7 @@ package net.bitnine.agenspop.elastic;
 
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import org.apache.tinkerpop.gremlin.structure.Direction;
 
 import java.util.Iterator;
 import java.util.List;
@@ -64,22 +65,39 @@ public interface ElasticGraphAPI {
     // access services of Vertex
     //
 
-    Iterable<? extends ElasticVertex> findVertices(String datasource);
-    Iterable<? extends ElasticVertex> findVertices(String datasource, String label);
-    Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key);
-    Iterable<? extends ElasticVertex> findVertices(String datasource, String label, String key, Object value);
+    // **TIP: remove duplicates from a list
+    //     0) new ArrayList<>(new HashSet<>(Arrays.asList( listWithDuplicates )))   -- plain Java
+    //     1) Lists.newArrayList(Sets.newHashSet(listWithDuplicates));              -- using Guava
+    //     2) listWithDuplicates.stream().distinct().collect(Collectors.toList());  -- using Stream
+
+    Iterable<ElasticVertex> findVertices(String... ids);
+    Iterable<ElasticVertex> findVertices(String datasource);
+    Iterable<ElasticVertex> findVertices(String datasource, String label);
+    Iterable<ElasticVertex> findVertices(String datasource, String label, String key);
+    Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value);
+
+    ElasticVertex findOtherVertexOfEdge(String eid, String vid);
+    Iterable<ElasticVertex> findNeighborVertices(String id);
+    Iterable<ElasticVertex> findNeighborVerticesWithLabels(String id, final String... labels);
+    Iterable<ElasticVertex> findNeighborVerticesWithDirection(String id, Direction direction);
+    Iterable<ElasticVertex> findNeighborVerticesWithDirectionAndLabels(String id, Direction direction, final String... labels);
 
     //////////////////////////////////////////////////
     //
     // access services of Edge
     //
 
-    Iterable<? extends ElasticEdge> findEdgesBySid(String sid);
-    Iterable<? extends ElasticEdge> findEdgesByTid(String tid);
-    Iterable<? extends ElasticEdge> findEdgesBySidAndTid(String sid, String tid);
+    Iterable<ElasticEdge> findEdges(String... ids);
+    Iterable<ElasticEdge> findEdges(String datasource);
+    Iterable<ElasticEdge> findEdges(String datasource, String label);
+    Iterable<ElasticEdge> findEdges(String datasource, String label, String key);
+    Iterable<ElasticEdge> findEdges(String datasource, String label, String key, Object value);
 
-    Iterable<? extends ElasticEdge> findEdges(String datasource);
-    Iterable<? extends ElasticEdge> findEdges(String datasource, String label);
-    Iterable<? extends ElasticEdge> findEdges(String datasource, String label, String key);
-    Iterable<? extends ElasticEdge> findEdges(String datasource, String label, String key, Object value);
+    Iterable<ElasticEdge> findEdgesBySid(String sid);
+    Iterable<ElasticEdge> findEdgesByTid(String tid);
+    Iterable<ElasticEdge> findEdgesBySidAndTid(String sid, String tid);
+
+    Iterable<ElasticEdge> findEdgesOfVertexWithDirection(String id, Direction direction);
+    Iterable<ElasticEdge> findEdgesOfVertexWithDirectionAndLabels(String id, Direction direction, final String... labels);
+
 }

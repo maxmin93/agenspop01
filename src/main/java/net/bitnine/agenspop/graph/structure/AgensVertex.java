@@ -107,34 +107,17 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
         this.graph.tx().readWrite();
         return new Iterator<Vertex>() {
-            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils
-                .filter(
-                    edgeLabels.length == 0
-                        ? Direction.BOTH == direction
-                            // 양방향
-                            ? IteratorUtils.concat(
-                                    getBaseVertex().relationships(Direction.OUT).iterator(),
-                                    getBaseVertex().relationships(Direction.IN).iterator())
-                            // 단방향
-                            : getBaseVertex().relationships(direction).iterator()
-                        : Direction.BOTH == direction
-                            // 양방향
-                            ? IteratorUtils.concat(
-                                    getBaseVertex().relationships(Direction.OUT, (edgeLabels)).iterator(),
-                                    getBaseVertex().relationships(Direction.IN, (edgeLabels)).iterator())
-                            // 단방향
-                            : getBaseVertex().relationships(direction, (edgeLabels)).iterator()
-                    , graph.trait.getEdgePredicate()
-                );
+            final Iterator<ElasticVertex> neighborIterator = IteratorUtils.filter(
+                    graph.baseGraph.findNeighborVerticesWithDirectionAndLabels(id().toString(), direction, edgeLabels).iterator()
+                    , graph.trait.getVertexPredicate());
 
             @Override
             public boolean hasNext() {
-                return this.relationshipIterator.hasNext();
+                return this.neighborIterator.hasNext();
             }
-
             @Override
             public AgensVertex next() {
-                return new AgensVertex(this.relationshipIterator.next().other(getBaseVertex()), graph);
+                return new AgensVertex(this.neighborIterator.next(), graph);
             }
         };
     }
@@ -147,33 +130,14 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
         this.graph.tx().readWrite();
         return new Iterator<Edge>() {
-            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils
-                .filter(
-                    edgeLabels.length == 0
-                        // edge 라벨 지정이 없는 경우
-                        ? Direction.BOTH == direction
-                            // 양방향
-                            ? IteratorUtils.concat(
-                                    getBaseVertex().relationships(Direction.OUT).iterator(),
-                                    getBaseVertex().relationships(Direction.IN).iterator())
-                            // 단방향
-                            : getBaseVertex().relationships(direction).iterator()
-                        // edge 라벨 리스트를 지정한 경우
-                        : Direction.BOTH == direction
-                            // 양방향
-                            ? IteratorUtils.concat(
-                                    getBaseVertex().relationships(Direction.OUT, (edgeLabels)).iterator(),
-                                    getBaseVertex().relationships(Direction.IN, (edgeLabels)).iterator())
-                            // 단방향
-                            : getBaseVertex().relationships(direction, (edgeLabels)).iterator()
-                    , graph.trait.getEdgePredicate()
-                );
+            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(
+                graph.baseGraph.findEdgesOfVertexWithDirectionAndLabels(id().toString(), direction, edgeLabels).iterator()
+                , graph.trait.getEdgePredicate());
 
             @Override
             public boolean hasNext() {
                 return this.relationshipIterator.hasNext();
             }
-
             @Override
             public AgensEdge next() {
                 return new AgensEdge(this.relationshipIterator.next(), graph);
