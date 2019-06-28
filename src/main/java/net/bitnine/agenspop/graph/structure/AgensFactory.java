@@ -84,9 +84,10 @@ public final class AgensFactory {
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
 
         // remove test ==> vertex{1}, edge{7,8,9}
-//        System.out.println("  - before remove V(marko): "+g.toString());
-//        marko.remove();
+        System.out.println("  - before remove V(marko): "+g.toString());
+        marko.remove();
 
+/*
         GraphTraversalSource t = g.traversal();
         List<Vertex> vertexList = t.V().next(100);
         System.out.println("  - list vertices ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
@@ -107,5 +108,6 @@ public final class AgensFactory {
         System.out.println("  - vertex has ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         vertexList = t.V().hasLabel("person").out("knows").where(__.values("age").is(P.lt(30))).next(100);
         System.out.println("  - vertex where ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+ */
     }
 }
