@@ -296,13 +296,14 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+        final Iterator<Vertex> iter;
         if (0 == vertexIds.length) {
-            return IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
+            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            return Stream.of(vertexIds)
+            iter = Stream.of(vertexIds)
                     .map(id -> {
                         if (id instanceof Number)
                             return vertexIdManager.convert(((Number) id).longValue(), this);
@@ -315,17 +316,18 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            return Stream.of(this.baseGraph.getVertexById(id.toString()));
+                            Optional<? extends ElasticVertex> base = this.baseGraph.getVertexById(id.toString());
+                            if( base.isPresent() ) return Stream.of((ElasticVertex)base.get());
+                            else return Stream.empty();
                         } catch (final RuntimeException e) {
                             if (AgensHelper.isNotFound(e)) return Stream.empty();
                             throw e;
                         }
                     })
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         }
+        return iter;
     }
 
     @Override
@@ -335,13 +337,14 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         this.tx().readWrite();
         final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+        final Iterator<Edge> iter;
         if (0 == edgeIds.length) {
-            return IteratorUtils.stream(this.getBaseGraph().findEdges(graphName))
+            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName))
                     .filter(relationshipPredicate)
                     .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
-            return Stream.of(edgeIds)
+            iter = Stream.of(edgeIds)
                     .map(id -> {
                         if (id instanceof Number)
                             return edgeIdManager.convert(((Number) id).longValue(), this);
@@ -354,17 +357,18 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            return Stream.of(this.baseGraph.getEdgeById(id.toString()));
+                            Optional<? extends ElasticEdge> base = this.baseGraph.getEdgeById(id.toString());
+                            if( base.isPresent() ) return Stream.of((ElasticEdge)base.get());
+                            else return Stream.empty();
                         } catch (final RuntimeException e) {
                             if (AgensHelper.isNotFound(e)) return Stream.empty();
                             throw e;
                         }
                     })
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
                     .filter(relationshipPredicate)
                     .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         }
+        return iter;
     }
 
     private <T extends Element> Iterator<T> createElementIterator(

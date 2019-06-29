@@ -77,10 +77,7 @@ public interface ElasticGraphAPI {
     Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value);
 
     ElasticVertex findOtherVertexOfEdge(String eid, String vid);
-    Iterable<ElasticVertex> findNeighborVertices(String id);
-    Iterable<ElasticVertex> findNeighborVerticesWithLabels(String id, final String... labels);
-    Iterable<ElasticVertex> findNeighborVerticesWithDirection(String id, Direction direction);
-    Iterable<ElasticVertex> findNeighborVerticesWithDirectionAndLabels(String id, Direction direction, final String... labels);
+    Iterable<ElasticVertex> findNeighborVertices(String id, Direction direction, final String... labels);
 
     //////////////////////////////////////////////////
     //
@@ -97,7 +94,6 @@ public interface ElasticGraphAPI {
     Iterable<ElasticEdge> findEdgesByTid(String tid);
     Iterable<ElasticEdge> findEdgesBySidAndTid(String sid, String tid);
 
-    Iterable<ElasticEdge> findEdgesOfVertexWithDirection(String id, Direction direction);
-    Iterable<ElasticEdge> findEdgesOfVertexWithDirectionAndLabels(String id, Direction direction, final String... labels);
+    Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, final String... labels);
 
 }

@@ -36,9 +36,6 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
         if (TraversalHelper.onGraphComputer(traversal))
             return;
 
-        // for DEBUG
-        System.out.println("AgensGraphStepStrategy::traversal1 = "+traversal.toString());
-
         // 전체 traversal 에서 graphStep 들 반복
         for (final GraphStep originalGraphStep : TraversalHelper.getStepsOfClass(GraphStep.class, traversal)) {
             // graphStep 을 AgensGraphStep 으로 변경 (바꿔치기)
@@ -65,12 +62,9 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
                 }
                 currentStep = currentStep.getNextStep();
             }
-
-            // for DEBUG
-            System.out.println("AgensGraphStepStrategy::AgensGraphStep2 = "+agensGraphStep.toString());
         }
         // for DEBUG
-        System.out.println("AgensGraphStepStrategy::traversal2 = "+traversal.toString());
+        System.out.println("AgensGraphStepStrategy::traversal = "+traversal.toString());
     }
 
     public static AgensGraphStepStrategy instance() {

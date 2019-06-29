@@ -1,18 +1,14 @@
 package net.bitnine.agenspop.graph.structure;
 
-
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +22,11 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
         super(vertex, graph);
+        this.properties = new HashMap<>();
+        for( ElasticProperty item : vertex.getProperties() ){
+            AgensVertexProperty property = new AgensVertexProperty(this, item);
+            this.properties.put( property.key(), property );
+        }
     }
 
     public AgensVertex(final Object id, final String label, final AgensGraph graph) {
@@ -53,7 +54,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public void remove() {
         this.graph.tx().readWrite();
         // remove connected AgensEdges and AgensVertex
-        final Iterable<ElasticEdge> edges = graph.baseGraph.findEdgesOfVertexWithDirection(id().toString(),Direction.BOTH);
+        final Iterable<ElasticEdge> edges = graph.baseGraph.findEdgesOfVertex(id().toString(), Direction.BOTH);
         for( ElasticEdge edge : edges ) {
             edge.delete();
             graph.baseGraph.deleteEdge(edge);
@@ -77,7 +78,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
         this.graph.tx().readWrite();
         final VertexProperty<V> vertexProperty = this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
-        if (null == this.properties) this.properties = new ConcurrentHashMap<>();
+        if( this.properties == null ) this.properties = new HashMap<>();
         this.properties.put(key, vertexProperty);
         return vertexProperty;
     }
@@ -106,20 +107,13 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
 
         this.graph.tx().readWrite();
-        return new Iterator<Vertex>() {
-            final Iterator<ElasticVertex> neighborIterator = IteratorUtils.filter(
-                    graph.baseGraph.findNeighborVerticesWithDirectionAndLabels(id().toString(), direction, edgeLabels).iterator()
-                    , graph.trait.getVertexPredicate());
+        Iterable<ElasticVertex> bases = graph.baseGraph.findNeighborVertices(id().toString(), direction, edgeLabels);
+        final List<Vertex> vertices = new ArrayList<>();
+        for( ElasticVertex base : bases ){
+            vertices.add( new AgensVertex(base, graph));
+        }
 
-            @Override
-            public boolean hasNext() {
-                return this.neighborIterator.hasNext();
-            }
-            @Override
-            public AgensVertex next() {
-                return new AgensVertex(this.neighborIterator.next(), graph);
-            }
-        };
+        return vertices.iterator();
     }
 
     // 정점의 연결간선들 (방향, 연결간선의 라벨셋)
@@ -129,26 +123,14 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return edgeIterator;
 
         this.graph.tx().readWrite();
-        return new Iterator<Edge>() {
-            final Iterator<ElasticEdge> relationshipIterator = IteratorUtils.filter(
-                graph.baseGraph.findEdgesOfVertexWithDirectionAndLabels(id().toString(), direction, edgeLabels).iterator()
-                , graph.trait.getEdgePredicate());
-
-            @Override
-            public boolean hasNext() {
-                return this.relationshipIterator.hasNext();
-            }
-            @Override
-            public AgensEdge next() {
-                return new AgensEdge(this.relationshipIterator.next(), graph);
-            }
-        };
+        Iterable<ElasticEdge> bases = graph.baseGraph.findEdgesOfVertex(id().toString(), direction, edgeLabels);
+        final List<Edge> edges = new ArrayList<>();
+        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        return edges.iterator();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public String toString() {
-        return StringFactory.vertexString(this);
-    }
+    public String toString() { return "v[" + id() + "]"; }
 }

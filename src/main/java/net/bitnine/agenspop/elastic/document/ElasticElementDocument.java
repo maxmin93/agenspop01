@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public abstract class ElasticElementDocument implements ElasticElement {
 
     public static final String DEFAULT_DATASOURCE = "default";
-    public static final String ID_DELIMITER = "@@";
+    public static final String ID_DELIMITER = "_";
     // Except special characters ==> + - && || ! ( ) { } [ ] ^ " ~ * ? : \
 
     @Id
@@ -103,10 +103,6 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
 
     @Override
-    public ElasticProperty setProperty(String key, Object value) {
-        return setProperty(key, value.getClass().getName(), value);
-    }
-    @Override
     public boolean setProperty(ElasticProperty property) {
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(property.getKey())).collect(Collectors.toList());
         if( result.size() > 0 ){
@@ -117,6 +113,10 @@ public abstract class ElasticElementDocument implements ElasticElement {
         return properties.add((ElasticPropertyDocument) property);
     }
 
+    @Override
+    public ElasticProperty setProperty(String key, Object value) {
+        return setProperty(key, value.getClass().getName(), value);
+    }
     @Override
     public ElasticProperty setProperty(String key, String type, Object value){
         List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());

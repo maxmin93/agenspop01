@@ -1,19 +1,14 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
-import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -26,8 +21,11 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
-        this.properties = edge.getProperties().stream().collect(
-                Collectors.toMap(r->((ElasticProperty)r).getKey(), r->(Property)r));
+        this.properties = new HashMap<>();
+        for( ElasticProperty item : edge.getProperties() ){
+            AgensProperty property = new AgensProperty(this, item);
+            this.properties.put( property.key(), property );
+        }
     }
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
@@ -84,7 +82,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
         this.graph.tx().readWrite();
         final AgensProperty<V> property = new AgensProperty<V>(this, key, value);
-        if (null == this.properties) this.properties = new ConcurrentHashMap<>();
+        if( this.properties == null ) this.properties = new HashMap<>();
         this.properties.put(key, property);
         return property;
     }
@@ -110,9 +108,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     @Override
     public String toString() {
-        return StringFactory.edgeString(this);
+        return "e[" + getBaseEdge().getId() + "]" + "[" + getBaseEdge().getSid() + "->" + getBaseEdge().getTid() + "]";
     }
-
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction) {

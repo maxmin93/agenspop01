@@ -303,6 +303,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public Iterable<ElasticVertex> findVertices(final String... ids){
+        if( ids.length == 0 ) return Collections.EMPTY_LIST;
         List<? extends ElasticVertex> list = vertexRepository.findByIdIn(Arrays.asList(ids));
         return (List<ElasticVertex>)list;
     }
@@ -341,26 +342,15 @@ public class ElasticGraphService implements ElasticGraphAPI {
     }
 
     @Override
-    public Iterable<ElasticVertex> findNeighborVertices(String id){
-        return findNeighborVerticesWithDirectionAndLabels(id, Direction.BOTH);
-    }
-    @Override
-    public Iterable<ElasticVertex> findNeighborVerticesWithDirection(String id, Direction direction){
-        return findNeighborVerticesWithDirectionAndLabels(id, direction);
-    }
-    @Override
-    public Iterable<ElasticVertex> findNeighborVerticesWithLabels(String id, final String... labels){
-        return findNeighborVerticesWithDirectionAndLabels(id, Direction.BOTH, labels);
-    }
-    @Override
-    public Iterable<ElasticVertex> findNeighborVerticesWithDirectionAndLabels(String id, Direction direction, final String... labels){
-        final Iterable<ElasticEdge> edges = (labels.length > 0) ?
-                findEdgesOfVertexWithDirectionAndLabels(id, direction, labels)
-                : findEdgesOfVertexWithDirection(id, direction);
+    public Iterable<ElasticVertex> findNeighborVertices(String id, Direction direction, final String... labels){
+        final Iterable<? extends ElasticEdge> edges = findEdgesOfVertex(id, direction, labels);
         List<String> vids = StreamSupport.stream(edges.spliterator(),false)
                 .map(s->Arrays.asList(s.getSid(),s.getTid()))
-                .flatMap(List::stream).distinct().collect(Collectors.toList());
-        return findVertices( vids.toArray(new String[vids.size()]) );
+                .flatMap(List::stream).distinct()
+                .filter(r -> !r.equals(id))
+                .collect(Collectors.toList());
+        return vids.size() > 0 ? findVertices( vids.toArray(new String[vids.size()]) )
+                    : Collections.EMPTY_LIST;
     }
 
     //////////////////////////////////////////////////
@@ -369,31 +359,26 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
 
     @Override
-    public Iterable<ElasticEdge> findEdgesOfVertexWithDirection(String id, Direction direction){
+    public Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, final String... labels) {
         final Iterable<? extends ElasticEdge> list;
-        if( direction.equals(Direction.OUT) )       // source vertex of edge
-            list = edgeRepository.findBySid(id);
-        else if ( direction.equals(Direction.IN) )  // target vertex of edge
-            list = edgeRepository.findByTid(id);
-        else
-            list = Sets.newHashSet( Iterables.concat(
-                    edgeRepository.findBySid(id), edgeRepository.findByTid(id)
-                ));
-        return (Iterable<ElasticEdge>) list;
-    }
-
-    @Override
-    public Iterable<ElasticEdge> findEdgesOfVertexWithDirectionAndLabels(String id, Direction direction, final String... labels){
-        final Iterable<? extends ElasticEdge> list;
-        if( direction.equals(Direction.OUT) )       // source vertex of edge
-            list = edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels));
-        else if ( direction.equals(Direction.IN) )  // target vertex of edge
-            list = edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels));
-        else
-            list = Sets.newHashSet( Iterables.concat(
-                    edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels))
-                    , edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels))
-                ));
+        if( direction.equals(Direction.OUT) ){       // source vertex of edge
+            list = ( labels.length == 0 ) ? edgeRepository.findBySid(id)
+                    : edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels));
+        }
+        else if ( direction.equals(Direction.IN) ) {  // target vertex of edge
+            list = ( labels.length == 0 ) ? edgeRepository.findByTid(id)
+                    : edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels));
+        }
+        else{
+            list = ( labels.length == 0 ) ?
+                    Sets.newHashSet( Iterables.concat(
+                        edgeRepository.findBySid(id), edgeRepository.findByTid(id)
+                    ))
+                    : Sets.newHashSet( Iterables.concat(
+                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels)),
+                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels))
+                    ));
+        }
         return (Iterable<ElasticEdge>) list;
     }
 
