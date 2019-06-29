@@ -95,8 +95,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     public void remove() {
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
-        this.properties = null;
         this.removed = true;
+        this.properties = null;
 
         ElasticEdge baseEdge = this.getBaseEdge();
         try {

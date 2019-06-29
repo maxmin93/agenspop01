@@ -38,7 +38,7 @@ public class ElasticEdgeDocument extends ElasticElementDocument implements Elast
 
     @Override
     public String toString() {
-        return "ElasticEdge{ " +
+        return "ElasticEdge{" +
                 " deleted=" + deleted +
                 ", id='" + id + '\'' +
                 ", label='" + label + '\'' +

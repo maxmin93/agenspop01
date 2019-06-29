@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 public abstract class ElasticElementDocument implements ElasticElement {
 
     public static final String DEFAULT_DATASOURCE = "default";
-    public static final String ID_DELIMITER = "::";
+    public static final String ID_DELIMITER = "@@";
+    // Except special characters ==> + - && || ! ( ) { } [ ] ^ " ~ * ? : \
 
     @Id
     protected String id;
@@ -28,17 +29,13 @@ public abstract class ElasticElementDocument implements ElasticElement {
     @Version
     protected Long version;
 
-//    **NOTE: deprecated at 2019-06-20
-//    @Field(type = FieldType.Integer)
-//    protected Integer eid;
-
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Keyword)    // not_analyzed
     protected String label;
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Keyword)    // not_analyzed
     protected String datasource;
 
     @Field(type = FieldType.Nested, includeInParent = true)
-    protected Set<ElasticProperty> properties = new HashSet<>();
+    protected Set<ElasticPropertyDocument> properties = new HashSet<>();
 
     protected ElasticElementDocument(){
         this.deleted = false;
@@ -80,10 +77,14 @@ public abstract class ElasticElementDocument implements ElasticElement {
     @Override public Iterable<String> getKeys(){
         return properties.stream().map(ElasticProperty::getKey).collect(Collectors.toList());
     }
-    @Override public void setProperties(Set<ElasticProperty> properties){
+    @Override public void setProperties(Set<ElasticPropertyDocument> properties){
         this.properties = properties;
+//        this.properties = properties.stream().map(s->(ElasticPropertyDocument)s).collect(Collectors.toSet());
     }
-    @Override public Set<ElasticProperty> getProperties(){ return this.properties; }
+    @Override public Set<ElasticPropertyDocument> getProperties(){
+        return this.properties;
+//        return this.properties.stream().map(s->(ElasticProperty)s).collect(Collectors.toSet());
+    }
 
     /////////////////////////////////////////
 
@@ -113,7 +114,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
                 properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
             });
         }
-        return properties.add(property);
+        return properties.add((ElasticPropertyDocument) property);
     }
 
     @Override
@@ -125,7 +126,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
             });
         }
         ElasticProperty prop = new ElasticPropertyDocument(key, type, value);
-        return properties.add(prop) ? prop : null;
+        return properties.add((ElasticPropertyDocument)prop) ? prop : null;
     }
 
     @Override
@@ -146,6 +147,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     @Override public void delete(){
         this.deleted = true;
+        this.properties = null;
     }
     @Override public boolean isDeleted(){
         return deleted.booleanValue();

@@ -1,12 +1,9 @@
 package net.bitnine.agenspop.graph.structure.trait;
 
-import com.google.common.collect.Iterables;
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
-import net.bitnine.agenspop.graph.process.traversal.LabelP;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensHelper;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
@@ -49,8 +46,8 @@ public class SimpleAgensTrait implements AgensTrait {
         ElasticGraphAPI api = ((AgensGraph)vertex.graph()).getBaseGraph();
         ElasticVertex baseVertex = vertex.getBaseVertex();
         try {
-            baseVertex.delete();        // marking deleted
-            api.deleteVertex( baseVertex );  // remove ElasticVertex
+            baseVertex.delete();            // marking deleted
+            api.deleteVertex( baseVertex ); // remove ElasticVertex
         } catch (final RuntimeException ex) {
             if (!AgensHelper.isNotFound(ex)) throw ex;
         }
@@ -156,7 +153,7 @@ public class SimpleAgensTrait implements AgensTrait {
         if (!label.isPresent())
             label = hasContainers.stream()
                     .filter(hasContainer -> hasContainer.getKey().equals(T.label.getAccessor()))
-                    .filter(hasContainer -> hasContainer.getPredicate() instanceof LabelP)
+//                    .filter(hasContainer -> hasContainer.getPredicate() instanceof LabelP)
                     .map(hasContainer -> (String) hasContainer.getValue())
                     .findAny();
 

@@ -2,16 +2,14 @@ package net.bitnine.agenspop.graph.structure;
 
 
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.T;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.*;
 
 import java.io.InputStream;
 import java.util.List;
@@ -83,16 +81,22 @@ public final class AgensFactory {
         josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
 
+        try{
+            Thread.sleep(1000);
+            // Then do something meaningful...
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }
         // remove test ==> vertex{1}, edge{7,8,9}
-        System.out.println("  - before remove V(marko): "+g.toString());
-        marko.remove();
+//        System.out.println("  - before remove V(marko): "+g.toString());
+//        marko.remove();
 
-/*
         GraphTraversalSource t = g.traversal();
         List<Vertex> vertexList = t.V().next(100);
         System.out.println("  - list vertices ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         List<Edge> edgeList = t.E().next(100);
         System.out.println("  - list edges ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+/*
         vertexList = t.V("modern::5", "modern::4", "modern::3").next(100);
         System.out.println("  - vertex ids ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         edgeList = t.V("modern::2").bothE().next(100);
@@ -100,7 +104,6 @@ public final class AgensFactory {
         Vertex v1 = t.V("modern::1").next();
         vertexList = t.V(v1).out().next(100);
         System.out.println("  - vertex(1) out neighbors ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
-
         List<Object> valueList = t.V().values("name").next(100);
         System.out.println("  - vertices.value('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
 

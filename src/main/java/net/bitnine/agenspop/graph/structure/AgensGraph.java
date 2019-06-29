@@ -527,7 +527,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
      * @param <T> the id type
      */
     public interface IdManager<T> {
-        static String MIX_DELIMITER = "::";
         /**
          * Generate an identifier which should be unique to the {@link AgensGraph} instance.
          */

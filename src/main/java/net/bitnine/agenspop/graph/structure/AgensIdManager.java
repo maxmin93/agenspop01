@@ -1,5 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
+import net.bitnine.agenspop.elastic.document.ElasticElementDocument;
+
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -109,10 +111,10 @@ public enum AgensIdManager implements AgensGraph.IdManager {
      */
     MIX_ID {
         private String generateId(final AgensGraph graph){
-            return graph.name()+MIX_DELIMITER+graph.currentId.incrementAndGet();
+            return graph.name()+ ElasticElementDocument.ID_DELIMITER+graph.currentId.incrementAndGet();
         }
         private String generateId(final Integer index, final AgensGraph graph){
-            String id = graph.name()+MIX_DELIMITER+index;
+            String id = graph.name()+ElasticElementDocument.ID_DELIMITER+index;
             if( !graph.baseGraph.existsVertex(id) && !graph.baseGraph.existsEdge(id) ) return id;
             else return getNextId(graph);
         }
@@ -132,7 +134,7 @@ public enum AgensIdManager implements AgensGraph.IdManager {
                 return generateId((Integer)id, graph);
             else if (id instanceof Number)
                 return generateId(((Number) id).intValue(), graph);
-            else if (id instanceof String && ((String)id).indexOf(MIX_DELIMITER) > 0)
+            else if (id instanceof String && ((String)id).indexOf(ElasticElementDocument.ID_DELIMITER) > 0)
                 return id;
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to Mix(String) but received %s", id.getClass()));
@@ -141,7 +143,7 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         public Object convert(final Object id) {
             if (null == id)
                 return null;
-            else if (id instanceof String && ((String)id).indexOf(MIX_DELIMITER) > 0)
+            else if (id instanceof String && ((String)id).indexOf(ElasticElementDocument.ID_DELIMITER) > 0)
                 return id;
             else
                 throw new IllegalArgumentException(String.format("Expected an id that is convertible to Mix(String) but received %s", id.getClass()));
@@ -149,9 +151,9 @@ public enum AgensIdManager implements AgensGraph.IdManager {
 
         @Override
         public boolean allow(final Object id) {
-            if( id != null && id instanceof String && ((String)id).indexOf(MIX_DELIMITER) > 0){
+            if( id != null && id instanceof String && ((String)id).indexOf(ElasticElementDocument.ID_DELIMITER) > 0){
                 try {
-                    if( Integer.valueOf(((String) id).split(MIX_DELIMITER)[1]) > 0 ) return true;
+                    if( Integer.valueOf(((String) id).split(ElasticElementDocument.ID_DELIMITER)[1]) > 0 ) return true;
                 }catch (NumberFormatException ex){ }
             }
             return false;

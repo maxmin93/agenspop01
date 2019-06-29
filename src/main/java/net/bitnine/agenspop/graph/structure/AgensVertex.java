@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
  */
 public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertex> {
 
-    public static final String LABEL_DELIMINATOR = "::";
-
     protected Map<String, VertexProperty> properties;
 //    protected Map<String, Set<Edge>> outEdges;
 //    protected Map<String, Set<Edge>> inEdges;
@@ -55,9 +53,11 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public void remove() {
         this.graph.tx().readWrite();
         // remove connected AgensEdges and AgensVertex
-        final List<Edge> edges = new ArrayList<>();
-        this.edges(Direction.BOTH).forEachRemaining(edges::add);
-        edges.stream().filter(edge -> !((AgensEdge) edge).removed).forEach(Edge::remove);
+        final Iterable<ElasticEdge> edges = graph.baseGraph.findEdgesOfVertexWithDirection(id().toString(),Direction.BOTH);
+        for( ElasticEdge edge : edges ) {
+            edge.delete();
+            graph.baseGraph.deleteEdge(edge);
+        }
         // post processes of remove vertex : properties, graph, marking
         this.properties = null;
         this.removed = true;
