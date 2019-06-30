@@ -269,8 +269,6 @@ public class ElasticGraphService implements ElasticGraphAPI {
         Terms labels = aggregations.get("datasources");
         labels.getBuckets().forEach(b->{
             result.put(b.getKeyAsString(), b.getDocCount());
-            // for DEBUG
-            System.out.println("  - key="+b.getKeyAsString() + ", cnt=" + b.getDocCount());
         });
         return result;
     }
@@ -298,8 +296,6 @@ public class ElasticGraphService implements ElasticGraphAPI {
         Terms labels = aggregations.get("datasources");
         labels.getBuckets().forEach(b->{
             result.put(b.getKeyAsString(), b.getDocCount());
-            // for DEBUG
-            System.out.println("  - key="+b.getKeyAsString() + ", cnt=" + b.getDocCount());
         });
         return result;
     }

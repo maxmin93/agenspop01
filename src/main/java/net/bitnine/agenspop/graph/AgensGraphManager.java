@@ -17,6 +17,7 @@ import java.util.function.Function;
 import java.util.Set;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +37,17 @@ public class AgensGraphManager implements GraphManager {
             = "Gremlin Server must be configured to use the AgensGraphManager.";
     public static final Function<String, String> GRAPH_TRAVERSAL_NAME = (String gName) -> gName + "_traversal";
 
+    // Datasources based on Vertex index
     private final Map<String, Graph> graphs = new ConcurrentHashMap<>();
     private final Map<String, TraversalSource> traversalSources = new ConcurrentHashMap<>();
+
     private final Object instantiateGraphLock = new Object();
     private GremlinExecutor gremlinExecutor = null;
 
     private final ElasticGraphAPI baseGraph;
     private static AgensGraphManager instance = null;
+
+    private final Map<String, Long> datasources = new ConcurrentHashMap<>();
 
     /**
      * This class adheres to the TinkerPop graphManager specifications. It provides a coordinated
@@ -54,35 +59,42 @@ public class AgensGraphManager implements GraphManager {
     @Autowired
     public AgensGraphManager(ElasticGraphService baseGraph) {
         this.baseGraph = baseGraph;
-        initialize();
-    }
-
-    private synchronized void initialize() {
-        if (null != instance) {
-            final String errMsg = "You may not instantiate a AgensGraphManager. The single instance should be handled by Tinkerpop's GremlinServer startup processes.";
-            throw new AgensGraphManagerException(errMsg);
-        }
-        instance = this;
+        this.instance = this;
         // for DEBUG
         System.out.println("AgensGraphManager is initializing.");
     }
 
-    @PostConstruct
-    private synchronized void ready(){
-        String gName = "modern";
-        AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
-        // AgensFactory.generateModern(g);
-        putGraph(gName, g);
-        updateTraversalSource(gName, g);
-        // for DEBUG
-        System.out.println("AgensGraphManager ready: "+g.toString());
-
-        // for Verify
-        // http://localhost:9200/elasticvertex/_search?pretty=true&q=*:*
-    }
-
     public static AgensGraphManager getInstance() {
         return instance;
+    }
+
+    @PostConstruct
+    private synchronized void ready(){
+        // check exist datasources
+        Map<String, Long> dsVlist = baseGraph.listVertexDatasources();
+        Map<String, Long> dsElist = baseGraph.listEdgeDatasources();
+
+        // if not exists, insert sample of modern graph
+        if( dsVlist.size() == 0 || dsVlist.values().stream().reduce(0L, (a,b)->a+b) == 0L ){
+            String gName = "modern";
+            AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
+            AgensFactory.generateModern(g);
+            putGraph(gName, g);
+            updateTraversalSource(gName, g);
+        }
+
+        // graphs loading
+        StringBuilder sb = new StringBuilder();
+        for(Map.Entry<String, Long> ds : dsVlist.entrySet() ){
+            AgensGraph g = AgensFactory.createEmpty(baseGraph, ds.getKey());
+            putGraph(ds.getKey(), g);
+            updateTraversalSource(ds.getKey(), g);
+            sb.append(" ").append(ds.getKey()).append("[V=").append(ds.getValue()).append(",E=")
+                    .append(dsElist.getOrDefault(ds.getKey(), 0L))
+                    .append("],");
+        }
+        if( sb.length() > 1 ) sb.setLength(sb.length() - 1);
+        System.out.println("AgensGraphManager ready ==>"+sb.toString());
     }
 
 /*
