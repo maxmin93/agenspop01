@@ -66,10 +66,10 @@ public class ElasticGraphService implements ElasticGraphAPI {
 //        this.operations = operations;
     }
 
-    @PreDestroy
-    public void deleteIndices() {
-        this.shutdown();
-    }
+//    @PreDestroy
+//    public void deleteIndices() {
+//        this.shutdown();
+//    }
 
     @PostConstruct
     public void insertDataSample() {
@@ -156,25 +156,33 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public void shutdown(){
-        template.deleteIndex(ElasticVertexDocument.class);
-        System.out.println("** Delete index before destruction : "+VERTEX_INDEX_NAME);
-        template.deleteIndex(ElasticEdgeDocument.class);
-        System.out.println("** Delete index before destruction : "+EDGE_INDEX_NAME);
+        if( template.indexExists(ElasticVertexDocument.class) ) {
+            template.deleteIndex(ElasticVertexDocument.class);
+            System.out.println("** Delete index before destruction : " + VERTEX_INDEX_NAME);
+        }
+        if( template.indexExists(ElasticEdgeDocument.class) ) {
+            template.deleteIndex(ElasticEdgeDocument.class);
+            System.out.println("** Delete index before destruction : " + EDGE_INDEX_NAME);
+        }
     }
 
     @Override
     public void startup(){
-        // create index of Vertex documents
-        template.createIndex(ElasticVertexDocument.class);
-        template.putMapping(ElasticVertexDocument.class);
-        template.refresh(ElasticVertexDocument.class);
-        System.out.println("** create index of documents : "+VERTEX_INDEX_NAME);
+        if( !template.indexExists(ElasticVertexDocument.class) ){
+            // create index of Vertex documents
+            template.createIndex(ElasticVertexDocument.class);
+            template.putMapping(ElasticVertexDocument.class);
+            template.refresh(ElasticVertexDocument.class);
+            System.out.println("** create index of documents : "+VERTEX_INDEX_NAME);
+        }
 
-        // create index of Edge documents
-        template.createIndex(ElasticEdgeDocument.class);
-        template.putMapping(ElasticEdgeDocument.class);
-        template.refresh(ElasticEdgeDocument.class);
-        System.out.println("** create index of documents : "+EDGE_INDEX_NAME);
+        if( !template.indexExists(ElasticEdgeDocument.class) ) {
+            // create index of Edge documents
+            template.createIndex(ElasticEdgeDocument.class);
+            template.putMapping(ElasticEdgeDocument.class);
+            template.refresh(ElasticEdgeDocument.class);
+            System.out.println("** create index of documents : " + EDGE_INDEX_NAME);
+        }
     }
 
     //////////////////////////////////////////////////

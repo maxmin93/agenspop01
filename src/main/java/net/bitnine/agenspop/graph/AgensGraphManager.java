@@ -71,7 +71,7 @@ public class AgensGraphManager implements GraphManager {
     private synchronized void ready(){
         String gName = "modern";
         AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
-        AgensFactory.generateModern(g);
+        // AgensFactory.generateModern(g);
         putGraph(gName, g);
         updateTraversalSource(gName, g);
         // for DEBUG
