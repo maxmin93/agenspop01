@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.web;
 
+import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
@@ -18,11 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -64,6 +64,42 @@ public class GraphController {
     public String hello() throws Exception {
         return "{ \"msg\": \"Hello, graph!\"}";
     }
+
+    @GetMapping("/{datasource}/v")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> listAllV(@PathVariable String datasource) throws Exception {
+        AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
+        if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
+
+        List<AgensVertex> vertices = new ArrayList<>();
+        Iterator<Vertex> iter = g.vertices();
+        while( iter.hasNext() ){
+            vertices.add((AgensVertex) iter.next());
+        }
+
+        String json = "{}";
+        json = mapperV1.writeValueAsString(vertices);     // AgensIoRegistryV1
+        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{datasource}/e")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> listAllE(@PathVariable String datasource) throws Exception {
+        AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
+        if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
+
+        List<AgensEdge> edges = new ArrayList<>();
+        Iterator<Edge> iter = g.edges();
+        while( iter.hasNext() ){
+            edges.add((AgensEdge)iter.next());
+        }
+
+        String json = "{}";
+        json = mapperV1.writeValueAsString(edges);     // AgensIoRegistryV1
+        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+    }
+
+    ///////////////////////////////////////////
 
     @GetMapping("/gtest0")
     public ResponseEntity<DetachedGraph> graphTest0() throws Exception {
