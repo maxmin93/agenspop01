@@ -9,10 +9,8 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import javax.swing.text.html.Option;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -35,7 +33,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
     protected String datasource;
 
     @Field(type = FieldType.Nested, includeInParent = true)
-    protected Set<ElasticPropertyDocument> properties = new HashSet<>();
+    protected Set<ElasticPropertyDocument> properties = ConcurrentHashMap.newKeySet();
 
     protected ElasticElementDocument(){
         this.deleted = false;
@@ -90,26 +88,21 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     @Override
     public Optional<ElasticProperty> getProperty(String key){
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        if( result.size() == 0 ) return Optional.empty();
-        return Optional.of(result.get(0));
+        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
+        if( !iter.hasNext() ) return Optional.empty();
+        return Optional.of(iter.next());
     }
 
     @Override
     public ElasticProperty getProperty(String key, Object defaultValue){
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        if( result.size() == 0 ) return new ElasticPropertyDocument(key, defaultValue.getClass().getName(), defaultValue);
-        return result.get(0);
+        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
+        if( !iter.hasNext() ) return new ElasticPropertyDocument(key, defaultValue.getClass().getName(), defaultValue);
+        return iter.next();
     }
 
     @Override
     public boolean setProperty(ElasticProperty property) {
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(property.getKey())).collect(Collectors.toList());
-        if( result.size() > 0 ){
-            result.forEach(r->{
-                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
-            });
-        }
+        removeProperty(property.getKey());
         return properties.add((ElasticPropertyDocument) property);
     }
 
@@ -119,30 +112,22 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
     @Override
     public ElasticProperty setProperty(String key, String type, Object value){
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        if( result.size() > 0 ){
-            result.forEach(r->{
-                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
-            });
-        }
-        ElasticProperty prop = new ElasticPropertyDocument(key, type, value);
-        return properties.add((ElasticPropertyDocument)prop) ? prop : null;
+        ElasticProperty property = new ElasticPropertyDocument(key, type, value);
+        return setProperty(property) ? property : null;
     }
 
     @Override
-    public boolean removeProperty(String key){
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        if( result.size() > 0 ){
-            result.forEach(r->{
-                properties.stream().filter(p->p.equals(r)).forEach(properties::remove);
-            });
+    public void removeProperty(String key){
+        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
+        while( iter.hasNext() ){
+            ElasticPropertyDocument property = iter.next();
+            iter.remove();
         }
-        return result.size() > 0;
     }
 
     @Override public boolean hasProperty(String key){
-        List<ElasticProperty> result = properties.stream().filter(p->p.getKey().equals(key)).collect(Collectors.toList());
-        return result.size() > 0;
+        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
+        return iter.hasNext();
     }
 
     @Override public void delete(){

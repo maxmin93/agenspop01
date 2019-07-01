@@ -22,10 +22,11 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
             Exception ex, WebRequest request) {
 
         CustomErrorResponse errors = new CustomErrorResponse();
-        errors.setTimestamp(LocalDateTime.now());
-        errors.setError(ex.getMessage());
         errors.setStatus(HttpStatus.NOT_FOUND.value());
+        errors.setTimestamp(LocalDateTime.now());
         errors.setType("AgensGremlinException");
+        errors.setError(ex.getMessage());
+        if( ex.getCause() != null ) errors.setCause(ex.getCause().getMessage());
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
@@ -35,10 +36,11 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
             Exception ex, WebRequest request) {
 
         CustomErrorResponse errors = new CustomErrorResponse();
-        errors.setTimestamp(LocalDateTime.now());
-        errors.setError(ex.getMessage());
         errors.setStatus(HttpStatus.NOT_FOUND.value());
+        errors.setTimestamp(LocalDateTime.now());
         errors.setType("AgensGraphManagerException");
+        errors.setError(ex.getMessage());
+        if( ex.getCause() != null ) errors.setCause(ex.getCause().getMessage());
 
         return new ResponseEntity<>(errors, HttpStatus.NOT_FOUND);
     }
@@ -48,10 +50,11 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
             Exception ex, WebRequest request) {
 
         CustomErrorResponse errors = new CustomErrorResponse();
-        errors.setTimestamp(LocalDateTime.now());
-        errors.setError(ex.getMessage());
         errors.setStatus(HttpStatus.NOT_FOUND.value());
+        errors.setTimestamp(LocalDateTime.now());
         errors.setType("AgensGraphException");
+        errors.setError(ex.getMessage());
+        if( ex.getCause() != null ) errors.setCause(ex.getCause().getMessage());
 
         return new ResponseEntity<>(errors, HttpStatus.NOT_FOUND);
     }
@@ -61,10 +64,11 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
             Exception ex, WebRequest request) {
 
         CustomErrorResponse errors = new CustomErrorResponse();
-        errors.setTimestamp(LocalDateTime.now());
-        errors.setError(ex.getMessage());
         errors.setStatus(HttpStatus.NOT_FOUND.value());
+        errors.setTimestamp(LocalDateTime.now());
         errors.setType("IllegalArgumentException");
+        errors.setError(ex.getMessage());
+        if( ex.getCause() != null ) errors.setCause(ex.getCause().getMessage());
 
         return new ResponseEntity<>(errors, HttpStatus.NOT_FOUND);
     }
@@ -72,12 +76,12 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CustomErrorResponse> handleDefaultException(
             Exception ex, WebRequest request) {
-
         CustomErrorResponse errors = new CustomErrorResponse();
-        errors.setTimestamp(LocalDateTime.now());
-        errors.setError(ex.getMessage());
         errors.setStatus(HttpStatus.BAD_REQUEST.value());
+        errors.setTimestamp(LocalDateTime.now());
         errors.setType("OtherException");
+        errors.setError(ex.getMessage());
+        if( ex.getCause() != null ) errors.setCause(ex.getCause().getMessage());
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }

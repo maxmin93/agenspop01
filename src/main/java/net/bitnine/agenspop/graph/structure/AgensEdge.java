@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
+import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
@@ -9,23 +10,24 @@ import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
-    protected Map<String, Property> properties;
+//    protected Map<String, Property> properties;
 //    protected final Vertex outVertex;       // sourceV
 //    protected final Vertex inVertex;        // targetV
 
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
-        this.properties = new HashMap<>();
-        for( ElasticProperty item : edge.getProperties() ){
-            AgensProperty property = new AgensProperty(this, item);
-            this.properties.put( property.key(), property );
-        }
+//        this.properties = new HashMap<>();
+//        for( ElasticProperty item : edge.getProperties() ){
+//            AgensProperty property = new AgensProperty(this, item);
+//            this.properties.put( property.key(), property );
+//        }
     }
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
@@ -79,23 +81,23 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public <V> Property<V> property(final String key, final V value) {
         ElementHelper.validateProperty(key, value);
+//        if( this.properties == null ) this.properties = new HashMap<>();
 
         this.graph.tx().readWrite();
-        final AgensProperty<V> property = new AgensProperty<V>(this, key, value);
-        if( this.properties == null ) this.properties = new HashMap<>();
-        this.properties.put(key, property);
-        return property;
+        ElasticProperty propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), value);
+        baseElement.setProperty(propertyBase);
+        return new AgensProperty<V>(this, propertyBase);
     }
 
     ////////////////////////////////
 
     @Override
     public void remove() {
+        if( this.removed ) return;
+
+        this.removed = true;
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
-        this.removed = true;
-        this.properties = null;
-
         ElasticEdge baseEdge = this.getBaseEdge();
         try {
             baseEdge.delete();                          // marking deleted

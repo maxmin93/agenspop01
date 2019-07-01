@@ -45,7 +45,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     @Override
     public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
-        if (null == inVertex) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        if (inVertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
         if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
         return AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
     }

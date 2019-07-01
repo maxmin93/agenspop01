@@ -11,6 +11,7 @@ public class CustomErrorResponse {
     private LocalDateTime timestamp;
     private int status;
     private String error;
+    private String cause = "";
 
     //...getters setters
 
@@ -41,4 +42,7 @@ public class CustomErrorResponse {
     public void setType(String type) {
         this.type = type;
     }
+
+    public String getCause() { return cause; }
+    public void setCause(String cause) { this.cause = cause; }
 }

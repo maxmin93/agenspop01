@@ -390,8 +390,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             GraphSONUtil.writeWithType(GraphSONTokens.ID, edge.id(), jsonGenerator, serializerProvider, typeSerializer);
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, edge.label());
             jsonGenerator.writeStringField("datasource", ((AgensGraph)edge.graph()).name());
-            GraphSONUtil.writeWithType("target", edge.inVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
-            GraphSONUtil.writeWithType("source", edge.outVertex().id(), jsonGenerator, serializerProvider, typeSerializer);
+            jsonGenerator.writeStringField("source", edge.getBaseEdge().getSid());
+            jsonGenerator.writeStringField("target", edge.getBaseEdge().getTid());
             writeProperties(edge, jsonGenerator, serializerProvider, typeSerializer);
 
             jsonGenerator.writeEndObject();
@@ -405,18 +405,13 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         private void writeProperties(final AgensEdge edge, final JsonGenerator jsonGenerator,
                                      final SerializerProvider serializerProvider,
                                      final TypeSerializer typeSerializer) throws IOException {
-            final Iterator<Property<Object>> elementProperties = normalize ?
-                    IteratorUtils.list(edge.properties(), Comparators.PROPERTY_COMPARATOR).iterator()
-                    : edge.properties();
-            if (elementProperties.hasNext()) {
-                jsonGenerator.writeObjectFieldStart(GraphSONTokens.PROPERTIES);
-                if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
-                while (elementProperties.hasNext()) {
-                    final Property<Object> elementProperty = elementProperties.next();
-                    GraphSONUtil.writeWithType(elementProperty.key(), elementProperty.value(), jsonGenerator, serializerProvider, typeSerializer);
-                }
-                jsonGenerator.writeEndObject();
+            jsonGenerator.writeObjectFieldStart(GraphSONTokens.PROPERTIES);
+            Iterator<Property<Object>> iter = edge.properties();
+            while( iter.hasNext() ){
+                AgensProperty<Object> p = (AgensProperty)iter.next();
+                GraphSONUtil.writeWithType(p.key(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
             }
+            jsonGenerator.writeEndObject();
         }
 
     }

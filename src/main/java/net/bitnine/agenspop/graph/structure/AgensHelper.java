@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
@@ -25,6 +27,22 @@ public final class AgensHelper {
     private static final String NOT_FOUND_EXCEPTION = "NotFoundException";
 
     private AgensHelper() { }
+
+    public static void attachProperties(final Vertex vertex, final Object... propertyKeyValues) {
+        if (vertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        for (int i = 0; i < propertyKeyValues.length; i = i + 2) {
+            if (!propertyKeyValues[i].equals(T.id) && !propertyKeyValues[i].equals(T.label)){
+                ((AgensVertex)vertex).property((String)propertyKeyValues[i], propertyKeyValues[i + 1]);
+            }
+        }
+    }
+    public static void attachProperties(final Edge edge, final Object... propertyKeyValues) {
+        if (edge == null) throw Graph.Exceptions.argumentCanNotBeNull("edge");
+        for (int i = 0; i < propertyKeyValues.length; i = i + 2) {
+            if (!propertyKeyValues[i].equals(T.id) && !propertyKeyValues[i].equals(T.label))
+                ((AgensEdge)edge).property((String) propertyKeyValues[i], propertyKeyValues[i + 1]);
+        }
+    }
 
     protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
         ElementHelper.validateLabel(label);
