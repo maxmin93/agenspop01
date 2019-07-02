@@ -1,6 +1,8 @@
 package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
+import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.GraphReader;
 import org.apache.tinkerpop.gremlin.structure.io.GraphWriter;
@@ -406,10 +408,11 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                                      final SerializerProvider serializerProvider,
                                      final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeObjectFieldStart(GraphSONTokens.PROPERTIES);
-            Iterator<Property<Object>> iter = edge.properties();
+            List<ElasticProperty> properties = new ArrayList<>(edge.getBaseEdge().getProperties());
+            Iterator<ElasticProperty> iter = properties.iterator();
             while( iter.hasNext() ){
-                AgensProperty<Object> p = (AgensProperty)iter.next();
-                GraphSONUtil.writeWithType(p.key(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
+                ElasticProperty p = (ElasticProperty)iter.next();
+                GraphSONUtil.writeWithType(p.getKey(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
             }
             jsonGenerator.writeEndObject();
         }
