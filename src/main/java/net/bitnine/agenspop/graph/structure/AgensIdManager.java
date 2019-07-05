@@ -114,9 +114,7 @@ public enum AgensIdManager implements AgensGraph.IdManager {
             return graph.name()+ ElasticElementDocument.ID_DELIMITER+graph.currentId.incrementAndGet();
         }
         private String generateId(final Integer index, final AgensGraph graph){
-            String id = graph.name()+ElasticElementDocument.ID_DELIMITER+index;
-            if( !graph.baseGraph.existsVertex(id) && !graph.baseGraph.existsEdge(id) ) return id;
-            else return getNextId(graph);
+            return graph.name()+ElasticElementDocument.ID_DELIMITER+index;
         }
 
         @Override
@@ -130,10 +128,10 @@ public enum AgensIdManager implements AgensGraph.IdManager {
         public Object convert(final Object id, final AgensGraph graph) {
             if (null == id)
                 return null;
-            else if (id instanceof Long)
+            else if (id instanceof Integer)
                 return generateId((Integer)id, graph);
             else if (id instanceof Number)
-                return generateId(((Number) id).intValue(), graph);
+                return generateId(((Number)id).intValue(), graph);
             else if (id instanceof String && ((String)id).indexOf(ElasticElementDocument.ID_DELIMITER) > 0)
                 return id;
             else

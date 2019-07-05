@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ResultsExtractor;
+import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
@@ -135,6 +136,20 @@ public class ElasticGraphService implements ElasticGraphAPI {
     @Override
     public Iterable<? extends ElasticEdge> edges() {
         return edgeRepository.findAll();
+    }
+
+    @Override
+    public boolean removeDatasource(String datasource){
+        // when
+        DeleteQuery deleteQuery = new DeleteQuery();
+        deleteQuery.setQuery(termQuery("datasource", datasource));
+        // delete vertices
+        template.delete(deleteQuery, ElasticVertexDocument.class);
+        template.refresh(ElasticVertexDocument.class);
+        // delete edges
+        template.delete(deleteQuery, ElasticEdgeDocument.class);
+        template.refresh(ElasticEdgeDocument.class);
+        return (countV(datasource) + countE(datasource)) == 0L;
     }
 
     //////////////////////////////////////////////////

@@ -239,6 +239,21 @@ public class AgensGraphManager implements GraphManager {
         }
     }
 
+    public Graph openGraph(String gName) {
+        Graph graph = graphs.get(gName);
+        if (graph != null) {
+            updateTraversalSource(gName, graph);
+            return graph;
+        } else {
+            synchronized (instantiateGraphLock) {
+                graph = AgensFactory.createEmpty(baseGraph, gName);
+                if (graph != null) graphs.put(gName, graph);
+            }
+            updateTraversalSource(gName, graph);
+            return graph;
+        }
+    }
+
     @Override
     public Graph removeGraph(String gName) {
         if (gName == null) return null;

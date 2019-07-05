@@ -34,6 +34,9 @@ public interface ElasticGraphAPI {
     void deleteVertex(ElasticVertex vertex);
     void deleteEdge(ElasticEdge edge);
 
+    long countV();
+    long countE();
+
     //////////////////////////////////////////////////
     //
     // Admin
@@ -48,8 +51,7 @@ public interface ElasticGraphAPI {
     // about Schema
     //
 
-    long countV();
-    long countE();
+    boolean removeDatasource(String datasource);
 
     long countV(String datasource);
     long countE(String datasource);
