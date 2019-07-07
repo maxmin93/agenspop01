@@ -75,7 +75,8 @@ public class AgensGraphManager implements GraphManager {
         Map<String, Long> dsElist = baseGraph.listEdgeDatasources();
 
         // if not exists, insert sample of modern graph
-        if( dsVlist.size() == 0 || dsVlist.values().stream().reduce(0L, (a,b)->a+b) == 0L ){
+//        if( dsVlist.size() == 0 || dsVlist.values().stream().reduce(0L, (a,b)->a+b) == 0L ){
+        if( dsVlist.size() == 0 || !dsVlist.keySet().contains("modern") || dsVlist.get("modern") < 6L ){
             String gName = "modern";
             AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
             AgensFactory.generateModern(g);

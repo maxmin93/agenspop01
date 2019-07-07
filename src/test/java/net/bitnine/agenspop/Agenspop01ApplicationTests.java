@@ -124,11 +124,11 @@ public class Agenspop01ApplicationTests {
 		josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
 		peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
 
-		try {
-			Thread.sleep(500); 	// Then do something meaningful...
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(500); 	// Then do something meaningful...
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 
 		long sizeV = baseGraph.countV(testGraphName);
 		long sizeE = baseGraph.countE(testGraphName);
@@ -178,11 +178,11 @@ public class Agenspop01ApplicationTests {
 
 		v1.remove();
 
-		try {
-			Thread.sleep(500); 	// Then do something meaningful...
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(500); 	// Then do something meaningful...
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 
 		sizeV = baseGraph.countV(testGraphName);
 		sizeE = baseGraph.countE(testGraphName);

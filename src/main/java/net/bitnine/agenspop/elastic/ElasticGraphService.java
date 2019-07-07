@@ -14,6 +14,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -58,7 +59,8 @@ public class ElasticGraphService implements ElasticGraphAPI {
     public ElasticGraphService(
             ElasticVertexRepository vertexRepository,
             ElasticEdgeRepository edgeRepository,
-            ElasticsearchTemplate template
+            ElasticsearchTemplate template,
+            TransportClient client
             //, ElasticsearchOperations operations
     ) {
         this.vertexRepository = vertexRepository;
@@ -150,6 +152,23 @@ public class ElasticGraphService implements ElasticGraphAPI {
         template.delete(deleteQuery, ElasticEdgeDocument.class);
         template.refresh(ElasticEdgeDocument.class);
         return (countV(datasource) + countE(datasource)) == 0L;
+    }
+
+    //////////////////////////////////////////////////
+    //
+    // Bulk Insert/Update (SaveAll)
+    //
+    // ** 참고
+    // https://docs.spring.io/spring-data/elasticsearch/docs/current/api/
+    //
+    // <S extends T> Iterable<S> saveAll(Iterable<S> entities)
+
+    public Iterable<ElasticVertexDocument> bulkInsertV(Iterable<ElasticVertexDocument> vlist){
+        return vertexRepository.saveAll(vlist);
+    }
+
+    public Iterable<ElasticEdgeDocument> bulkInsertE(Iterable<ElasticEdgeDocument> elist){
+        return edgeRepository.saveAll(elist);
     }
 
     //////////////////////////////////////////////////
