@@ -34,8 +34,8 @@ public interface ElasticProperty {
 
     default Object value() throws NoSuchElementException {
         Object value = null;
-        if( !whiteList.contains(getType()) )
-            throw new NoSuchElementException("Collection Types cannot be supported in Property");
+//        if( !whiteList.contains(getType()) )
+//            throw new NoSuchElementException("Collection Types cannot be supported in Property");
 
         try{
             Class cls = Class.forName( getType() );
@@ -43,8 +43,9 @@ public interface ElasticProperty {
             value = cons.newInstance( getValue() );
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
                 | IllegalAccessException | InvocationTargetException ex){
-            throw new NoSuchElementException(String.format("property.value(\"%s\")<%s> exception: %s"
-                    , getValue(), getType(), ex.toString()));
+//            throw new NoSuchElementException(String.format("property.value(\"%s\")<%s> exception: %s"
+//                    , getValue(), getType(), ex.toString()));
+            value = getValue();
         }
         return value;
     }

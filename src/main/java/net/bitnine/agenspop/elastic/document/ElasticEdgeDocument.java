@@ -9,6 +9,8 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.util.stream.Collectors;
 
+// http://localhost:9200/agensedge/_search?pretty=true&size=20&q=datasource:modern
+
 @Document(indexName = "agensedge", type = "agensedge"
         , shards = 1, replicas = 0, refreshInterval = "-1")
 public class ElasticEdgeDocument extends ElasticElementDocument implements ElasticEdge {

@@ -42,6 +42,10 @@ import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
+// http://localhost:9200/_cat/indices?v
+// curl -X DELETE "localhost:9200/article?pretty"
+// curl -X GET "localhost:9200/_cat/indices?v"
+
 @Service
 public class ElasticGraphService implements ElasticGraphAPI {
 
@@ -76,7 +80,13 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @PostConstruct
     public void insertDataSample() {
+        // this.shutdown();
         this.startup();
+
+//        Iterable<ElasticVertex> vertices = findVertices("northwind");
+//        System.out.println("  -- findVertices: northwind V="+((Collection<?>) vertices).size());
+//        Iterator<ElasticVertex> iter = vertices.iterator();
+//        if( iter.hasNext() ) System.out.println("  -- findVertices: vertex => " + iter.next().toString());
     }
     /*
     final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29);
