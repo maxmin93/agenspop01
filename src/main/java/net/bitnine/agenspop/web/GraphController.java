@@ -65,16 +65,20 @@ public class GraphController {
         return "{ \"msg\": \"Hello, graph!\"}";
     }
 
-    @GetMapping("/{datasource}/v")
+    @GetMapping("/v/{datasource}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<?> listAllV(@PathVariable String datasource) throws Exception {
+    public ResponseEntity<?> listAllV(@PathVariable String datasource
+            , @RequestParam(value="size", defaultValue="20", required=false) Integer size
+            ) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
         if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
+        if( size <= 0 ) size = 20;
 
         List<AgensVertex> vertices = new ArrayList<>();
         Iterator<Vertex> iter = g.vertices();
         while( iter.hasNext() ){
             vertices.add((AgensVertex) iter.next());
+            size -= 1;
         }
 
         String json = "{}";
@@ -82,16 +86,20 @@ public class GraphController {
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/{datasource}/e")
+    @GetMapping("/e/{datasource}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<?> listAllE(@PathVariable String datasource) throws Exception {
+    public ResponseEntity<?> listAllE(@PathVariable String datasource
+            , @RequestParam(value="size", defaultValue="20", required=false) Integer size
+            ) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
         if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
+        if( size <= 0 ) size = 20;
 
         List<AgensEdge> edges = new ArrayList<>();
         Iterator<Edge> iter = g.edges();
-        while( iter.hasNext() ){
+        while( iter.hasNext() && size > 0 ){
             edges.add((AgensEdge)iter.next());
+            size -= 1;
         }
 
         String json = "{}";
