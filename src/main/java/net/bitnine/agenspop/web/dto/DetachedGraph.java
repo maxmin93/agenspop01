@@ -1,4 +1,4 @@
-package net.bitnine.agenspop.service;
+package net.bitnine.agenspop.web.dto;
 
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensFactory;

@@ -1,7 +1,5 @@
 package net.bitnine.agenspop.web;
 
-import net.bitnine.agenspop.service.AgensGremlinService;
-import net.bitnine.agenspop.service.DetachedGraph;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/admin")

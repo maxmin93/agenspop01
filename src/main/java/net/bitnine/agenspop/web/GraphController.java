@@ -5,7 +5,7 @@ import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.service.AgensGremlinService;
-import net.bitnine.agenspop.service.DetachedGraph;
+import net.bitnine.agenspop.web.dto.DetachedGraph;
 import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
@@ -16,6 +16,8 @@ import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONVersion;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.TypeInfo;
 import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,18 +70,15 @@ public class GraphController {
     @GetMapping("/v/{datasource}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> listAllV(@PathVariable String datasource
-            , @RequestParam(value="size", defaultValue="20", required=false) Integer size
-            ) throws Exception {
+            , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
+            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
         if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
-        if( size <= 0 ) size = 20;
 
-        List<AgensVertex> vertices = new ArrayList<>();
-        Iterator<Vertex> iter = g.vertices();
-        while( iter.hasNext() ){
-            vertices.add((AgensVertex) iter.next());
-            size -= 1;
-        }
+        CompletableFuture<List<AgensVertex>> future =
+                gremlin.getVertices(datasource, labels.toArray(new String[labels.size()]));
+        CompletableFuture.allOf(future).join();
+        List<AgensVertex> vertices = future.get();
 
         String json = "{}";
         json = mapperV1.writeValueAsString(vertices);     // AgensIoRegistryV1
@@ -89,18 +88,15 @@ public class GraphController {
     @GetMapping("/e/{datasource}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> listAllE(@PathVariable String datasource
-            , @RequestParam(value="size", defaultValue="20", required=false) Integer size
-            ) throws Exception {
+            , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
+            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
         if( g == null ) throw new IllegalAccessException(String.format("graph[%s] is not found.", datasource));
-        if( size <= 0 ) size = 20;
 
-        List<AgensEdge> edges = new ArrayList<>();
-        Iterator<Edge> iter = g.edges();
-        while( iter.hasNext() && size > 0 ){
-            edges.add((AgensEdge)iter.next());
-            size -= 1;
-        }
+        CompletableFuture<List<AgensEdge>> future =
+                gremlin.getEdges(datasource, labels.toArray(new String[labels.size()]));
+        CompletableFuture.allOf(future).join();
+        List<AgensEdge> edges = future.get();
 
         String json = "{}";
         json = mapperV1.writeValueAsString(edges);     // AgensIoRegistryV1
@@ -122,27 +118,27 @@ public class GraphController {
     }
 
     @GetMapping("/gtest1")
-    public ResponseEntity<List<Vertex>> graphTest1() throws Exception {
-        CompletableFuture<List<Vertex>> future = gremlin.getVertices("modern");
+    public ResponseEntity<List<AgensVertex>> graphTest1() throws Exception {
+        CompletableFuture<List<AgensVertex>> future = gremlin.getVertices("modern");
         CompletableFuture.allOf(future).join();
-        List<Vertex> vertices = future.get();
+        List<AgensVertex> vertices = future.get();
 
         HttpStatus httpStatus = HttpStatus.OK;
         if( vertices == null ) httpStatus = HttpStatus.NO_CONTENT;
 
-        return new ResponseEntity<List<Vertex>>(vertices, productHeaders(), httpStatus);
+        return new ResponseEntity<List<AgensVertex>>(vertices, productHeaders(), httpStatus);
     }
 
     @GetMapping("/gtest2")
-    public ResponseEntity<List<Edge>> graphTest2() throws Exception {
-        CompletableFuture<List<Edge>> future = gremlin.getEdges("modern");
+    public ResponseEntity<List<AgensEdge>> graphTest2() throws Exception {
+        CompletableFuture<List<AgensEdge>> future = gremlin.getEdges("modern");
         CompletableFuture.allOf(future).join();
-        List<Edge> edges = future.get();
+        List<AgensEdge> edges = future.get();
 
         HttpStatus httpStatus = HttpStatus.OK;
         if( edges == null ) httpStatus = HttpStatus.NO_CONTENT;
 
-        return new ResponseEntity<List<Edge>>(edges, productHeaders(), httpStatus);
+        return new ResponseEntity<List<AgensEdge>>(edges, productHeaders(), httpStatus);
     }
 
     /////////////////////////////////////////

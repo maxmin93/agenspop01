@@ -24,6 +24,8 @@ import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ResultsExtractor;
@@ -53,6 +55,9 @@ public class ElasticGraphService implements ElasticGraphAPI {
 //        "agensvertex";
     static final String EDGE_INDEX_NAME = ElasticEdgeDocument.class.getAnnotation(Document.class).indexName();
 //        "agensedge";
+
+    // default pageable
+    static final Pageable DEFAULT_PAGEABLE = PageRequest.of(0, 100);
 
     private final ElasticVertexRepository vertexRepository;
     private final ElasticEdgeRepository edgeRepository;
@@ -357,24 +362,24 @@ public class ElasticGraphService implements ElasticGraphAPI {
     }
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource){
-        List<? extends ElasticVertex> list = vertexRepository.findByDatasource(datasource);
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasource(datasource, DEFAULT_PAGEABLE);
         return (List<ElasticVertex>)list;
     }
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource, String label){
-        List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabel(datasource, label);
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabel(datasource, label, DEFAULT_PAGEABLE);
         return (Iterable<ElasticVertex>)list;
     }
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource, String label, String key){
-        Iterable<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+        Iterable<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(
+                datasource, label, key, DEFAULT_PAGEABLE);
         return (Iterable<ElasticVertex>)list;
     }
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value){
         Iterable<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(
-                    datasource, label, key, value.toString()
-                );
+                    datasource, label, key, value.toString(), DEFAULT_PAGEABLE);
         return (Iterable<ElasticVertex>)list;
     }
 
@@ -410,21 +415,21 @@ public class ElasticGraphService implements ElasticGraphAPI {
     public Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, final String... labels) {
         final Iterable<? extends ElasticEdge> list;
         if( direction.equals(Direction.OUT) ){       // source vertex of edge
-            list = ( labels.length == 0 ) ? edgeRepository.findBySid(id)
-                    : edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels));
+            list = ( labels.length == 0 ) ? edgeRepository.findBySid(id, DEFAULT_PAGEABLE)
+                    : edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE);
         }
         else if ( direction.equals(Direction.IN) ) {  // target vertex of edge
-            list = ( labels.length == 0 ) ? edgeRepository.findByTid(id)
-                    : edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels));
+            list = ( labels.length == 0 ) ? edgeRepository.findByTid(id, DEFAULT_PAGEABLE)
+                    : edgeRepository.findByTidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE);
         }
         else{
             list = ( labels.length == 0 ) ?
                     Sets.newHashSet( Iterables.concat(
-                        edgeRepository.findBySid(id), edgeRepository.findByTid(id)
+                        edgeRepository.findBySid(id, DEFAULT_PAGEABLE), edgeRepository.findByTid(id, DEFAULT_PAGEABLE)
                     ))
                     : Sets.newHashSet( Iterables.concat(
-                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels)),
-                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels))
+                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE),
+                        edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE)
                     ));
         }
         return (Iterable<ElasticEdge>) list;
@@ -432,17 +437,17 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public Iterable<ElasticEdge> findEdgesBySid(String sid){
-        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySid(sid);
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySid(sid, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
     @Override
     public Iterable<ElasticEdge> findEdgesByTid(String tid){
-        final Iterable<? extends ElasticEdge> list = edgeRepository.findByTid(tid);
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByTid(tid, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
     @Override
     public Iterable<ElasticEdge> findEdgesBySidAndTid(String sid, String tid){
-        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySidAndTid(sid, tid);
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findBySidAndTid(sid, tid, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
 
@@ -453,24 +458,24 @@ public class ElasticGraphService implements ElasticGraphAPI {
     }
     @Override
     public Iterable<ElasticEdge> findEdges(String datasource){
-        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasource(datasource);
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasource(datasource, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
     @Override
     public Iterable<ElasticEdge> findEdges(String datasource, String label){
-        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasourceAndLabel(datasource, label);
+        final Iterable<? extends ElasticEdge> list = edgeRepository.findByDatasourceAndLabel(datasource, label, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
     @Override
     public Iterable<ElasticEdge> findEdges(String datasource, String label, String key){
         final Iterable<? extends ElasticEdge> list = edgeRepository
-                .findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key);
+                .findByDatasourceAndLabelAndPropsKeyUsingCustomQuery(datasource, label, key, DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
     @Override
     public Iterable<ElasticEdge> findEdges(String datasource, String label, String key, Object value){
         final Iterable<? extends ElasticEdge> list = edgeRepository
-                .findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(datasource, label, key, value.toString());
+                .findByDatasourceAndLabelAndPropsKeyAndValueUsingCustomQuery(datasource, label, key, value.toString(), DEFAULT_PAGEABLE);
         return (Iterable<ElasticEdge>) list;
     }
 
