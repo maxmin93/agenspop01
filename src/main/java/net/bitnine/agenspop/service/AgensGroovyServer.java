@@ -1,10 +1,15 @@
 package net.bitnine.agenspop.service;
 
+import io.netty.buffer.ByteBuf;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.server.util.LifeCycleHook;
 import org.apache.tinkerpop.gremlin.server.util.MetricManager;
 import org.apache.tinkerpop.gremlin.server.util.ThreadFactoryUtil;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +24,15 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -53,18 +57,17 @@ public class AgensGroovyServer {
     private final Map<String,Object> hostOptions = new ConcurrentHashMap<>();
 
     @Autowired
-    public AgensGroovyServer(AgensGraphManager graphManager
-            , ExecutorService gremlinService, ScheduledExecutorService scheduledService) {
-        System.out.println("0) ======================================");
-
+    public AgensGroovyServer(
+            AgensGraphManager graphManager
+            , ExecutorService gremlinService
+            , ScheduledExecutorService scheduledService
+    ) {
         this.graphManager = graphManager;
         this.gremlinExecutorService = gremlinService;
         this.scheduledExecutorService = scheduledService;
-        this.settings = new Settings();
+        this.settings = new Settings();     // default settings
 
-        System.out.println("1) ======================================");
         logger.info("Initialized Gremlin thread pool.  Threads in pool named with pattern gremlin-*");
-
         final GremlinExecutor.Builder gremlinExecutorBuilder = GremlinExecutor.build()
                 .scriptEvaluationTimeout(settings.scriptEvaluationTimeout)
                 .afterFailure((b, e) -> this.graphManager.rollbackAll())
@@ -84,8 +87,6 @@ public class AgensGroovyServer {
         });
 
         gremlinExecutor = gremlinExecutorBuilder.create();
-
-        System.out.println("2) ======================================");
         logger.info("Initialized GremlinExecutor and preparing GremlinScriptEngines instances.");
 
         // force each scriptengine to process something so that the init scripts will fire (this is necessary if
@@ -98,14 +99,12 @@ public class AgensGroovyServer {
                 final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
                         scriptEvaluationTimeoutOverride(0L).create();
                 gremlinExecutor.eval("1+1", engineName, new SimpleBindings(Collections.emptyMap()), lifeCycle).join();
-                registerMetrics(engineName);
+                registerMetrics(engineName);    // gremlin-groovy
                 logger.info("Initialized {} GremlinScriptEngine and registered metrics", engineName);
             } catch (Exception ex) {
                 logger.warn(String.format("Could not initialize %s GremlinScriptEngine as init script could not be evaluated", engineName), ex);
             }
         });
-
-        System.out.println("3) ======================================");
 
         // script engine init may have altered the graph bindings or maybe even created new ones - need to
         // re-apply those references back
@@ -121,17 +120,74 @@ public class AgensGroovyServer {
                     this.graphManager.putTraversalSource(kv.getKey(), (TraversalSource) kv.getValue());
                 });
 
-        System.out.println("4) ======================================");
-
         // determine if the initialization scripts introduced LifeCycleHook objects - if so we need to gather them
         // up for execution
         hooks = gremlinExecutor.getScriptEngineManager().getBindings().entrySet().stream()
                 .filter(kv -> kv.getValue() instanceof LifeCycleHook)
                 .map(kv -> (LifeCycleHook) kv.getValue())
                 .collect(Collectors.toList());
-
-        System.out.println("5) ======================================");
     }
+
+    /////////////////////////////////////////////////////
+    //
+    // CompletableFuture<Object> eval(
+    //      final String script
+    //      , final String language
+    //      , final Bindings boundVars
+    //      ,  final LifeCycle lifeCycle
+    // )
+
+    // https://stackoverflow.com/questions/19793944/retrieve-used-groovy-variable-after-evaluate
+
+    @PostConstruct
+    private synchronized void ready() {
+        String script = "modern_traversal.V().count()";     //"a = 1 + 1";
+        final AtomicReference<Object> resultHolder = new AtomicReference<>();
+        try{
+            // use no timeout on the engine initialization - perhaps this can be a configuration later
+            final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
+                    scriptEvaluationTimeoutOverride(0L).create();
+            final Bindings bindings = new SimpleBindings(Collections.emptyMap());
+
+            final CompletableFuture<Object> evalFuture = gremlinExecutor.eval(script, null, bindings, lifeCycle);
+            evalFuture.thenAcceptAsync(r -> {
+                // now that the eval/serialization is done in the same thread - complete the promise so we can
+                // write back the HTTP response on the same thread as the original request
+                resultHolder.set(r);
+                if( r != null ){
+                    System.out.println("**0) script : "+script+" ==> "+r.toString()+" : "+r.getClass().getName());
+                    DefaultGraphTraversal t = (DefaultGraphTraversal)r;
+                    while(t.hasNext()){
+                        // AgensGraphStepStrategy::traversal = [AgensCountGlobalStep(vertex)]
+                        // ==> ... 6
+                        System.out.println("    ... "+t.next().toString());
+                    }
+                }
+            }, gremlinExecutor.getExecutorService());
+
+            evalFuture.join();
+            Object r = evalFuture.get();
+            if( resultHolder.get() != null ){
+                Object result = resultHolder.get();
+                System.out.println("**1)script : "+script+" ==> "+result.toString()+" : "+result.getClass().getName());
+            }
+/*
+            if( r != null ){
+                // **script : modern_traversal.V().count() ==> [GraphStep(vertex,[]), CountGlobalStep]
+                System.out.println("**2)script : "+script+" ==> "+r.toString());
+                // java.lang.ClassCastException
+                // Object result = ((GraphTraversal)r).next();
+                // System.out.println("**script : "+script+" ==> "+r.toString()+" ==> "+result.toString());
+            }
+ */
+        } catch (Exception ex) {
+            // tossed to exceptionCaught which delegates to sendError method
+            final Throwable t = ExceptionUtils.getRootCause(ex);
+            throw new RuntimeException(null == t ? ex : t);
+        }
+    }
+
+    /////////////////////////////////////////////////////
 
     private void registerMetrics(final String engineName) {
         final GremlinScriptEngine engine = gremlinExecutor.getScriptEngineManager().getEngineByName(engineName);

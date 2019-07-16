@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.graph.process.traversal.strategy.optimization;
 
 
+import net.bitnine.agenspop.graph.process.traversal.step.map.AgensCountGlobalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategy;
@@ -67,7 +68,7 @@ public final class AgensGraphCountStrategy
 
         final Class<? extends Element> elementClass = ((GraphStep<?, ?>) steps.get(0)).getReturnClass();
         TraversalHelper.removeAllSteps(traversal);
-        traversal.addStep(new TinkerCountGlobalStep<>(traversal, elementClass));
+        traversal.addStep(new AgensCountGlobalStep<>(traversal, elementClass));
     }
 
     @Override
