@@ -35,7 +35,7 @@ public class AgensGraphManager implements GraphManager {
             LoggerFactory.getLogger(AgensGraphManager.class);
     public static final String AGENS_GRAPH_MANAGER_EXPECTED_STATE_MSG
             = "Gremlin Server must be configured to use the AgensGraphManager.";
-    public static final Function<String, String> GRAPH_TRAVERSAL_NAME = (String gName) -> gName + "_traversal";
+    public static final Function<String, String> GRAPH_TRAVERSAL_NAME = (String gName) -> gName + "_g";
 
     // Datasources based on Vertex index
     private final Map<String, Graph> graphs = new ConcurrentHashMap<>();

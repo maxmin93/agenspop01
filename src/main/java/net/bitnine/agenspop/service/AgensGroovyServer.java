@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.service;
 
+import com.google.common.base.Joiner;
 import io.netty.buffer.ByteBuf;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 
@@ -29,6 +30,7 @@ import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -138,16 +140,17 @@ public class AgensGroovyServer {
     // )
 
     // https://stackoverflow.com/questions/19793944/retrieve-used-groovy-variable-after-evaluate
-
+/*
     @PostConstruct
     private synchronized void ready() {
-        String script = "modern_traversal.V().count()";     //"a = 1 + 1";
+        String script = "v = modern_g.V('modern_2')";     //"a = 1 + 1";
         final AtomicReference<Object> resultHolder = new AtomicReference<>();
         try{
             // use no timeout on the engine initialization - perhaps this can be a configuration later
             final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
                     scriptEvaluationTimeoutOverride(0L).create();
-            final Bindings bindings = new SimpleBindings(Collections.emptyMap());
+            final Map<String,Object> params = new HashMap<>();
+            final Bindings bindings = new SimpleBindings(params);
 
             final CompletableFuture<Object> evalFuture = gremlinExecutor.eval(script, null, bindings, lifeCycle);
             evalFuture.thenAcceptAsync(r -> {
@@ -155,12 +158,15 @@ public class AgensGroovyServer {
                 // write back the HTTP response on the same thread as the original request
                 resultHolder.set(r);
                 if( r != null ){
-                    System.out.println("**0) script : "+script+" ==> "+r.toString()+" : "+r.getClass().getName());
+                    System.out.println("**0) script : "+script+" ==> "+r.toString()
+                            +"\n  -- "+ Joiner.on("&").withKeyValueSeparator("=").join(bindings)
+                            // bindings.entrySet().stream().map(Object::toString).collect(Collectors.joining("&"))
+                            +"\n  -- "+ r.getClass().getName());
                     DefaultGraphTraversal t = (DefaultGraphTraversal)r;
                     while(t.hasNext()){
                         // AgensGraphStepStrategy::traversal = [AgensCountGlobalStep(vertex)]
                         // ==> ... 6
-                        System.out.println("    ... "+t.next().toString());
+                        System.out.println("     ... "+t.next().toString());
                     }
                 }
             }, gremlinExecutor.getExecutorService());
@@ -171,22 +177,13 @@ public class AgensGroovyServer {
                 Object result = resultHolder.get();
                 System.out.println("**1)script : "+script+" ==> "+result.toString()+" : "+result.getClass().getName());
             }
-/*
-            if( r != null ){
-                // **script : modern_traversal.V().count() ==> [GraphStep(vertex,[]), CountGlobalStep]
-                System.out.println("**2)script : "+script+" ==> "+r.toString());
-                // java.lang.ClassCastException
-                // Object result = ((GraphTraversal)r).next();
-                // System.out.println("**script : "+script+" ==> "+r.toString()+" ==> "+result.toString());
-            }
- */
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method
             final Throwable t = ExceptionUtils.getRootCause(ex);
             throw new RuntimeException(null == t ? ex : t);
         }
     }
-
+*/
     /////////////////////////////////////////////////////
 
     private void registerMetrics(final String engineName) {

@@ -23,6 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +71,6 @@ public class GraphController {
     }
 
     @GetMapping("/v/{datasource}")
-    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> listAllV(@PathVariable String datasource
             , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
@@ -86,7 +88,6 @@ public class GraphController {
     }
 
     @GetMapping("/e/{datasource}")
-    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> listAllE(@PathVariable String datasource
             , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
@@ -100,6 +101,39 @@ public class GraphController {
 
         String json = "{}";
         json = mapperV1.writeValueAsString(edges);     // AgensIoRegistryV1
+        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{script}")
+    public ResponseEntity<?> runScript(@PathVariable String script
+            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
+        if( script == null || script.length() == 0 )
+            throw new IllegalAccessException("script is empty");
+
+        // sql decoding : "+", "%", "&" etc..
+        try {
+            script = URLDecoder.decode(script, StandardCharsets.UTF_8.toString());
+        }catch(UnsupportedEncodingException ue){
+            System.out.println("api.query: UnsupportedEncodingException => "+script);
+            throw new IllegalArgumentException("UnsupportedEncodingException => "+ue.getCause());
+        }
+
+        String json = "{}";
+        try {
+            CompletableFuture<?> future = gremlin.runGremlin(script);
+            CompletableFuture.allOf(future).join();
+
+            Object result = future.get();
+            if( result != null ){
+                if( result instanceof List )
+                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.toString()));
+            }
+
+            json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
+            return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        }catch (Exception ex){
+            System.out.println("** ERROR: runScript ==> " + ex.getMessage());
+        }
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 

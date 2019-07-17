@@ -1,9 +1,13 @@
 package net.bitnine.agenspop.service;
 
+import com.google.common.base.Joiner;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.web.dto.DetachedGraph;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.tinkerpop.gremlin.groovy.engine.GremlinExecutor;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Edge;
@@ -12,10 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;
@@ -23,13 +29,71 @@ import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;
 @Service
 public class AgensGremlinService {
 
-    public final static int NEXT_FETCH_SIZE = 100;
+    public final static String GREMLIN_GROOVY = "gremlin-groovy";
+
     private final AgensGraphManager graphManager;
+    private final AgensGroovyServer groovyServer;
+    private final GremlinExecutor gremlinExecutor;
 
     @Autowired
-    AgensGremlinService(AgensGraphManager graphManager ){
+    AgensGremlinService(
+            AgensGraphManager graphManager,
+            AgensGroovyServer groovyServer
+    ){
         this.graphManager = graphManager;
+        this.groovyServer = groovyServer;
+        this.gremlinExecutor = groovyServer.getGremlinExecutor();
     }
+
+    @PostConstruct
+    private void ready() {
+        // String script = "vlist = modern_g.V('modern_1','modern_2')";
+        String script = "modern_g.V().count()";
+        try {
+            CompletableFuture<?> future = runGremlin(script);
+            CompletableFuture.allOf(future).join();
+
+            List<Object> resultList = (List<Object>)future.get();
+            if( resultList != null ){
+                resultList.stream().forEach(r -> System.out.println("  ==> "+r.toString()));
+            }
+        }catch (Exception ex){
+            System.out.println("** ERROR: runScript ==> " + ex.getMessage());
+        }
+    }
+
+    @Async("agensExecutor")
+    public CompletableFuture<?> runGremlin(String script){
+        try{
+            // use no timeout on the engine initialization - perhaps this can be a configuration later
+            final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
+                    scriptEvaluationTimeoutOverride(0L).create();
+            final Bindings bindings = new SimpleBindings(Collections.emptyMap());
+
+            final CompletableFuture<Object> evalFuture = gremlinExecutor.eval(script, GREMLIN_GROOVY, bindings, lifeCycle);
+            CompletableFuture.allOf(evalFuture).join();
+
+            Object result = evalFuture.get();
+            if( result == null ) return CompletableFuture.completedFuture( null );
+
+            if( result instanceof DefaultGraphTraversal ){
+                DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
+                // for DEBUG
+                System.out.println("** script: \""+script+"\" ==> "+t.toString());
+
+                List<Object> resultList = new ArrayList<>();
+                while(t.hasNext()) resultList.add(t.next());
+                return CompletableFuture.completedFuture(resultList);
+            }
+            else return CompletableFuture.completedFuture(result);
+        } catch (Exception ex) {
+            // tossed to exceptionCaught which delegates to sendError method
+            final Throwable t = ExceptionUtils.getRootCause(ex);
+            throw new RuntimeException(null == t ? ex : t);
+        }
+    }
+
+    ////////////////////////////////////////////
 
     @Async("agensExecutor")
     public CompletableFuture<DetachedGraph> getGraph(String gName) throws InterruptedException {
@@ -39,10 +103,10 @@ public class AgensGremlinService {
         GraphTraversalSource ts = (GraphTraversalSource) graphManager.getTraversalSource(GRAPH_TRAVERSAL_NAME.apply(gName));
         if( ts == null ) return CompletableFuture.completedFuture( null );
 
-        List<AgensVertex> vertices = ts.V().next(NEXT_FETCH_SIZE).stream()
+        List<AgensVertex> vertices = ts.V().next(100).stream()
                 .filter(c->c instanceof AgensVertex).map(v->(AgensVertex)v)
                 .collect(Collectors.toList());
-        List<AgensEdge> edges = ts.E().next(NEXT_FETCH_SIZE).stream()
+        List<AgensEdge> edges = ts.E().next(100).stream()
                 .filter(c->c instanceof AgensEdge).map(e->(AgensEdge)e)
                 .collect(Collectors.toList());
 
