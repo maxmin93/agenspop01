@@ -8,8 +8,9 @@ public interface ElasticEdge extends ElasticElement {
     String getTid();
 
 /*
+    // **NOTE: vertex index 에서 탐색
+    //
     public Iterator<ElasticVertexWrapper> vertices(final Direction direction);
-
     public default ElasticVertexWrapper outVertex() {
         return this.vertices(Direction.OUT).next();
     }
@@ -19,14 +20,11 @@ public interface ElasticEdge extends ElasticElement {
     public default Iterator<ElasticVertexWrapper> bothVertices() {
         return this.vertices(Direction.BOTH);
     }
-
-    @Override
-    public Iterator<HashMap.Entry<String,Object>> properties(final String... propertyKeys);
 */
 
-    /**
-     * Common exceptions to use with an edge.
-     */
+        /**
+         * Common exceptions to use with an edge.
+         */
     public static class Exceptions extends ElasticElement.Exceptions {
 
         private Exceptions() {

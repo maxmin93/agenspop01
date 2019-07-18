@@ -53,6 +53,9 @@ public interface ElasticEdgeRepository extends ElasticsearchRepository<ElasticEd
     List<ElasticEdgeDocument> findByTidAndLabelIn(String tid, final List<String> labels, Pageable pageable);
     List<ElasticEdgeDocument> findBySidAndTidAndLabelIn(String sid, String tid, final List<String> labels, Pageable pageable);
 
+    List<ElasticEdgeDocument> findBySidAndLabelAndPropertiesKeyAndPropertiesValue(String sid, String label, String key, String value, Pageable pageable);
+    List<ElasticEdgeDocument> findByTidAndLabelAndPropertiesKeyAndPropertiesValue(String tid, String label, String key, String value, Pageable pageable);
+
     /////////////////////////////
 
     // Page<ElasticEdgeDocument> findByLabel(String label, Pageable pageable);

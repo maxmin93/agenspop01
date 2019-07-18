@@ -74,18 +74,26 @@ public class AgensGremlinService {
             CompletableFuture.allOf(evalFuture).join();
 
             Object result = evalFuture.get();
-            if( result == null ) return CompletableFuture.completedFuture( null );
-
-            if( result instanceof DefaultGraphTraversal ){
+            if( result != null && result instanceof DefaultGraphTraversal ){
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
                 System.out.println("** script: \""+script+"\" ==> "+t.toString());
 
-                List<Object> resultList = new ArrayList<>();
-                while(t.hasNext()) resultList.add(t.next());
-                return CompletableFuture.completedFuture(resultList);
+                if( t.hasNext() ){          // if result exists,
+                    Object r = t.next();
+                    if( t.hasNext() ){      // if result is iterable,
+                        List<Object> resultList = new ArrayList<>();
+                        resultList.add(r);
+                        while( t.hasNext() ) resultList.add(t.next());
+
+                        return CompletableFuture.completedFuture(resultList);
+                    }
+                    return CompletableFuture.completedFuture(r);
+                }
+                return CompletableFuture.completedFuture(null);
             }
-            else return CompletableFuture.completedFuture(result);
+            return CompletableFuture.completedFuture(result);
+
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method
             final Throwable t = ExceptionUtils.getRootCause(ex);

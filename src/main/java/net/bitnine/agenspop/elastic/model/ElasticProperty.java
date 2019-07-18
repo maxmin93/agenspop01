@@ -14,6 +14,9 @@ public interface ElasticProperty {
     static List<String> whiteList = Arrays.asList(
             String.class.getName(), Integer.class.getName(), Long.class.getName()
             , Float.class.getName(), Double.class.getName(), Boolean.class.getName()
+
+            // **NOTE: 당장은 단일 객체만 처리한다
+            //
             // ** excpetions
             // List.class.getName(), Map.class.getName(), Set.class.getName()
     );
@@ -34,17 +37,21 @@ public interface ElasticProperty {
 
     default Object value() throws NoSuchElementException {
         Object value = null;
+
+        // **NOTE: logstash 로부터 데이터가 변경되어 유입됨
+        //
 //        if( !whiteList.contains(getType()) )
 //            throw new NoSuchElementException("Collection Types cannot be supported in Property");
 
+        // **NOTE: 좀더 스마트한 객체 생성 방법이 필요함
+        //      지금은 constructor(String valueStr) 형태로만 작동
         try{
             Class cls = Class.forName( getType() );
             Constructor cons = cls.getDeclaredConstructor( String.class );
             value = cons.newInstance( getValue() );
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
                 | IllegalAccessException | InvocationTargetException ex){
-//            throw new NoSuchElementException(String.format("property.value(\"%s\")<%s> exception: %s"
-//                    , getValue(), getType(), ex.toString()));
+            // 처리 불가할 경우, String 타입으로 리턴
             value = getValue();
         }
         return value;

@@ -9,8 +9,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.lang.reflect.Method;
-import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
-
 import java.util.concurrent.Executor;
 
 @Configuration

@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.web;
 
+import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
@@ -46,11 +47,11 @@ public class GraphController {
             version(GraphSONVersion.V1_0).create().createMapper();
 
     private final AgensGremlinService gremlin;
-    private final GraphManager manager;
+    private final AgensGraphManager manager;
     private final String gName = "modern";
 
     @Autowired
-    public GraphController(GraphManager manager, AgensGremlinService gremlin){
+    public GraphController(AgensGraphManager manager, AgensGremlinService gremlin){
         this.gremlin = gremlin;
         this.manager = manager;
     }
@@ -71,7 +72,7 @@ public class GraphController {
     }
 
     @GetMapping("/v/{datasource}")
-    public ResponseEntity<?> listAllV(@PathVariable String datasource
+    public ResponseEntity<?> listVertices(@PathVariable String datasource
             , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
@@ -88,7 +89,7 @@ public class GraphController {
     }
 
     @GetMapping("/e/{datasource}")
-    public ResponseEntity<?> listAllE(@PathVariable String datasource
+    public ResponseEntity<?> listEdges(@PathVariable String datasource
             , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         AgensGraph g = (AgensGraph) this.manager.getGraph(datasource);
@@ -104,8 +105,8 @@ public class GraphController {
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/{script}")
-    public ResponseEntity<?> runScript(@PathVariable String script
+    @GetMapping("/script")
+    public ResponseEntity<?> runScript(@RequestParam("q") String script
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
@@ -194,7 +195,7 @@ public class GraphController {
     @GetMapping("/test1")
     @ResponseStatus(HttpStatus.OK)
     public String test1() throws Exception {
-        String tsName = gName + "_traversal";
+        String tsName = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(gName);
         GraphTraversalSource ts = (GraphTraversalSource) this.manager.getTraversalSource(tsName);
         if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
 
@@ -211,7 +212,7 @@ public class GraphController {
     @GetMapping("/test2")
     @ResponseStatus(HttpStatus.OK)
     public String test2() throws Exception {
-        String tsName = gName + "_traversal";
+        String tsName = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(gName);
         GraphTraversalSource ts = (GraphTraversalSource) this.manager.getTraversalSource(tsName);
         if( ts == null ) throw new IllegalAccessException(tsName + " is not found.");
 

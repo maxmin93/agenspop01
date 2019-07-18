@@ -11,6 +11,19 @@ import java.util.Optional;
 
 public interface ElasticGraphAPI {
 
+    // **NOTE: 탐색 규칙
+    //      0) id
+    //          => 무조건, 유일한, 절대적인 구분자
+    //      1) datasource
+    //          => 유일하다. 전체 대상으로 label 또는 value 를 검색하기도 함
+    //      2) label
+    //          => 멀티 검색도 가능
+    //      3) property.value
+    //          => property 대상으로 검색
+    //      ...
+    //      9) 전체 대상 검색
+    //          기본 graph 를 설정 : 'whole' <== 대상 질의시 datasource 를 제외하고 검색하도록
+
     //////////////////////////////////////////////////
     //
     // common access services about ElasticElement
@@ -97,5 +110,6 @@ public interface ElasticGraphAPI {
     Iterable<ElasticEdge> findEdgesBySidAndTid(String sid, String tid);
 
     Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, final String... labels);
+    Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, String label, String key, Object value);
 
 }

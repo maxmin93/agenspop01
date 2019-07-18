@@ -130,6 +130,53 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
+    // **참고 https://github.com/rayokota/hgraphdb
+
+    public Iterator<Edge> edges(final Direction direction, final String label, final String key, final Object value) {
+        this.graph.tx().readWrite();
+        Iterable<ElasticEdge> bases = graph.baseGraph
+                .findEdgesOfVertex(id().toString(), direction, label, key, value);
+        final List<Edge> edges = new ArrayList<>();
+        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        return edges.iterator();
+    }
+
+/*
+    public Iterator<Edge> edgesInRange(final Direction direction, final String label, final String key,
+                                       final Object inclusiveFromValue, final Object exclusiveToValue) {
+        return graph.getEdgeIndexModel().edgesInRange(this, direction, label, key, inclusiveFromValue, exclusiveToValue);
+    }
+
+    public Iterator<Edge> edgesWithLimit(final Direction direction, final String label, final String key,
+                                         final Object fromValue, final int limit) {
+        return edgesWithLimit(direction, label, key, fromValue, limit, false);
+    }
+
+    public Iterator<Edge> edgesWithLimit(final Direction direction, final String label, final String key,
+                                         final Object fromValue, final int limit, final boolean reversed) {
+        return graph.getEdgeIndexModel().edgesWithLimit(this, direction, label, key, fromValue, limit, reversed);
+    }
+
+    public Iterator<Vertex> vertices(final Direction direction, final String label, final String key, final Object value) {
+        return graph.getEdgeIndexModel().vertices(this, direction, label, key, value);
+    }
+
+    public Iterator<Vertex> verticesInRange(final Direction direction, final String label, final String key,
+                                            final Object inclusiveFromValue, final Object exclusiveToValue) {
+        return graph.getEdgeIndexModel().verticesInRange(this, direction, label, key, inclusiveFromValue, exclusiveToValue);
+    }
+
+    public Iterator<Vertex> verticesWithLimit(final Direction direction, final String label, final String key,
+                                              final Object fromValue, final int limit) {
+        return verticesWithLimit(direction, label, key, fromValue, limit, false);
+    }
+
+    public Iterator<Vertex> verticesWithLimit(final Direction direction, final String label, final String key,
+                                              final Object fromValue, final int limit, final boolean reversed) {
+        return graph.getEdgeIndexModel().verticesWithLimit(this, direction, label, key, fromValue, limit, reversed);
+    }
+*/
+    //////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public String toString() { return "v[" + id() + "]"; }

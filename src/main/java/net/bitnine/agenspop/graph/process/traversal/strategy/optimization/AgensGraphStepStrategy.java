@@ -42,6 +42,7 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
             final AgensGraphStep<?, ?> agensGraphStep = new AgensGraphStep<>(originalGraphStep);
             TraversalHelper.replaceStep(originalGraphStep, agensGraphStep, traversal);
 
+            // 이어지는 과정이 HasStep 또는 NoOpBarrierStep 이면
             Step<?, ?> currentStep = agensGraphStep.getNextStep();
             while (currentStep instanceof HasStep || currentStep instanceof NoOpBarrierStep) {
                 // GraphStep 으로부터 이어지는 HasStep 인 경우

@@ -27,13 +27,6 @@ public interface ElasticElement {
     Set<ElasticPropertyDocument> getProperties();
     void setProperties(Set<ElasticPropertyDocument> properties);
 
-/*
-    public default <V> Iterator<V> values(final String... propertyKeys) {
-        return IteratorUtils.map(this.<V>properties(propertyKeys), property -> property.value());
-    }
-    public <V> Iterator<? extends Property<V>> properties(final String... propertyKeys);
-*/
-
     /**
      * Common exceptions to use with an element.
      */

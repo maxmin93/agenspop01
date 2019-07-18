@@ -157,7 +157,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public boolean removeDatasource(String datasource){
-        // when
+        // set target datasource
         DeleteQuery deleteQuery = new DeleteQuery();
         deleteQuery.setQuery(termQuery("datasource", datasource));
         // delete vertices
@@ -166,6 +166,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
         // delete edges
         template.delete(deleteQuery, ElasticEdgeDocument.class);
         template.refresh(ElasticEdgeDocument.class);
+        // verify
         return (countV(datasource) + countE(datasource)) == 0L;
     }
 
@@ -431,6 +432,24 @@ public class ElasticGraphService implements ElasticGraphAPI {
                         edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE),
                         edgeRepository.findBySidAndLabelIn(id, Arrays.asList(labels), DEFAULT_PAGEABLE)
                     ));
+        }
+        return (Iterable<ElasticEdge>) list;
+    }
+
+    @Override
+    public Iterable<ElasticEdge> findEdgesOfVertex(String id, Direction direction, String label, String key, Object value){
+        final Iterable<? extends ElasticEdge> list;
+        if( direction.equals(Direction.OUT) ){       // source vertex of edge
+            list = edgeRepository.findBySidAndLabelAndPropertiesKeyAndPropertiesValue(id, label, key, value.toString(), DEFAULT_PAGEABLE);
+        }
+        else if ( direction.equals(Direction.IN) ) {  // target vertex of edge
+            list = edgeRepository.findByTidAndLabelAndPropertiesKeyAndPropertiesValue(id, label, key, value.toString(), DEFAULT_PAGEABLE);
+        }
+        else{
+            list = Sets.newHashSet( Iterables.concat(
+                    edgeRepository.findBySidAndLabelAndPropertiesKeyAndPropertiesValue(id, label, key, value.toString(), DEFAULT_PAGEABLE),
+                    edgeRepository.findByTidAndLabelAndPropertiesKeyAndPropertiesValue(id, label, key, value.toString(), DEFAULT_PAGEABLE)
+            ));
         }
         return (Iterable<ElasticEdge>) list;
     }

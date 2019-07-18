@@ -49,28 +49,34 @@ public final class AgensGraphCountStrategy
             return;
 
         final List<Step> steps = traversal.getSteps();
-        if (steps.size() < 2 ||
-                !(steps.get(0) instanceof GraphStep) ||
-                0 != ((GraphStep) steps.get(0)).getIds().length ||
-                !(steps.get(steps.size() - 1) instanceof CountGlobalStep))
-            return;
+        if (steps.size() < 2 ||                                         // 스텝이 2 미만
+            !(steps.get(0) instanceof GraphStep) ||                     // 시작이 GraphStep 이 아님
+            0 != ((GraphStep) steps.get(0)).getIds().length ||          // 탐색할 Ids 가 설정되었거나
+            !(steps.get(steps.size() - 1) instanceof CountGlobalStep)   // 마지막 스텝이 count 가 아니면
+        ) return;                                                       // => 건너뛰기
 
+        // graph step 이후로 순회
+        // => count step 을 수행할 traversal 이 아니면 건너뛰기
         for (int i = 1; i < steps.size() - 1; i++) {
             final Step current = steps.get(i);
             if (!(//current instanceof MapStep ||  // MapSteps will not necessarily emit an element as demonstrated in https://issues.apache.org/jira/browse/TINKERPOP-1958
                     current instanceof IdentityStep ||
-                            current instanceof NoOpBarrierStep ||
-                            current instanceof CollectingBarrierStep) ||
+                    current instanceof NoOpBarrierStep ||
+                    current instanceof CollectingBarrierStep) ||
                     (current instanceof TraversalParent &&
                             TraversalHelper.anyStepRecursively(s -> (s instanceof SideEffectStep || s instanceof AggregateStep), (TraversalParent) current)))
                 return;
         }
 
+        // 반환 타입 클래스
         final Class<? extends Element> elementClass = ((GraphStep<?, ?>) steps.get(0)).getReturnClass();
+        // traversal 의 모든 과정 비우고
         TraversalHelper.removeAllSteps(traversal);
+        // AgensCountGlobalStep 만 넣기
         traversal.addStep(new AgensCountGlobalStep<>(traversal, elementClass));
     }
 
+    // 마지막에 적용되는 최적화 전략
     @Override
     public Set<Class<? extends ProviderOptimizationStrategy>> applyPost() {
         return Collections.singleton(AgensGraphStepStrategy.class);

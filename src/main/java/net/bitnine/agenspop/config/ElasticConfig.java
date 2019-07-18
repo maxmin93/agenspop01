@@ -1,7 +1,5 @@
 package net.bitnine.agenspop.config;
 
-import net.bitnine.agenspop.dto.Article;
-import net.bitnine.agenspop.dto.Author;
 import net.bitnine.agenspop.elastic.repository.ArticleRepository;
 import net.bitnine.agenspop.service.ArticleService;
 
@@ -18,13 +16,8 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-
-import static java.util.Arrays.asList;
 
 @Configuration
 @EnableElasticsearchRepositories(basePackages = "net.bitnine.agenspop.elastic.repository")
@@ -69,57 +62,6 @@ public class ElasticConfig {
         return clusterName;
     }
 
-/*
-    @PreDestroy
-    public void deleteIndex() {
-        operations.deleteIndex(Article.class);
-        System.out.println("** Delete index before destory : "+Article.class.getSimpleName());
-    }
-
-    @PostConstruct
-    public void insertDataSample() {
-
-        final Author johnSmith = new Author("John Smith");
-        final Author johnDoe = new Author("John Doe");
-
-        // Remove all documents
-        repository.deleteAll();
-        operations.refresh(Article.class);
-        System.out.println("** Remove all documents : "+Article.class.getSimpleName());
-
-        // Save data sample
-        elasticsearchTemplate.deleteIndex(Article.class);
-        elasticsearchTemplate.createIndex(Article.class);
-        System.out.println("** Delete and create index : "+ Arrays.asList(Article.class.getAnnotations()).toString());
-        // don't call putMapping() to test the default mappings
-
-        Article article = new Article("Spring Data Elasticsearch");
-        article.setAuthors(asList(johnSmith, johnDoe));
-        article.setTag("software", "elasticsearch");
-        article.setTag("framework", "spring data");
-        service.save(article);
-
-        article = new Article("Search engines");
-        article.setAuthors(asList(johnDoe));
-        article.setTag("software", "search engines");
-        article.setTag("type", "tutorial");
-        service.save(article);
-
-        article = new Article("Second Article About Elasticsearch");
-        article.setAuthors(asList(johnSmith));
-        article.setTag("software", "elasticsearch");
-        article.setTag("framework", "spring data");
-        article.setTag("lang", "java");
-        service.save(article);
-
-        article = new Article("Elasticsearch Tutorial");
-        article.setAuthors(asList(johnDoe));
-        article.setTag("software", "elasticsearch");
-        service.save(article);
-
-        System.out.println("** Save Article data samples (4)");
-    }
-*/
     @Bean
     public Client client(){
         Settings settings = Settings.builder()

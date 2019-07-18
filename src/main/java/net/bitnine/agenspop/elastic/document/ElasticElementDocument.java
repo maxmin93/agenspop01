@@ -1,14 +1,12 @@
 package net.bitnine.agenspop.elastic.document;
 
 import net.bitnine.agenspop.elastic.model.ElasticElement;
-import net.bitnine.agenspop.elastic.model.ElasticEmptyProperty;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -18,7 +16,8 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     public static final String DEFAULT_DATASOURCE = "default";
     public static final String ID_DELIMITER = "_";
-    // Except special characters ==> + - && || ! ( ) { } [ ] ^ " ~ * ? : \
+    // **NOTE: Except special characters ==> + - && || ! ( ) { } [ ] ^ " ~ * ? : \
+    //      삽입해도 ID에 대해 전체 완전 매칭이 되는 문자로 취급되는 것은 "_" 밖에 없는듯
 
     @Id
     protected String id;
@@ -77,26 +76,30 @@ public abstract class ElasticElementDocument implements ElasticElement {
     }
     @Override public void setProperties(Set<ElasticPropertyDocument> properties){
         this.properties = properties;
-//        this.properties = properties.stream().map(s->(ElasticPropertyDocument)s).collect(Collectors.toSet());
     }
     @Override public Set<ElasticPropertyDocument> getProperties(){
         return this.properties;
-//        return this.properties.stream().map(s->(ElasticProperty)s).collect(Collectors.toSet());
     }
 
     /////////////////////////////////////////
 
     @Override
     public Optional<ElasticProperty> getProperty(String key){
-        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
-        if( !iter.hasNext() ) return Optional.empty();
+        Iterator<ElasticPropertyDocument> iter = properties.stream()
+                .filter(p->p.getKey().equals(key)).iterator();
+        if( !iter.hasNext() ){
+            return Optional.empty();
+        }
         return Optional.of(iter.next());
     }
 
     @Override
     public ElasticProperty getProperty(String key, Object defaultValue){
-        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
-        if( !iter.hasNext() ) return new ElasticPropertyDocument(key, defaultValue.getClass().getName(), defaultValue);
+        Iterator<ElasticPropertyDocument> iter = properties.stream()
+                .filter(p->p.getKey().equals(key)).iterator();
+        if( !iter.hasNext() ) {
+            return new ElasticPropertyDocument(key, defaultValue.getClass().getName(), defaultValue);
+        }
         return iter.next();
     }
 

@@ -17,17 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
 
-//    protected Map<String, Property> properties;
-//    protected final Vertex outVertex;       // sourceV
-//    protected final Vertex inVertex;        // targetV
-
     public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
         super(edge, graph);
-//        this.properties = new HashMap<>();
-//        for( ElasticProperty item : edge.getProperties() ){
-//            AgensProperty property = new AgensProperty(this, item);
-//            this.properties.put( property.key(), property );
-//        }
     }
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {

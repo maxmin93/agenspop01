@@ -39,7 +39,8 @@ public final class AgensFactory {
     private static Configuration getMixIdManagerConfiguration() {
         final Configuration conf = new BaseConfiguration();
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, defaultGraphName());
-        // 필요 없음. AgensGraph 초기화시 IdManager 고정
+        // **NOTE: 필요 없음.
+        //      AgensGraph 초기화시 IdManager 고정
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.MIX_ID.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.MIX_ID.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single);
@@ -87,6 +88,10 @@ public final class AgensFactory {
         }catch(InterruptedException e){
             e.printStackTrace();
         }
+
+        ///////////////////////////////////////////////////
+        // gremlin test
+
         // remove test ==> vertex{1}, edge{7,8,9}
 //        System.out.println("  - before remove V(marko): "+g.toString());
 //        marko.remove();
