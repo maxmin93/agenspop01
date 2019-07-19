@@ -23,13 +23,13 @@ public class AgensVertexStepStrategy extends AbstractTraversalStrategy<Traversal
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
         for (final VertexStep originalVertexStep : TraversalHelper.getStepsOfClass(VertexStep.class, traversal)) {
-            final AgensVertexStep<?> hbaseVertexStep = new AgensVertexStep<>(originalVertexStep);
-            TraversalHelper.replaceStep(originalVertexStep, hbaseVertexStep, traversal);
-            Step<?, ?> currentStep = hbaseVertexStep.getNextStep();
+            final AgensVertexStep<?> agensVertexStep = new AgensVertexStep<>(originalVertexStep);
+            TraversalHelper.replaceStep(originalVertexStep, agensVertexStep, traversal);
+            Step<?, ?> currentStep = agensVertexStep.getNextStep();
             while (currentStep instanceof HasStep || currentStep instanceof NoOpBarrierStep) {
                 if (currentStep instanceof HasStep) {
                     for (final HasContainer hasContainer : ((HasContainerHolder) currentStep).getHasContainers()) {
-                        hbaseVertexStep.addHasContainer(hasContainer);
+                        agensVertexStep.addHasContainer(hasContainer);
                     }
                     TraversalHelper.copyLabels(currentStep, currentStep.getPreviousStep(), false);
                     traversal.removeStep(currentStep);

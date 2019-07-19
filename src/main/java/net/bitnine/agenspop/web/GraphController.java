@@ -160,7 +160,7 @@ public class GraphController {
             Object result = future.get();
             if( result != null ){
                 if( result instanceof List )
-                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.toString()));
+                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.getClass().getSimpleName()+"|"+r.toString()));
             }
 
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1

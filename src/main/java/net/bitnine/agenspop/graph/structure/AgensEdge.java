@@ -33,13 +33,19 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public Vertex outVertex() {     // source v of edge
         Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
-        return (Vertex) v.orElse(null);
+        if( v.isPresent() ){
+            return (Vertex) new AgensVertex(v.get(), this.graph);
+        }
+        return (Vertex) null;
     }
 
     @Override
     public Vertex inVertex() {      // target v of edge
         Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
-        return (Vertex) v.orElse(null);
+        if( v.isPresent() ){
+            return (Vertex) new AgensVertex(v.get(), this.graph);
+        }
+        return (Vertex) null;
     }
 
     @Override

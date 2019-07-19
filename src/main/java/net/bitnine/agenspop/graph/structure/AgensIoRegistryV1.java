@@ -11,6 +11,7 @@ import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedEdge;
 import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertex;
 import org.apache.tinkerpop.gremlin.structure.util.Comparators;
 import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexProperty;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerVertex;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import org.apache.commons.configuration.BaseConfiguration;
@@ -112,7 +113,6 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             addSerializer(AgensVertex.class, new AgensIoRegistryV1.AgensVertexJacksonSerializer(false));
             addSerializer(AgensVertexProperty.class, new AgensIoRegistryV1.AgensVertexPropertyJacksonSerializer(false));
             addSerializer(AgensProperty.class, new AgensIoRegistryV1.AgensPropertyJacksonSerializer());
-
         }
     }
 
