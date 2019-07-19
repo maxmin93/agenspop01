@@ -84,6 +84,11 @@
 			<artifactId>gremlin-groovy</artifactId>
 			<version>${tinkerpop.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.opencypher.gremlin</groupId>
+			<artifactId>translation</artifactId>
+			<version>1.0.2</version>
+		</dependency>
 
 		<!-- utils -->
 		<dependency>

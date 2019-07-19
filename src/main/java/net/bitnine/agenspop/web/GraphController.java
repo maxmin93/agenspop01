@@ -16,6 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONVersion;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.TypeInfo;
 import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
+import org.opencypher.gremlin.translation.TranslationFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -49,11 +50,13 @@ public class GraphController {
     private final AgensGremlinService gremlin;
     private final AgensGraphManager manager;
     private final String gName = "modern";
+    private final TranslationFacade cfog;
 
     @Autowired
     public GraphController(AgensGraphManager manager, AgensGremlinService gremlin){
         this.gremlin = gremlin;
         this.manager = manager;
+        this.cfog = new TranslationFacade();
     }
 
     private final HttpHeaders productHeaders(){
@@ -105,8 +108,8 @@ public class GraphController {
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/script")
-    public ResponseEntity<?> runScript(@RequestParam("q") String script
+    @GetMapping("/gremlin")
+    public ResponseEntity<?> runGremlin(@RequestParam("q") String script
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
@@ -133,7 +136,53 @@ public class GraphController {
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
             return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
         }catch (Exception ex){
-            System.out.println("** ERROR: runScript ==> " + ex.getMessage());
+            System.out.println("** ERROR: runGremlin ==> " + ex.getMessage());
+        }
+        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+    }
+
+    @GetMapping("/cypher")
+    public ResponseEntity<?> runCypher(@RequestParam("q") String script
+            , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource
+            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
+        if( script == null || script.length() == 0 )
+            throw new IllegalAccessException("script is empty");
+
+        // sql decoding : "+", "%", "&" etc..
+        try {
+            script = URLDecoder.decode(script, StandardCharsets.UTF_8.toString());
+        }catch(UnsupportedEncodingException ue){
+            System.out.println("api.query: UnsupportedEncodingException => "+script);
+            throw new IllegalArgumentException("UnsupportedEncodingException => "+ue.getCause());
+        }
+
+        // **참고
+        // https://github.com/opencypher/cypher-for-gremlin/tree/master/translation
+        //
+        // translate cypher query to gremlin
+        String transScript = cfog.toGremlinGroovy(script);
+        // replace to graph traversal of datasource
+        if( transScript.length() > 2 && transScript.startsWith("g.") )
+            transScript = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(datasource)
+                        + "." + transScript.substring(2);
+        // for DEBUG
+        System.out.println("** trans: "+script+" ==> "+transScript);
+
+        String json = "{}";
+        try {
+            CompletableFuture<?> future = gremlin.runGremlin(transScript);
+            CompletableFuture.allOf(future).join();
+
+            Object result = future.get();
+            if( result != null ){
+                if( result instanceof List )
+                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.toString()));
+            }
+
+            json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
+            return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        }catch (Exception ex){
+            System.out.println("** ERROR: runCypher ==> " + ex.getMessage());
         }
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }

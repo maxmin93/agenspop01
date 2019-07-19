@@ -47,8 +47,7 @@ public class AgensGremlinService {
 
     @PostConstruct
     private void ready() {
-        // String script = "vlist = modern_g.V('modern_1','modern_2')";
-        String script = "modern_g.V().count()";
+        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
         try {
             CompletableFuture<?> future = runGremlin(script);
             CompletableFuture.allOf(future).join();
