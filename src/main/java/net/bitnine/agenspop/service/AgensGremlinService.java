@@ -12,6 +12,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.opencypher.gremlin.translation.TranslationFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -29,11 +30,13 @@ import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;
 @Service
 public class AgensGremlinService {
 
+    public static enum SCRIPT_TYPE { GREMLIN, CYPHER };
     public final static String GREMLIN_GROOVY = "gremlin-groovy";
 
     private final AgensGraphManager graphManager;
     private final AgensGroovyServer groovyServer;
     private final GremlinExecutor gremlinExecutor;
+    private final TranslationFacade cfog;
 
     @Autowired
     AgensGremlinService(
@@ -43,6 +46,7 @@ public class AgensGremlinService {
         this.graphManager = graphManager;
         this.groovyServer = groovyServer;
         this.gremlinExecutor = groovyServer.getGremlinExecutor();
+        this.cfog = new TranslationFacade();
     }
 
     @PostConstruct
@@ -76,7 +80,59 @@ public class AgensGremlinService {
             if( result != null && result instanceof DefaultGraphTraversal ){
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** script: \""+script+"\" ==> "+t.toString());
+                System.out.println("** traversal: \""+script+"\" ==> "+t.toString());
+
+                if( t.hasNext() ){          // if result exists,
+                    Object r = t.next();
+                    if( t.hasNext() ){      // if result is iterable,
+                        List<Object> resultList = new ArrayList<>();
+                        resultList.add(r);
+                        while( t.hasNext() ) resultList.add(t.next());
+
+                        return CompletableFuture.completedFuture(resultList);
+                    }
+                    return CompletableFuture.completedFuture(r);
+                }
+                return CompletableFuture.completedFuture(null);
+            }
+            return CompletableFuture.completedFuture(result);
+
+        } catch (Exception ex) {
+            // tossed to exceptionCaught which delegates to sendError method
+            final Throwable t = ExceptionUtils.getRootCause(ex);
+            throw new RuntimeException(null == t ? ex : t);
+        }
+    }
+
+
+    @Async("agensExecutor")
+    public CompletableFuture<?> runCypher(String cypher, String datasource){
+        try{
+            // **참고
+            // https://github.com/opencypher/cypher-for-gremlin/tree/master/translation
+            //
+            // translate cypher query to gremlin
+            String script = cfog.toGremlinGroovy(cypher);
+            // replace to graph traversal of datasource
+            if( script.length() > 2 && script.startsWith("g.") )
+                script = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(datasource)
+                        + "." + script.substring(2);
+            // for DEBUG
+            System.out.println("** translate: "+cypher+" ==> "+script);
+
+            // use no timeout on the engine initialization - perhaps this can be a configuration later
+            final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
+                    scriptEvaluationTimeoutOverride(0L).create();
+            final Bindings bindings = new SimpleBindings(Collections.emptyMap());
+
+            final CompletableFuture<Object> evalFuture = gremlinExecutor.eval(script, GREMLIN_GROOVY, bindings, lifeCycle);
+            CompletableFuture.allOf(evalFuture).join();
+
+            Object result = evalFuture.get();
+            if( result != null && result instanceof DefaultGraphTraversal ){
+                DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
+                // for DEBUG
+                System.out.println("** traversal: \""+script+"\" ==> "+t.toString());
 
                 if( t.hasNext() ){          // if result exists,
                     Object r = t.next();

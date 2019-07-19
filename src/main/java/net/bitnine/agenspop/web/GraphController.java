@@ -9,14 +9,12 @@ import net.bitnine.agenspop.service.AgensGremlinService;
 import net.bitnine.agenspop.web.dto.DetachedGraph;
 import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONVersion;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.TypeInfo;
 import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
-import org.opencypher.gremlin.translation.TranslationFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -50,13 +48,11 @@ public class GraphController {
     private final AgensGremlinService gremlin;
     private final AgensGraphManager manager;
     private final String gName = "modern";
-    private final TranslationFacade cfog;
 
     @Autowired
     public GraphController(AgensGraphManager manager, AgensGremlinService gremlin){
         this.gremlin = gremlin;
         this.manager = manager;
-        this.cfog = new TranslationFacade();
     }
 
     private final HttpHeaders productHeaders(){
@@ -156,21 +152,9 @@ public class GraphController {
             throw new IllegalArgumentException("UnsupportedEncodingException => "+ue.getCause());
         }
 
-        // **참고
-        // https://github.com/opencypher/cypher-for-gremlin/tree/master/translation
-        //
-        // translate cypher query to gremlin
-        String transScript = cfog.toGremlinGroovy(script);
-        // replace to graph traversal of datasource
-        if( transScript.length() > 2 && transScript.startsWith("g.") )
-            transScript = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(datasource)
-                        + "." + transScript.substring(2);
-        // for DEBUG
-        System.out.println("** trans: "+script+" ==> "+transScript);
-
         String json = "{}";
         try {
-            CompletableFuture<?> future = gremlin.runGremlin(transScript);
+            CompletableFuture<?> future = gremlin.runCypher(script, datasource);
             CompletableFuture.allOf(future).join();
 
             Object result = future.get();
