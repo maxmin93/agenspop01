@@ -51,8 +51,8 @@ public class AgensGremlinService {
 
     @PostConstruct
     private void ready() {
-        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
-
+//        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
+        String script = "modern_g.V().valueMap()";
 /*
 String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 expected> type = LinkedHashMap()
@@ -67,7 +67,23 @@ expected> type = LinkedHashMap()
 
             List<Object> resultList = (List<Object>)future.get();
             if( resultList != null ){
-                resultList.stream().forEach(r -> System.out.println("  ==> "+r.toString()));
+                if( resultList.size() > 0 && resultList.get(0) instanceof LinkedHashMap ){
+                    for(Object result: resultList ){
+                        LinkedHashMap<String,Object> list = (LinkedHashMap<String,Object>) result;
+                        list.forEach((k,v) -> System.out.println("  "+k+" -> "+v+"|"+v.getClass().getSimpleName()));
+/*
+  ==> {country=[USA], age=[29], name=[marko]}   |LinkedHashMap
+  ==> {country=[USA], age=[27], name=[vadas]}   |LinkedHashMap
+  ==> {lang=[java], name=[lop]}                 |LinkedHashMap
+  ==> {country=[USA], age=[32], name=[josh]}    |LinkedHashMap
+  ==> {lang=[java], name=[ripple]}              |LinkedHashMap
+  ==> {country=[USA], age=[35], name=[peter]}   |LinkedHashMap
+ */
+                    }
+                }else{
+                    resultList.stream().forEach(r ->
+                            System.out.println("  ==> "+r.toString()+"|"+r.getClass().getSimpleName()));
+                }
             }
         }catch (Exception ex){
             System.out.println("** ERROR: runScript ==> " + ex.getMessage());

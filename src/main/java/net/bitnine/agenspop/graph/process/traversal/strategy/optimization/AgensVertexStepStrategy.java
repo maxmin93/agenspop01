@@ -22,11 +22,15 @@ public class AgensVertexStepStrategy extends AbstractTraversalStrategy<Traversal
     @SuppressWarnings("unchecked")
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
+        // traversal 내의 모든 VertexStep 에 대해서 순회
         for (final VertexStep originalVertexStep : TraversalHelper.getStepsOfClass(VertexStep.class, traversal)) {
+            // VertexStep 을 AgensVertexStep 으로 바꿔치기
             final AgensVertexStep<?> agensVertexStep = new AgensVertexStep<>(originalVertexStep);
             TraversalHelper.replaceStep(originalVertexStep, agensVertexStep, traversal);
+            // 그 뒤에 이어지는 Step 이 Has 또는 NoOpBarrier 인 경우
             Step<?, ?> currentStep = agensVertexStep.getNextStep();
             while (currentStep instanceof HasStep || currentStep instanceof NoOpBarrierStep) {
+                // HasStep 복사하기
                 if (currentStep instanceof HasStep) {
                     for (final HasContainer hasContainer : ((HasContainerHolder) currentStep).getHasContainers()) {
                         agensVertexStep.addHasContainer(hasContainer);

@@ -7,6 +7,7 @@ import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
+import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensPropertyMapStepStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensVertexStepStrategy;
 import net.bitnine.agenspop.graph.structure.trait.AgensTrait;
 import net.bitnine.agenspop.graph.structure.trait.SimpleAgensTrait;
@@ -50,9 +51,10 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     static {
         TraversalStrategies.GlobalCache.registerStrategies(AgensGraph.class
                 , TraversalStrategies.GlobalCache.getStrategies(Graph.class).clone().addStrategies(
-                        AgensGraphStepStrategy.instance(),
-                        AgensVertexStepStrategy.instance(),
-                        AgensGraphCountStrategy.instance()
+                        AgensGraphStepStrategy.instance(), AgensGraphCountStrategy.instance()
+                        // **NOTE: 테스트만 하고 삭제해야 함 (루프 조회하느라 성능 저하)
+                        , AgensVertexStepStrategy.instance()
+                        , AgensPropertyMapStepStrategy.instance()
                 ));
     }
 

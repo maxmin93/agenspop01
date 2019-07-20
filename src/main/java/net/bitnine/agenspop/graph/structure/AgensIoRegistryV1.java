@@ -113,6 +113,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             addSerializer(AgensVertex.class, new AgensIoRegistryV1.AgensVertexJacksonSerializer(false));
             addSerializer(AgensVertexProperty.class, new AgensIoRegistryV1.AgensVertexPropertyJacksonSerializer(false));
             addSerializer(AgensProperty.class, new AgensIoRegistryV1.AgensPropertyJacksonSerializer());
+
+            addSerializer(ElasticProperty.class, new AgensIoRegistryV1.ElasticPropertyJacksonSerializer());
         }
     }
 
@@ -337,8 +339,36 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         private static void ser(final AgensProperty property, final JsonGenerator jsonGenerator,
                                 final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeStartObject();
-            // if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
+            if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
             serializerProvider.defaultSerializeField(GraphSONTokens.KEY, property.key(), jsonGenerator);
+            serializerProvider.defaultSerializeField(GraphSONTokens.VALUE, property.value(), jsonGenerator);
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+    final static class ElasticPropertyJacksonSerializer extends StdSerializer<ElasticProperty> {
+
+        public ElasticPropertyJacksonSerializer() {
+            super(ElasticProperty.class);
+        }
+
+        @Override
+        public void serialize(final ElasticProperty property, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
+                throws IOException {
+            ser(property, jsonGenerator, serializerProvider, null);
+        }
+
+        @Override
+        public void serializeWithType(final ElasticProperty property, final JsonGenerator jsonGenerator,
+                                      final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
+            ser(property, jsonGenerator, serializerProvider, typeSerializer);
+        }
+
+        private static void ser(final ElasticProperty property, final JsonGenerator jsonGenerator,
+                                final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
+            jsonGenerator.writeStartObject();
+            if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
+            serializerProvider.defaultSerializeField(GraphSONTokens.KEY, property.getKey(), jsonGenerator);
             serializerProvider.defaultSerializeField(GraphSONTokens.VALUE, property.value(), jsonGenerator);
             jsonGenerator.writeEndObject();
         }
