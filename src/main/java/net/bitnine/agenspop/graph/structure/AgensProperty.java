@@ -61,7 +61,7 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Elas
 
     @Override
     public String toString() {
-        return StringFactory.propertyString(this);
+        return "p["+key()+":"+this.propertyBase.getValue()+"]";
     }
 
     @Override
@@ -77,7 +77,6 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Elas
     @Override
     public void remove() {
         if (this.removed) return;
-
         this.removed = true;
         this.element.graph().tx().readWrite();
         final ElasticElement entity = ((AgensElement) this.element).getBaseElement();

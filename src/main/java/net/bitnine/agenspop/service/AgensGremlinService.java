@@ -52,6 +52,15 @@ public class AgensGremlinService {
     @PostConstruct
     private void ready() {
         String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
+
+/*
+String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
+expected> type = LinkedHashMap()
+==>[a:[cypher.element:[id:7,label:knows,weight:0.5],cypher.inv:2,cypher.outv:1]]
+==>[a:[cypher.element:[id:8,label:knows,weight:1.0],cypher.inv:4,cypher.outv:1]]
+
+==> modern_g.E().valueMap()
+ */
         try {
             CompletableFuture<?> future = runGremlin(script);
             CompletableFuture.allOf(future).join();
@@ -114,9 +123,11 @@ public class AgensGremlinService {
             // translate cypher query to gremlin
             String script = cfog.toGremlinGroovy(cypher);
             // replace to graph traversal of datasource
-            if( script.length() > 2 && script.startsWith("g.") )
+            if( script.length() > 2 && script.startsWith("g.") ) {
                 script = AgensGraphManager.GRAPH_TRAVERSAL_NAME.apply(datasource)
                         + "." + script.substring(2);
+                script = script.replaceAll("\\s+","");   // remove tailling spaces
+            }
             // for DEBUG
             System.out.println("** translate: "+cypher+" ==> "+script);
 

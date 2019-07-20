@@ -37,7 +37,7 @@ public class ElasticPropertyDocument implements ElasticProperty {
 
     @Override
     public String toString() {
-        return String.format("%s<%s>=%s", key, type, value);
+        return String.format("[%s:%s]", key, value);
     }
 
     @Override
@@ -46,20 +46,21 @@ public class ElasticPropertyDocument implements ElasticProperty {
         if (this.getClass() != obj.getClass()) return false;
         if (this == obj) return true;
 
+        // if key and value are same, return true
         ElasticPropertyDocument that = (ElasticPropertyDocument) obj;
         if (this.key == null || that.getKey() == null || !this.key.equals(that.getKey()) )
             return false;
-        if (this.value == null || that.getValue() == null || !this.value.equals(that.getValue()))
+        if (this.value == null || that.getValue() == null || !this.value.equals(that.getValue()) )
             return false;
-        if (this.type == null || that.getType() == null || !this.type.equals(that.getType()) )
-            return false;
+        // skip type
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return 31*value.hashCode() + 43*type.hashCode() + 59*key.hashCode();
+        // **NOTE: HashSet use hashCode() when compare items
+        return 31*key.hashCode();
     }
 
 }

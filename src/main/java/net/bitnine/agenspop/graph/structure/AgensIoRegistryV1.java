@@ -337,7 +337,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         private static void ser(final AgensProperty property, final JsonGenerator jsonGenerator,
                                 final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeStartObject();
-            if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
+            // if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
             serializerProvider.defaultSerializeField(GraphSONTokens.KEY, property.key(), jsonGenerator);
             serializerProvider.defaultSerializeField(GraphSONTokens.VALUE, property.value(), jsonGenerator);
             jsonGenerator.writeEndObject();

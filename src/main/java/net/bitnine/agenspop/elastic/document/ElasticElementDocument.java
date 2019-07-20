@@ -32,7 +32,7 @@ public abstract class ElasticElementDocument implements ElasticElement {
     protected String datasource;
 
     @Field(type = FieldType.Nested, includeInParent = true)
-    protected Set<ElasticPropertyDocument> properties = ConcurrentHashMap.newKeySet();
+    protected Set<ElasticPropertyDocument> properties = new HashSet();
 
     protected ElasticElementDocument(){
         this.deleted = false;
@@ -83,14 +83,22 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     /////////////////////////////////////////
 
+//    @Override
+//    public Optional<ElasticProperty> getProperty(String key){
+//        Iterator<ElasticPropertyDocument> iter = properties.stream()
+//                .filter(p->p.getKey().equals(key)).iterator();
+//        if( !iter.hasNext() ){
+//            return Optional.empty();
+//        }
+//        return Optional.of(iter.next());
+//    }
+
     @Override
-    public Optional<ElasticProperty> getProperty(String key){
+    public ElasticProperty getProperty(String key){
         Iterator<ElasticPropertyDocument> iter = properties.stream()
                 .filter(p->p.getKey().equals(key)).iterator();
-        if( !iter.hasNext() ){
-            return Optional.empty();
-        }
-        return Optional.of(iter.next());
+        if( !iter.hasNext() ) return null;
+        return iter.next();
     }
 
     @Override
@@ -121,10 +129,12 @@ public abstract class ElasticElementDocument implements ElasticElement {
 
     @Override
     public void removeProperty(String key){
-        Iterator<ElasticPropertyDocument> iter = properties.stream().filter(p->p.getKey().equals(key)).iterator();
+        Iterator<ElasticPropertyDocument> iter = properties.iterator();
         while( iter.hasNext() ){
             ElasticPropertyDocument property = iter.next();
-            iter.remove();
+            if( property.getKey().equals(key) ){
+                iter.remove();
+            }
         }
     }
 

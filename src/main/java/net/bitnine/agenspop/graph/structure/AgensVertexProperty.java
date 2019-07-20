@@ -108,6 +108,6 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
 
     @Override
     public String toString() {
-        return StringFactory.propertyString(this);
+        return "p["+key()+":"+this.propertyBase.getValue()+"]";
     }
 }

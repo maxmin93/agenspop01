@@ -61,6 +61,20 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
         Iterable<String> keys = this.baseElement.getKeys();
         Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
                 key -> ElementHelper.keyExists(key, propertyKeys));
+//        while(filter.hasNext()){
+//            String key = filter.next();
+//            ElasticProperty ep = this.baseElement.getProperty(key);
+//            System.out.println("  -- filter: "+key+" => "+ep.value());
+//        }
+//
+//        filter = IteratorUtils.filter(keys.iterator(),
+//                key -> ElementHelper.keyExists(key, propertyKeys));
+
+//        Iterator<Property<V>> iter = IteratorUtils.map(filter,
+//                key -> new AgensProperty<>(this, key, (V) this.baseElement.getProperty(key)));
+//        System.out.println("__ pIter="+iter.hasNext());
+//        while(iter.hasNext()) System.out.println("  -- p: "+iter.next().toString());
+
         return IteratorUtils.map(filter,
                 key -> new AgensProperty<>(this, key, (V) this.baseElement.getProperty(key)));
     }

@@ -13,7 +13,7 @@ public interface ElasticElement {
     Iterable<String> getKeys();
 
     // ElasticProperty 만 반환하면 된다 ==> 실제 value 는 elasticProperty.value() 에서 처리
-    Optional<ElasticProperty> getProperty(String name);
+    ElasticProperty getProperty(String name);
     ElasticProperty getProperty(String name, Object defaultValue);
     ElasticProperty setProperty(String name, Object value);
     ElasticProperty setProperty(String name, String type, Object value);

@@ -56,9 +56,9 @@ public class SimpleAgensTrait implements AgensTrait {
     @Override
     public <V> VertexProperty<V> getVertexProperty(final AgensVertex vertex, final String key) {
         if( vertex.getBaseVertex().hasProperty(key) ){
-            Optional<ElasticProperty> pBase = vertex.getBaseVertex().getProperty(key);
+            ElasticProperty pBase = vertex.getBaseVertex().getProperty(key);
             if( !pBase.isPresent() ) VertexProperty.<V>empty();
-            VertexProperty<V> p = new AgensVertexProperty(vertex, pBase.get());
+            VertexProperty<V> p = new AgensVertexProperty(vertex, pBase);
             return p;
         }
         return VertexProperty.<V>empty();
