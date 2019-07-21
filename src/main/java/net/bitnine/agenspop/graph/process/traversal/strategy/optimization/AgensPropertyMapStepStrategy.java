@@ -61,11 +61,12 @@ public final class AgensPropertyMapStepStrategy
 */
 
         // traversal 내의 모든 PropertyMapStep 에 대해서 순회
-        for (final PropertyMapStep originStep : TraversalHelper.getStepsOfClass(PropertyMapStep.class, traversal)) {
+//        for (final PropertyMapStep originStep : TraversalHelper.getStepsOfClass(PropertyMapStep.class, traversal)) {
+        for (final PropertyMapStep originStep : TraversalHelper.getStepsOfAssignableClassRecursively(PropertyMapStep.class, traversal)) {
             // PropertyMapStep 을 AgensPropertyMapStep 으로 바꿔치기
             final AgensPropertyMapStep agensStep = new AgensPropertyMapStep(
                     originStep.getTraversal(), originStep.getReturnType(), originStep.getPropertyKeys());
-            TraversalHelper.replaceStep(originStep, agensStep, traversal);
+            TraversalHelper.replaceStep(originStep, agensStep, originStep.getTraversal());
         }
         // for DEBUG
         System.out.println("AgensPropertyMapStepStrategy::traversal = "+traversal.toString());

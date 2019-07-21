@@ -63,6 +63,7 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
         final Map<Object, Object> map = new LinkedHashMap<>();
         final Element element = traverser.get();
         final boolean isVertex = element instanceof Vertex;
+
         if (this.returnType == PropertyType.VALUE) {
             if (includeToken(WithOptions.ids)) map.put(T.id, element.id());
             if (element instanceof VertexProperty) {
@@ -72,12 +73,17 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
                 if (includeToken(WithOptions.labels)) map.put(T.label, element.label());
             }
         }
+
         final Iterator<? extends Property> properties = null == this.propertyTraversal ?
                 element.properties(this.propertyKeys) :
                 TraversalUtil.applyAll(traverser, this.propertyTraversal);
         //final Iterator<? extends Property> properties = element.properties(this.propertyKeys);
         while (properties.hasNext()) {
             final Property<?> property = properties.next();
+            map.put(property.key(), property.value());
+/*
+            // VertexProperty 인 경우 value 를 ArrayList 로 출력하는 부분 ==> 제거!
+            //
             final Object value = this.returnType == PropertyType.VALUE ? property.value() : property;
             if (isVertex) {
                 map.compute(property.key(), (k, v) -> {
@@ -88,6 +94,7 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
             } else {
                 map.put(property.key(), value);
             }
+ */
         }
         if (!traversalRing.isEmpty()) {
             for (final Object key : map.keySet()) {

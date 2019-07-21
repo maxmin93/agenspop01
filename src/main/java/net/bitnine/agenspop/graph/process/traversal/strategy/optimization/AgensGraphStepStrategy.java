@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.graph.process.traversal.strategy.optimization;
 
+import net.bitnine.agenspop.graph.process.traversal.step.map.AgensPropertyMapStep;
 import net.bitnine.agenspop.graph.process.traversal.step.sideEffect.AgensGraphStep;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
@@ -8,6 +9,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.step.HasContainerHolder;
 import org.apache.tinkerpop.gremlin.process.traversal.step.filter.HasStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.GraphStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.NoOpBarrierStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.PropertyMapStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalHelper;
@@ -36,6 +38,33 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
         if (TraversalHelper.onGraphComputer(traversal))
             return;
 
+        // apply AgensPropertyMapStep to traversal
+        applyAgensPropertyMapStepStrategy(traversal);
+        // apply AgensGraphStep to traversal
+        applyAgensGraphStepStrategy(traversal);
+
+        // for DEBUG
+        System.out.println("AgensGraphStepStrategy::traversal = "+traversal.toString());
+    }
+
+    public static AgensGraphStepStrategy instance() {
+        return INSTANCE;
+    }
+
+    ////////////////////////////////////
+
+    private void applyAgensPropertyMapStepStrategy(final Traversal.Admin<?, ?> traversal){
+        // traversal 내의 모든 PropertyMapStep 에 대해서 순회
+//        for (final PropertyMapStep originStep : TraversalHelper.getStepsOfClass(PropertyMapStep.class, traversal)) {
+        for (final PropertyMapStep originStep : TraversalHelper.getStepsOfAssignableClassRecursively(PropertyMapStep.class, traversal)) {
+            // PropertyMapStep 을 AgensPropertyMapStep 으로 바꿔치기
+            final AgensPropertyMapStep agensStep = new AgensPropertyMapStep(
+                    originStep.getTraversal(), originStep.getReturnType(), originStep.getPropertyKeys());
+            TraversalHelper.replaceStep(originStep, agensStep, originStep.getTraversal());
+        }
+    }
+
+    private void applyAgensGraphStepStrategy(final Traversal.Admin<?, ?> traversal){
         // 전체 traversal 에서 graphStep 들 반복
         for (final GraphStep originalGraphStep : TraversalHelper.getStepsOfClass(GraphStep.class, traversal)) {
             // graphStep 을 AgensGraphStep 으로 변경 (바꿔치기)
@@ -64,12 +93,6 @@ AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), 
                 currentStep = currentStep.getNextStep();
             }
         }
-        // for DEBUG
-        System.out.println("AgensGraphStepStrategy::traversal = "+traversal.toString());
-    }
-
-    public static AgensGraphStepStrategy instance() {
-        return INSTANCE;
     }
 }
 

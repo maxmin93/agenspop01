@@ -52,7 +52,8 @@ public class AgensGremlinService {
     @PostConstruct
     private void ready() {
 //        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
-        String script = "modern_g.V().valueMap()";
+//        String script = "modern_g.V().valueMap()";
+        String script = "modern_g.E().as('a').hasLabel('knows').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element','cypher.inv','cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 /*
 String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 expected> type = LinkedHashMap()
@@ -72,6 +73,8 @@ expected> type = LinkedHashMap()
                         LinkedHashMap<String,Object> list = (LinkedHashMap<String,Object>) result;
                         list.forEach((k,v) -> System.out.println("  "+k+" -> "+v+"|"+v.getClass().getSimpleName()));
 /*
+** NOTE:
+  Cypher-for-Gremlin 변환기를 거치면 결과를 LinkedHashMap 형태로 뱉는다!!
   ==> {country=[USA], age=[29], name=[marko]}   |LinkedHashMap
   ==> {country=[USA], age=[27], name=[vadas]}   |LinkedHashMap
   ==> {lang=[java], name=[lop]}                 |LinkedHashMap

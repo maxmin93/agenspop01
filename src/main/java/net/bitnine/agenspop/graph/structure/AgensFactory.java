@@ -68,6 +68,22 @@ public final class AgensFactory {
         return g;
     }
 
+/*
+g = TinkerGraph.open();
+
+v1 = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29, "country", "USA");
+v2 = g.addVertex(T.id, 2, "name", "vadas", "age", 27);
+v3 = g.addVertex(T.id, 3, "name", "lop", "lang", "java");
+v4 = g.addVertex(T.id, 4, "name", "josh", "age", 32);
+v5 = g.addVertex(T.id, 5, "name", "ripple", "lang", "java");
+v6 = g.addVertex(T.id, 6, "name", "peter", "age", 35);
+e1 = v1.addEdge("knows", v2, T.id, 7, "weight", 0.5f);
+e2 = v1.addEdge("knows", v4, T.id, 8, "weight", 1.0f);
+e3 = v1.addEdge("created", v3, T.id, 9, "weight", 0.4f);
+e4 = v4.addEdge("created", v5, T.id, 10, "weight", 1.0f);
+e5 = v4.addEdge("created", v3, T.id, 11, "weight", 0.4f);
+e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
+ */
     public static void generateModern(final AgensGraph g) {
         final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29, "country", "USA");
         final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27, "country", "USA");

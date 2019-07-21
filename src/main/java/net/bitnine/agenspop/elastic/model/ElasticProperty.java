@@ -36,19 +36,19 @@ public interface ElasticProperty {
     }
 
     default Object value() throws NoSuchElementException {
-        Object value = null;
-
-        // **NOTE: logstash 로부터 데이터가 변경되어 유입됨
-        //
-//        if( !whiteList.contains(getType()) )
-//            throw new NoSuchElementException("Collection Types cannot be supported in Property");
+        // **NOTE: logstash 로부터 데이터가 변경되어 유입되기 때문에 타입체크 안해도 됨
+        // if( !whiteList.contains(getType()) )
+        //     throw new NoSuchElementException("Collection Types cannot be supported in Property");
 
         // **NOTE: 좀더 스마트한 객체 생성 방법이 필요함
         //      지금은 constructor(String valueStr) 형태로만 작동
+        Object value = null;
         try{
             Class cls = Class.forName( getType() );
             Constructor cons = cls.getDeclaredConstructor( String.class );
             value = cons.newInstance( getValue() );
+//            if( cons != null ) value = cons.newInstance( getValue() );
+//            value = getValue();
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException
                 | IllegalAccessException | InvocationTargetException ex){
             // 처리 불가할 경우, String 타입으로 리턴

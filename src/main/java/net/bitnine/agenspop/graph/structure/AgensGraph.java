@@ -52,9 +52,9 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         TraversalStrategies.GlobalCache.registerStrategies(AgensGraph.class
                 , TraversalStrategies.GlobalCache.getStrategies(Graph.class).clone().addStrategies(
                         AgensGraphStepStrategy.instance(), AgensGraphCountStrategy.instance()
-                        // **NOTE: 테스트만 하고 삭제해야 함 (루프 조회하느라 성능 저하)
-                        , AgensVertexStepStrategy.instance()
-                        , AgensPropertyMapStepStrategy.instance()
+//                        // **NOTE: 테스트만 하고 삭제해야 함 (루프 조회하느라 성능 저하)
+//                        , AgensVertexStepStrategy.instance()
+//                        , AgensPropertyMapStepStrategy.instance()
                 ));
     }
 
