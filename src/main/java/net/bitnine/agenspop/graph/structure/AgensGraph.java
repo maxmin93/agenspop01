@@ -295,9 +295,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     @Override
     public Iterator<Vertex> vertices(final Object... vertexIds) {
-//        this.tx().readWrite();
-//        return createElementIterator(Vertex.class, vertices, vertexIdManager, vertexIds);
-
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
         final Iterator<Vertex> iter;
@@ -322,12 +319,30 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                         try {
                             Optional<? extends ElasticVertex> base = this.baseGraph.getVertexById(id.toString());
                             if( base.isPresent() ) return Stream.of((ElasticVertex)base.get());
-                            else return Stream.empty();
+                            return Stream.empty();
                         } catch (final RuntimeException e) {
                             if (AgensHelper.isNotFound(e)) return Stream.empty();
                             throw e;
                         }
                     })
+                    .filter(nodePredicate)
+                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+        }
+        return iter;
+    }
+
+    public Iterator<Vertex> vertices(String label, final Object... vertexIds) {
+        System.out.println("** graph.vertices() with label");
+        this.tx().readWrite();
+        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+        final Iterator<Vertex> iter;
+        if (0 == vertexIds.length) {
+            iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, label))
+                    .filter(nodePredicate)
+                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+        } else {
+            ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
+            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName, label, (String[]) vertexIds))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         }

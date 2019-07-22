@@ -367,9 +367,21 @@ public class ElasticGraphService implements ElasticGraphAPI {
         return (List<ElasticVertex>)list;
     }
     @Override
+    public Iterable<ElasticVertex> findVertices(String datasource, final String... ids){
+        if( ids.length == 0 ) return Collections.EMPTY_LIST;
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndIdIn(datasource, Arrays.asList(ids));
+        return (List<ElasticVertex>)list;
+    }
+    @Override
     public Iterable<ElasticVertex> findVertices(String datasource, String label){
         List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabel(datasource, label, DEFAULT_PAGEABLE);
         return (Iterable<ElasticVertex>)list;
+    }
+    @Override
+    public Iterable<ElasticVertex> findVertices(String datasource, String label, final String... ids){
+        if( ids.length == 0 ) return Collections.EMPTY_LIST;
+        List<? extends ElasticVertex> list = vertexRepository.findByDatasourceAndLabelAndIdIn(datasource, label, Arrays.asList(ids));
+        return (List<ElasticVertex>)list;
     }
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource, String label, String key){

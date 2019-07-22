@@ -87,7 +87,9 @@ public interface ElasticGraphAPI {
 
     Iterable<ElasticVertex> findVertices(String... ids);
     Iterable<ElasticVertex> findVertices(String datasource);
+    Iterable<ElasticVertex> findVertices(String datasource, String... ids);
     Iterable<ElasticVertex> findVertices(String datasource, String label);
+    Iterable<ElasticVertex> findVertices(String datasource, String label, String... ids);
     Iterable<ElasticVertex> findVertices(String datasource, String label, String key);
     Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value);
 
