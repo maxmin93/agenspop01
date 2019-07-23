@@ -15,12 +15,14 @@ import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.Io;
 import org.apache.tinkerpop.gremlin.structure.io.IoCore;
 import org.apache.tinkerpop.gremlin.structure.util.*;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedGraph;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
+import org.jruby.RubyProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
@@ -331,29 +334,99 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         return iter;
     }
 
-    public Iterator<Vertex> vertices(String label, final Object... vertexIds) {
-        System.out.println("** graph.vertices() with label");
+    public Iterator<Vertex> vertices(List<HasContainer> hasContainers, final Object... vertexIds) {
+        System.out.println("** graph.vertices() with hasContainers="+hasContainers.size());
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+
+        final List<String> labels = new ArrayList<>();
+        final List<String> keys = new ArrayList<>();
+        final List<Object> values = new ArrayList<>();
+        int optType = getOptimizedType(hasContainers, labels, keys, values);
+
         final Iterator<Vertex> iter;
-        if (0 == vertexIds.length) {
-            iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, label))
+        if ( vertexIds == null || vertexIds.length == 0) {
+            if( optType > 0 )
+                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, labels, keys, values))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+            else
+                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName))
+                        .filter(nodePredicate)
+                        .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName, label, (String[]) vertexIds))
+            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName, (String[]) vertexIds))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         }
+        System.out.println("vertices : optType="+optType+", iter.hasNext="+iter.hasNext());
         return iter;
+    }
+
+    private int getOptimizedType(List<HasContainer> hasContainers,
+                                 List<String> labels, List<String> keys, List<Object> values){
+        int optType = 0;
+        Iterator<HasContainer> iter = hasContainers.iterator();
+        while( iter.hasNext() ){
+            HasContainer c = iter.next();
+            System.out.println(String.format("  **Has : key=%s, P=%s, value=%s", c.getKey(), c.getBiPredicate().toString(), c.getValue().toString()));
+            // hasLabel(label...)
+            if( c.getKey().equals("~label") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    labels.add( (String)c.getValue() );
+                    optType += 10000;
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    labels.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 10000*valueList.size();
+                }
+            }
+            // hasKey(key...)
+            else if( c.getKey().equals("~key") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    keys.add( c.getValue().toString() );
+                    optType += 1000;
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    keys.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 1000*valueList.size();
+                }
+            }
+            // hasValue(value...)
+            else if( c.getKey().equals("~value") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    values.add( c.getValue() );
+                    optType += 100;
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    values.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 100*valueList.size();
+                }
+            }
+            // has(property
+            else {
+                if( c.getKey() != null ) keys.add(c.getKey());
+
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    values.add( c.getValue() );
+                    optType += 1;
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    values.addAll( valueList );
+                    optType += valueList.size();
+                }
+            }
+        }
+        return optType;
     }
 
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
-//        this.tx().readWrite();
-//        return createElementIterator(Edge.class, edges, edgeIdManager, edgeIds);
-
         this.tx().readWrite();
         final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
         final Iterator<Edge> iter;
@@ -387,6 +460,36 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     .filter(relationshipPredicate)
                     .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         }
+        return iter;
+    }
+
+    public Iterator<Edge> edges(List<HasContainer> hasContainers, final Object... edgeIds) {
+        System.out.println("** graph.edges() with hasContainers="+hasContainers.size());
+        this.tx().readWrite();
+        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+
+        final List<String> labels = new ArrayList<>();
+        final List<String> keys = new ArrayList<>();
+        final List<Object> values = new ArrayList<>();
+        int optType = getOptimizedType(hasContainers, labels, keys, values);
+
+        final Iterator<Edge> iter;
+        if ( edgeIds == null || edgeIds.length == 0) {
+            if( optType > 0 )
+                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName, labels, keys, values))
+                        .filter(relationshipPredicate)
+                        .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+            else
+                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName))
+                        .filter(relationshipPredicate)
+                        .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+        } else {
+            ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
+            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName, (String[]) edgeIds))
+                    .filter(relationshipPredicate)
+                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+        }
+        System.out.println("edges : optType="+optType+", iter.hasNext="+iter.hasNext());
         return iter;
     }
 

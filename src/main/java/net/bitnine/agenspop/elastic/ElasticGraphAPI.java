@@ -85,13 +85,22 @@ public interface ElasticGraphAPI {
     //     1) Lists.newArrayList(Sets.newHashSet(listWithDuplicates));              -- using Guava
     //     2) listWithDuplicates.stream().distinct().collect(Collectors.toList());  -- using Stream
 
+    //  **NOTE: optimized find functions
+    //      ==> http://tinkerpop.apache.org/docs/current/reference/#has-step
+    //    has(key,value)           : findVerticesWithKV(ds, key, val)
+    //    has(label, key, value)   : findVerticesWithLKV(ds, label, key, value)
+    //    hasLabel(labels…​)        : findVerticesWithLabels(ds, ...labels)
+    //    hasId(ids…​)              : findVertices(ids)
+    //    hasKey(keys…​)            : findVerticesWithKeys(ds, ...keys)
+    //    hasValue(values…​)        : findVerticesWithValues(ds, ...values)
+    //    has(key)                 : findVerticesWithKey(ds, key)
+    //    hasNot(key)              : findVerticesWithNotKey(ds, key)
+
     Iterable<ElasticVertex> findVertices(String... ids);
     Iterable<ElasticVertex> findVertices(String datasource);
-    Iterable<ElasticVertex> findVertices(String datasource, String... ids);
     Iterable<ElasticVertex> findVertices(String datasource, String label);
-    Iterable<ElasticVertex> findVertices(String datasource, String label, String... ids);
-    Iterable<ElasticVertex> findVertices(String datasource, String label, String key);
-    Iterable<ElasticVertex> findVertices(String datasource, String label, String key, Object value);
+    Iterable<ElasticVertex> findVertices(String datasource, String... ids);
+    Iterable<ElasticVertex> findVertices(String datasource, List<String> labels, List<String> keys, List<Object> values);
 
     ElasticVertex findOtherVertexOfEdge(String eid, String vid);
     Iterable<ElasticVertex> findNeighborVertices(String id, Direction direction, final String... labels);
@@ -104,8 +113,8 @@ public interface ElasticGraphAPI {
     Iterable<ElasticEdge> findEdges(String... ids);
     Iterable<ElasticEdge> findEdges(String datasource);
     Iterable<ElasticEdge> findEdges(String datasource, String label);
-    Iterable<ElasticEdge> findEdges(String datasource, String label, String key);
-    Iterable<ElasticEdge> findEdges(String datasource, String label, String key, Object value);
+    Iterable<ElasticEdge> findEdges(String datasource, String... ids);
+    Iterable<ElasticEdge> findEdges(String datasource, List<String> labels, List<String> keys, List<Object> values);
 
     Iterable<ElasticEdge> findEdgesBySid(String sid);
     Iterable<ElasticEdge> findEdgesByTid(String tid);

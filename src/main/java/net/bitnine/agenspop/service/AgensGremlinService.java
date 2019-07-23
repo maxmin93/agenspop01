@@ -57,7 +57,8 @@ public class AgensGremlinService {
     private void ready() {
 //        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
 //        String script = "modern_g.V().valueMap()";
-        String script = "modern_g.V().as('a').hasLabel('person').has('name',eq('vadas'))";
+//        String script = "modern_g.V().as('a').hasLabel('person').has('name',eq('vadas'))";
+        String script = "modern_g.V().as('a').hasKey('age','name')";
 //        String script = "modern_g.E().as('a').hasLabel('knows').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element','cypher.inv','cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 /*
 String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
@@ -80,7 +81,7 @@ expected> type = LinkedHashMap()
             CompletableFuture.allOf(future).join();
             Object result = (Object)future.get();
 
-            if( result != null && result instanceof List) {
+            if( result != null  && result instanceof List) {
                 List<Object> resultList = (List<Object>) future.get();
                 if (resultList != null && resultList.size() > 0) {
                     if (resultList.get(0) instanceof LinkedHashMap) {
@@ -116,21 +117,16 @@ expected> type = LinkedHashMap()
             if( result != null && result instanceof DefaultGraphTraversal ){
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** traversal: \""+script+"\" ==> "+t.toString());
+                System.out.print("** traversal: \""+script+"\" ==> "+t.toString()+" ==> "+t.hasNext()+"\n");
 
-                if( t.hasNext() ){          // if result exists,
-                    Object r = t.next();
-                    if( t.hasNext() ){      // if result is iterable,
-                        List<Object> resultList = new ArrayList<>();
-                        resultList.add(r);
-                        while( t.hasNext() ) resultList.add(t.next());
-
-                        return CompletableFuture.completedFuture(resultList);
-                    }
-                    return CompletableFuture.completedFuture(r);
+                List<Object> resultList = new ArrayList<>();
+                while( t.hasNext() ) {          // if result exists,
+                    resultList.add(t.next());
                 }
-                return CompletableFuture.completedFuture(null);
+                System.out.println("  ==> "+resultList.size());
+                return CompletableFuture.completedFuture(resultList);
             }
+            System.out.print("  ==> "+result.toString()+"|"+result.getClass().getSimpleName());
             return CompletableFuture.completedFuture(result);
 
         } catch (Exception ex) {

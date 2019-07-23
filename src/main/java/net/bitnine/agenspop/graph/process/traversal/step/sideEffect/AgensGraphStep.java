@@ -45,40 +45,23 @@ public final class AgensGraphStep<S, E extends Element> extends GraphStep<S, E> 
 
     private Iterator<? extends Edge> edges() {
         final AgensGraph graph = (AgensGraph) this.getTraversal().getGraph().get();
-        hasContainers.stream().forEach(c -> {
-            System.out.println("  __ HasStep => key="+c.getKey()+", P="+c.getBiPredicate()+", pV="+c.getValue());
-        });
-
         // ids are present, filter on them first
         if (null == this.ids)
             return Collections.emptyIterator();
-        else if (this.ids.length > 0)
-            return this.iteratorList(graph.edges(this.ids));
-        else
-            return this.iteratorList(graph.edges());
+        // if hasStep exists, then call optimized edges()
+        if( hasContainers.size() > 0 ){
+            return this.iteratorList(graph.edges(hasContainers, this.ids));
+        }
+        else return this.iteratorList(graph.edges(this.ids));
     }
 
     private Iterator<? extends Vertex> vertices() {
         final AgensGraph graph = (AgensGraph) this.getTraversal().getGraph().get();
-        String eqLabelValue = null;
-
-        Iterator<HasContainer> iter = hasContainers.iterator();
-        while( iter.hasNext() ){
-            HasContainer c = iter.next();
-            if( c.getKey().equals("~label") ){
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    eqLabelValue = (String)c.getValue();
-                    iter.remove();
-                    continue;
-                }
-            }
-        }
-
         // ids are present, filter on them first
         if (null == this.ids) return Collections.emptyIterator();
-
-        if( eqLabelValue != null ){
-            return this.iteratorList(graph.vertices(eqLabelValue, this.ids));
+        // if hasStep exists, then call optimized vertices()
+        if( hasContainers.size() > 0 ){
+            return this.iteratorList(graph.vertices(hasContainers, this.ids));
         }
         return this.iteratorList(graph.vertices(this.ids));
     }
@@ -127,8 +110,7 @@ public final class AgensGraphStep<S, E extends Element> extends GraphStep<S, E> 
             }
         }
         // 하나 이면
-        else
-            this.hasContainers.add(hasContainer);
+        else this.hasContainers.add(hasContainer);
     }
 
     @Override

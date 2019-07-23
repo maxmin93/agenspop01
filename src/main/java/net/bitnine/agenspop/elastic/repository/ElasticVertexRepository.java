@@ -22,16 +22,70 @@ public interface ElasticVertexRepository extends ElasticsearchRepository<Elastic
     // by Datasource
     List<ElasticVertexDocument> findByDatasource(String datasource, Pageable pageable);
     List<ElasticVertexDocument> findByDatasourceAndIdIn(String datasource, final List<String> ids);
+    List<ElasticVertexDocument> findByDatasourceAndLabelNotIn(String datasource, final List<String> labels, Pageable pageable);
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndIdIn(String datasource, String label, final List<String> ids);
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndIdNotIn(String datasource, String label, final List<String> ids, Pageable pageable);
 
     // by Label
     List<ElasticVertexDocument> findByLabel(String label, Pageable pageable);
     List<ElasticVertexDocument> findByLabelAndIdIn(String label, final List<String> ids);
+    List<ElasticVertexDocument> findByLabelAndIdNotIn(String label, final List<String> ids, Pageable pageable);
     List<ElasticVertexDocument> findByLabelIn(final List<String> labels, Pageable pageable);
+    List<ElasticVertexDocument> findByLabelNotIn(final List<String> labels, Pageable pageable);
 
-    // by Datasource and Label
-    List<ElasticVertexDocument> findByDatasourceAndLabel(String datasource, String label, Pageable pageable);
-    List<ElasticVertexDocument> findByDatasourceAndLabelIn(String datasource, final List<String> labels, Pageable pageable);
-    List<ElasticVertexDocument> findByDatasourceAndLabelAndIdIn(String datasource, String label, final List<String> ids);
+    // case: ~label.eq
+    // AND key.eq
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropertiesKey(
+            String datasource, String label, String key, Pageable pageable);
+    // AND key.eq AND value.eq
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValue(
+            String datasource, String label, String key, String value, Pageable pageable);
+    // AND key.within
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropertiesKeyIn(
+            String datasource, String label, final List<String> keys, Pageable pageable);
+    // AND key.eq AND values.within
+    List<ElasticVertexDocument> findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValueIn(
+            String datasource, String label, String key, final List<String> valuesList, Pageable pageable);
+    // AND none
+    List<ElasticVertexDocument> findByDatasourceAndLabel(
+            String datasource, String label, Pageable pageable);
+    
+    // case: none
+    // key.eq
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKey(
+            String datasource, String key, Pageable pageable);
+    // key.eq AND value.eq
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyAndPropertiesValue(
+            String datasource, String key, String value, Pageable pageable);
+    // key.within
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyIn(
+            String datasource, final List<String> keys, Pageable pageable);
+    // value.within
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesValueIn(
+            String datasource, final List<String> values, Pageable pageable);
+    // key.eq AND values.within
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyAndPropertiesValueIn(
+            String datasource, String key, final List<String> values, Pageable pageable);
+
+    // case: ~label.within
+    // AND none
+    List<ElasticVertexDocument> findByDatasourceAndLabelIn(
+            String datasource, List<String> labels, Pageable pageable);
+    // AND key.eq
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyAndLabelIn(
+            String datasource, String key, List<String> labels, Pageable pageable);
+    // AND key.eq AND value.eq
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyAndPropertiesValueAndLabelIn(
+            String datasource, String key, String value, List<String> labels, Pageable pageable);
+    // AND key.within
+    List<ElasticVertexDocument> findByDatasourceAndLabelInAndPropertiesKeyIn(
+            String datasource, List<String> labels, List<String> keys, Pageable pageable);
+    // AND values.within
+    List<ElasticVertexDocument> findByDatasourceAndLabelInAndPropertiesValueIn(
+            String datasource, List<String> labels, List<String> values, Pageable pageable);
+    // AND key.eq AND values.within
+    List<ElasticVertexDocument> findByDatasourceAndPropertiesKeyAndLabelInAndPropertiesValueIn(
+            String datasource, String key, List<String> labels, List<String> values, Pageable pageable);
 
     // by Key or Value
     @Query("{\"bool\": {\"must\": [{\"match\": {\"datasouce\": \"?0\"}}, {\"match\": {\"label\": \"?1\"}}, {\"match\": {\"properties.key\": \"?2\"}}]}}")
