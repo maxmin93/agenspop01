@@ -122,12 +122,7 @@ public class GraphController {
         try {
             CompletableFuture<?> future = gremlin.runGremlin(script);
             CompletableFuture.allOf(future).join();
-
             Object result = future.get();
-            if( result != null ){
-                if( result instanceof List )
-                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.toString()));
-            }
 
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
             return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
@@ -156,12 +151,7 @@ public class GraphController {
         try {
             CompletableFuture<?> future = gremlin.runCypher(script, datasource);
             CompletableFuture.allOf(future).join();
-
             Object result = future.get();
-            if( result != null ){
-                if( result instanceof List )
-                    ((List<Object>)result).stream().forEach(r -> System.out.println("  ==> "+r.getClass().getSimpleName()+"|"+r.toString()));
-            }
 
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
             return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);

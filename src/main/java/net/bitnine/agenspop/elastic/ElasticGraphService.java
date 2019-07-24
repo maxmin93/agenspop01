@@ -528,30 +528,30 @@ public class ElasticGraphService implements ElasticGraphAPI {
             if( keys.size() == 1 && values.size() == 0 ){
                 list = vertexRepository.findByDatasourceAndLabelAndPropertiesKey(
                         datasource, labels.get(0), keys.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.eq='%s' and key.eq='%s'", list.size(), labels.get(0), keys.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.eq='%s' and key.eq='%s'", list.size(), labels.get(0), keys.get(0)));
             }
             // AND key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = vertexRepository.findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValue(
                         datasource, labels.get(0), keys.get(0), valuesList.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.eq='%s' and key.eq='%s' and value.eq='%s'", list.size(), labels.get(0), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.eq='%s' and key.eq='%s' and value.eq='%s'", list.size(), labels.get(0), keys.get(0), valuesList.get(0)));
             }
             // AND key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndLabelAndPropertiesKeyIn(
                         datasource, labels.get(0), keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.eq='%s' and keys.in=[%s]", list.size(), labels.get(0), String.join("&", keys) ));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.eq='%s' and keys.in=[%s]", list.size(), labels.get(0), String.join("&", keys) ));
             }
             // AND key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = vertexRepository.findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValueIn(
                         datasource, labels.get(0), keys.get(0), valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.eq='%s' and key.eq='%s' and value.in=[%s]", list.size(), labels.get(0), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.eq='%s' and key.eq='%s' and value.in=[%s]", list.size(), labels.get(0), keys.get(0), String.join("&", valuesList)));
             }
             // AND none
             else { // if( keys.size() == 0 && values.size() == 0 )
                 list = vertexRepository.findByDatasourceAndLabel(datasource, labels.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.eq='%s'", list.size(), labels.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.eq='%s'", list.size(), labels.get(0)));
             }
         }
         // case: none
@@ -560,31 +560,31 @@ public class ElasticGraphService implements ElasticGraphAPI {
             if( keys.size() == 1 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKey(
                         datasource, keys.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : key.eq='%s'", list.size(), keys.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : key.eq='%s'", list.size(), keys.get(0)));
             }
             // key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyAndPropertiesValue(
                         datasource, keys.get(0), valuesList.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : key.eq='%s' and value.eq='%s'", list.size(), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : key.eq='%s' and value.eq='%s'", list.size(), keys.get(0), valuesList.get(0)));
             }
             // key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyIn(
                         datasource, keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : key.in=[%s]", list.size(), String.join("&", keys)));
+                System.out.println(String.format("** optimized Vertices=%d : key.in=[%s]", list.size(), String.join("&", keys)));
             }
             // value.within
             else if( keys.size() == 0 && values.size() > 1 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesValueIn(
                         datasource, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : value.in=[%s]", list.size(), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Vertices=%d : value.in=[%s]", list.size(), String.join("&", valuesList)));
             }
             // key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyAndPropertiesValueIn(
                         datasource, keys.get(0), valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : key.eq='%s' and value.in=[%s]", list.size(), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Vertices=%d : key.eq='%s' and value.in=[%s]", list.size(), keys.get(0), String.join("&", valuesList)));
             }
         }
         // case: ~label.within
@@ -592,37 +592,37 @@ public class ElasticGraphService implements ElasticGraphAPI {
             // AND none
             if( keys.size() == 0 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndLabelIn(datasource, labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s]", list.size(), String.join("&", labels)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s]", list.size(), String.join("&", labels)));
             }
             // AND key.eq
             else if( keys.size() == 1 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyAndLabelIn(
                         datasource, keys.get(0), labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s] and key.eq='%s'", list.size(), String.join("&", labels), keys.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s] and key.eq='%s'", list.size(), String.join("&", labels), keys.get(0)));
             }
             // AND key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyAndPropertiesValueAndLabelIn(
                         datasource, keys.get(0), valuesList.get(0), labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s] and key.eq='%s' and value.eq='%s'", list.size(), String.join("&", labels), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s] and key.eq='%s' and value.eq='%s'", list.size(), String.join("&", labels), keys.get(0), valuesList.get(0)));
             }
             // AND key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = vertexRepository.findByDatasourceAndLabelInAndPropertiesKeyIn(
                         datasource, labels, keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s] and key.in=[%s]", list.size(), String.join("&", labels), String.join("&", keys)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s] and key.in=[%s]", list.size(), String.join("&", labels), String.join("&", keys)));
             }
             // AND values.within
             else if( keys.size() == 0 && values.size() > 1 ) {
                 list = vertexRepository.findByDatasourceAndLabelInAndPropertiesValueIn(
                         datasource, labels, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s] and value.in=[%s]", list.size(), String.join("&", labels), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s] and value.in=[%s]", list.size(), String.join("&", labels), String.join("&", valuesList)));
             }
             // AND key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = vertexRepository.findByDatasourceAndPropertiesKeyAndLabelInAndPropertiesValueIn(
                         datasource, keys.get(0), labels, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Vertices=%d : ~label.in=[%s] and key.eq='%s' and value.in=[%s]", list.size(), String.join("&", labels), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Vertices=%d : ~label.in=[%s] and key.eq='%s' and value.in=[%s]", list.size(), String.join("&", labels), keys.get(0), String.join("&", valuesList)));
             }
         }
 
@@ -749,30 +749,30 @@ public class ElasticGraphService implements ElasticGraphAPI {
             if( keys.size() == 1 && values.size() == 0 ){
                 list = edgeRepository.findByDatasourceAndLabelAndPropertiesKey(
                         datasource, labels.get(0), keys.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.eq='%s' and key.eq='%s'", list.size(), labels.get(0), keys.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.eq='%s' and key.eq='%s'", list.size(), labels.get(0), keys.get(0)));
             }
             // AND key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = edgeRepository.findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValue(
                         datasource, labels.get(0), keys.get(0), valuesList.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.eq='%s' and key.eq='%s' and value.eq='%s'", list.size(), labels.get(0), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.eq='%s' and key.eq='%s' and value.eq='%s'", list.size(), labels.get(0), keys.get(0), valuesList.get(0)));
             }
             // AND key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndLabelAndPropertiesKeyIn(
                         datasource, labels.get(0), keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.eq='%s' and keys.in=[%s]", list.size(), labels.get(0), String.join("&", keys) ));
+                System.out.println(String.format("** optimized Edges=%d : ~label.eq='%s' and keys.in=[%s]", list.size(), labels.get(0), String.join("&", keys) ));
             }
             // AND key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = edgeRepository.findByDatasourceAndLabelAndPropertiesKeyAndPropertiesValueIn(
                         datasource, labels.get(0), keys.get(0), valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.eq='%s' and key.eq='%s' and value.in=[%s]", list.size(), labels.get(0), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.eq='%s' and key.eq='%s' and value.in=[%s]", list.size(), labels.get(0), keys.get(0), String.join("&", valuesList)));
             }
             // AND none
             else { // if( keys.size() == 0 && values.size() == 0 )
                 list = edgeRepository.findByDatasourceAndLabel(datasource, labels.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.eq='%s'", list.size(), labels.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.eq='%s'", list.size(), labels.get(0)));
             }
         }
         // case: none
@@ -781,31 +781,31 @@ public class ElasticGraphService implements ElasticGraphAPI {
             if( keys.size() == 1 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKey(
                         datasource, keys.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : key.eq='%s'", list.size(), keys.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : key.eq='%s'", list.size(), keys.get(0)));
             }
             // key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyAndPropertiesValue(
                         datasource, keys.get(0), valuesList.get(0), DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : key.eq='%s' and value.eq='%s'", list.size(), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : key.eq='%s' and value.eq='%s'", list.size(), keys.get(0), valuesList.get(0)));
             }
             // key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyIn(
                         datasource, keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : key.in=[%s]", list.size(), String.join("&", keys)));
+                System.out.println(String.format("** optimized Edges=%d : key.in=[%s]", list.size(), String.join("&", keys)));
             }
             // value.within
             else if( keys.size() == 0 && values.size() > 1 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesValueIn(
                         datasource, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : value.in=[%s]", list.size(), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Edges=%d : value.in=[%s]", list.size(), String.join("&", valuesList)));
             }
             // key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyAndPropertiesValueIn(
                         datasource, keys.get(0), valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : key.eq='%s' and value.in=[%s]", list.size(), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Edges=%d : key.eq='%s' and value.in=[%s]", list.size(), keys.get(0), String.join("&", valuesList)));
             }
         }
         // case: ~label.within
@@ -813,37 +813,37 @@ public class ElasticGraphService implements ElasticGraphAPI {
             // AND none
             if( keys.size() == 0 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndLabelIn(datasource, labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s]", list.size(), String.join("&", labels)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s]", list.size(), String.join("&", labels)));
             }
             // AND key.eq
             else if( keys.size() == 1 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyAndLabelIn(
                         datasource, keys.get(0), labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s] and key.eq='%s'", list.size(), String.join("&", labels), keys.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s] and key.eq='%s'", list.size(), String.join("&", labels), keys.get(0)));
             }
             // AND key.eq AND value.eq
             else if( keys.size() == 1 && values.size() == 1 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyAndPropertiesValueAndLabelIn(
                         datasource, keys.get(0), valuesList.get(0), labels, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s] and key.eq='%s' and value.eq='%s'", list.size(), String.join("&", labels), keys.get(0), valuesList.get(0)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s] and key.eq='%s' and value.eq='%s'", list.size(), String.join("&", labels), keys.get(0), valuesList.get(0)));
             }
             // AND key.within
             else if( keys.size() > 1 && values.size() == 0 ) {
                 list = edgeRepository.findByDatasourceAndLabelInAndPropertiesKeyIn(
                         datasource, labels, keys, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s] and key.in=[%s]", list.size(), String.join("&", labels), String.join("&", keys)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s] and key.in=[%s]", list.size(), String.join("&", labels), String.join("&", keys)));
             }
             // AND values.within
             else if( keys.size() == 0 && values.size() > 1 ) {
                 list = edgeRepository.findByDatasourceAndLabelInAndPropertiesValueIn(
                         datasource, labels, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s] and value.in=[%s]", list.size(), String.join("&", labels), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s] and value.in=[%s]", list.size(), String.join("&", labels), String.join("&", valuesList)));
             }
             // AND key.eq AND values.within
             else if( keys.size() == 1 && values.size() > 1 ) {
                 list = edgeRepository.findByDatasourceAndPropertiesKeyAndLabelInAndPropertiesValueIn(
                         datasource, keys.get(0), labels, valuesList, DEFAULT_PAGEABLE);
-                System.out.println(String.format("  **optimized Edges=%d : ~label.in=[%s] and key.eq='%s' and value.in=[%s]", list.size(), String.join("&", labels), keys.get(0), String.join("&", valuesList)));
+                System.out.println(String.format("** optimized Edges=%d : ~label.in=[%s] and key.eq='%s' and value.in=[%s]", list.size(), String.join("&", labels), keys.get(0), String.join("&", valuesList)));
             }
         }
 

@@ -2,8 +2,6 @@ package net.bitnine.agenspop.graph.process.traversal.step.sideEffect;
 
 
 import net.bitnine.agenspop.graph.structure.AgensGraph;
-import net.bitnine.agenspop.graph.structure.AgensHelper;
-import org.apache.tinkerpop.gremlin.process.traversal.Compare;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.step.HasContainerHolder;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.GraphStep;
@@ -13,16 +11,12 @@ import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -85,11 +79,29 @@ public final class AgensGraphStep<S, E extends Element> extends GraphStep<S, E> 
                     StringFactory.stepString(this, this.returnClass.getSimpleName().toLowerCase(), Arrays.toString(this.ids), this.hasContainers);
     }
 
+    private boolean containersTestAll(final Element element, final List<HasContainer> hasContainers) {
+        for (final HasContainer hasContainer : hasContainers) {
+            // for DEBUG
+            System.out.println("  **hasTest("+element.getClass().getSimpleName()+") : "
+                    +hasContainer.toString()+" -> "+hasContainer.test(element));
+            // **NOTE
+            // AgensGraphStep 에서 넘기는 element 는 Vertex 또는 Edge 임
+            // 그 외의 테스트에 대해서는 검토 필요!!
+            //
+            // Solution1) AgensGraph.getOptimizedType() 에서 최적화된 hasContainer 삭제
+            //
+            // ex) 예를 들어 hasKey 테스트를 수행하면 Vertex/Edge 에 대해서는 검사가 안되기 때문에
+            //      false 를 반환하게 됨
+            if (!hasContainer.test(element)) return false;
+        }
+        return true;
+    }
+
     private <E extends Element> Iterator<E> iteratorList(final Iterator<E> iterator) {
         final List<E> list = new ArrayList<>();
         while (iterator.hasNext()) {
             final E e = iterator.next();
-            if (HasContainer.testAll(e, this.hasContainers))
+            if (containersTestAll(e, this.hasContainers))
                 list.add(e);
         }
         return list.iterator();

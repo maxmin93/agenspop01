@@ -53,13 +53,6 @@ public class AgensGremlinService {
         this.cfog = new TranslationFacade();
     }
 
-    @PostConstruct
-    private void ready() {
-//        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
-//        String script = "modern_g.V().valueMap()";
-//        String script = "modern_g.V().as('a').hasLabel('person').has('name',eq('vadas'))";
-        String script = "modern_g.V().as('a').hasKey('age','name')";
-//        String script = "modern_g.E().as('a').hasLabel('knows').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element','cypher.inv','cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 /*
 String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
 expected> type = LinkedHashMap()
@@ -76,6 +69,14 @@ expected> type = LinkedHashMap()
   ==> {lang=[java], name=[ripple]}              |LinkedHashMap
   ==> {country=[USA], age=[35], name=[peter]}   |LinkedHashMap
  */
+
+    @PostConstruct
+    private void ready() {
+//        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
+//        String script = "modern_g.V().valueMap()";
+//        String script = "modern_g.V().as('a').hasLabel('person').has('name',eq('vadas'))";
+        String script = "modern_g.V().hasKey('age','name')";
+//        String script = "modern_g.E().as('a').hasLabel('knows').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element','cypher.inv','cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
         try {
             CompletableFuture<?> future = runGremlin(script);
             CompletableFuture.allOf(future).join();
@@ -114,18 +115,18 @@ expected> type = LinkedHashMap()
             CompletableFuture.allOf(evalFuture).join();
 
             Object result = evalFuture.get();
-            if( result != null && result instanceof DefaultGraphTraversal ){
-                DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
+            if( result != null && result instanceof GraphTraversal ){
+                GraphTraversal t = (GraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.print("** traversal: \""+script+"\" ==> "+t.toString()+" ==> "+t.hasNext()+"\n");
+                System.out.print("** traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
 
                 List<Object> resultList = new ArrayList<>();
                 while( t.hasNext() ) {          // if result exists,
                     resultList.add(t.next());
                 }
-                System.out.println("  ==> "+resultList.size());
                 return CompletableFuture.completedFuture(resultList);
             }
+            // for DEBUG
             System.out.print("  ==> "+result.toString()+"|"+result.getClass().getSimpleName());
             return CompletableFuture.completedFuture(result);
 

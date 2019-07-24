@@ -23,16 +23,6 @@ public final class AgensGraphStepStrategy
     private AgensGraphStepStrategy() {
     }
 
-/*
-AgensGraphStepStrategy::traversal1 = [GraphStep(vertex,[]), HasStep([~label.eq(person), name.eq(marko)])]
-
-AgensGraphStepStrategy::AgensGraphStep1 = AgensGraphStep(vertex,[])
-AgensGraphStepStrategy::hasContainer = ~label.eq(person)
-AgensGraphStepStrategy::hasContainer = name.eq(marko)
-AgensGraphStepStrategy::AgensGraphStep2 = AgensGraphStep(vertex,[~label.eq(person), name.eq(marko)])
-
-AgensGraphStepStrategy::traversal2 = [AgensGraphStep(vertex,[~label.eq(person), name.eq(marko)])]
- */
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
         if (TraversalHelper.onGraphComputer(traversal))
