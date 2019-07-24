@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
@@ -19,6 +20,7 @@ import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
@@ -107,4 +109,88 @@ public final class AgensHelper {
         return ex.getClass().getSimpleName().equals(NOT_FOUND_EXCEPTION);
     }
 
+    // **NOTE: 최적화된 hasContainer 는 삭제!!
+    //      ==> hasContainer.test(element) 에서 실패 방지
+    public static int optimizeHasContainers(List<HasContainer> hasContainers,
+                       List<String> ids, List<String> labels, List<String> keys, List<Object> values){
+        int optType = 0;
+        Iterator<HasContainer> iter = hasContainers.iterator();
+        while( iter.hasNext() ){
+            HasContainer c = iter.next();
+            // hasId(id...)
+            if( c.getKey().equals("~id") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    ids.add( (String)c.getValue() );
+                    optType += 100000;
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    ids.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 100000*valueList.size();
+                    iter.remove();      // remove hasContainer!!
+                }
+                return optType;         // skips other hasContainers
+            }
+            // hasLabel(label...)
+            else if( c.getKey().equals("~label") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    labels.add( (String)c.getValue() );
+                    optType += 10000;
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    labels.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 10000*valueList.size();
+                    iter.remove();      // remove hasContainer!!
+                }
+            }
+            // hasKey(key...)
+            else if( c.getKey().equals("~key") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    keys.add( c.getValue().toString() );
+                    optType += 1000;
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    keys.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 1000*valueList.size();
+                    iter.remove();      // remove hasContainer!!
+                }
+            }
+            // hasValue(value...)
+            else if( c.getKey().equals("~value") ){
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    values.add( c.getValue() );
+                    optType += 100;
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    values.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
+                    optType += 100*valueList.size();
+                    iter.remove();      // remove hasContainer!!
+                }
+            }
+            // has(property
+            else {
+                if( c.getKey() != null ) keys.add(c.getKey());
+
+                if( c.getBiPredicate().toString().equals("eq") ){
+                    values.add( c.getValue() );
+                    optType += 1;
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("within") ){
+                    List<Object> valueList = (List<Object>)c.getValue();
+                    values.addAll( valueList );
+                    optType += valueList.size();
+                    iter.remove();      // remove hasContainer!!
+                }
+            }
+        }
+        return optType;
+    }
 }

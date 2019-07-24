@@ -518,7 +518,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public Iterable<ElasticVertex> findVertices(String datasource
-            , List<String> labels, List<String> keys, List<Object> values){
+            , List<String> ids, List<String> labels, List<String> keys, List<Object> values){
         List<? extends ElasticVertex> list = null;
         List<String> valuesList = values.stream().map(Object::toString).collect(Collectors.toList());
 
@@ -739,12 +739,20 @@ public class ElasticGraphService implements ElasticGraphAPI {
 
     @Override
     public Iterable<ElasticEdge> findEdges(String datasource
-            , List<String> labels, List<String> keys, List<Object> values){
+            , List<String> ids, List<String> labels, List<String> keys, List<Object> values){
         List<? extends ElasticEdge> list = null;
         List<String> valuesList = values.stream().map(Object::toString).collect(Collectors.toList());
 
+        // case: ~id
+        if( ids.size() > 0 ) {
+            // id.eq or id.within
+            if( ids.size() == 1 ){
+                list = edgeRepository.findByIdIn(ids);
+                System.out.println(String.format("** optimized Edges=%d : ~id.within='%s'", String.join("&", ids)));
+            }
+        }
         // case: ~label.eq
-        if( labels.size() == 1 ){
+        else if( labels.size() == 1 ){
             // AND key.eq
             if( keys.size() == 1 && values.size() == 0 ){
                 list = edgeRepository.findByDatasourceAndLabelAndPropertiesKey(

@@ -84,20 +84,16 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     protected AtomicInteger currentId = new AtomicInteger(0);
     // **NOTE: 그래프의 vertex, edge 는 모두 elastic-index 에서 가져와야 함
-    //         -- AgensVertex 의 in/out edges 들은 어떻게 관리?
-    //              => ElasticVertex 에 연결 정보 없음
-    //         -- AgensEdge 의 in/out vertex 들은 어떻게 관리?  => 자체 id 로 요청때 가져오는 방식
+    //      -- AgensVertex 의 in/out edges 들은 어떻게 관리?
+    //         => ElasticVertex 에 연결 정보 없음
+    //      -- AgensEdge 의 in/out vertex 들은 어떻게 관리?  => 자체 id 로 요청때 가져오는 방식
     //
-//    protected Map<Object, Vertex> vertices = new ConcurrentHashMap<>();
-//    protected Map<Object, Edge> edges = new ConcurrentHashMap<>();
 
-    protected Object graphComputerView = null;                  // excluded
-//    protected AgensIndex<AgensVertex> vertexIndex = null;
-//    protected AgensIndex<AgensEdge> edgeIndex = null;
+    protected Object graphComputerView = null;  // excluded
 
     protected AgensIdManager vertexIdManager;   // IdManager<?>
     protected AgensIdManager edgeIdManager;     // IdManager<?>
-//    protected IdManager<?> vertexPropertyIdManager;
+    // protected IdManager<?> vertexPropertyIdManager;
     protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
     protected final String graphName;
@@ -167,7 +163,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     @Override
     public <I extends Io> I io(final Io.Builder<I> builder) {
-        return (I) builder.graph(this).onMapper(mapper -> mapper.addRegistry(AgensIoRegistryV1.instance())).create();
+        return (I) builder.graph(this).onMapper(mapper ->
+                mapper.addRegistry(AgensIoRegistryV1.instance())).create();
     }
 
     @Override
@@ -338,15 +335,16 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
 
+        final List<String> ids = new ArrayList<>();
         final List<String> labels = new ArrayList<>();
         final List<String> keys = new ArrayList<>();
         final List<Object> values = new ArrayList<>();
-        int optType = getOptimizedType(hasContainers, labels, keys, values);
+        int optType = AgensHelper.optimizeHasContainers(hasContainers, ids, labels, keys, values);
 
         final Iterator<Vertex> iter;
         if ( vertexIds == null || vertexIds.length == 0) {
             if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, labels, keys, values))
+                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, ids, labels, keys, values))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
             else
@@ -364,76 +362,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 //            System.out.println("  ==> "+iter.next().toString() );
 //        }
         return iter;
-    }
-
-    // **NOTE: 최적화된 hasContainer 는 삭제!!
-    //      ==> hasContainer.test(element) 에서 실패 방지
-    private int getOptimizedType(List<HasContainer> hasContainers,
-                                 List<String> labels, List<String> keys, List<Object> values){
-        int optType = 0;
-        Iterator<HasContainer> iter = hasContainers.iterator();
-        while( iter.hasNext() ){
-            HasContainer c = iter.next();
-            // hasLabel(label...)
-            if( c.getKey().equals("~label") ){
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    labels.add( (String)c.getValue() );
-                    optType += 10000;
-                    iter.remove();      // remove hasContainer!!
-                }
-                else if( c.getBiPredicate().toString().equals("within") ){
-                    List<Object> valueList = (List<Object>)c.getValue();
-                    labels.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 10000*valueList.size();
-                    iter.remove();      // remove hasContainer!!
-                }
-            }
-            // hasKey(key...)
-            else if( c.getKey().equals("~key") ){
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    keys.add( c.getValue().toString() );
-                    optType += 1000;
-                    iter.remove();      // remove hasContainer!!
-                }
-                else if( c.getBiPredicate().toString().equals("within") ){
-                    List<Object> valueList = (List<Object>)c.getValue();
-                    keys.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 1000*valueList.size();
-                    iter.remove();      // remove hasContainer!!
-                }
-            }
-            // hasValue(value...)
-            else if( c.getKey().equals("~value") ){
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    values.add( c.getValue() );
-                    optType += 100;
-                    iter.remove();      // remove hasContainer!!
-                }
-                else if( c.getBiPredicate().toString().equals("within") ){
-                    List<Object> valueList = (List<Object>)c.getValue();
-                    values.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 100*valueList.size();
-                    iter.remove();      // remove hasContainer!!
-                }
-            }
-            // has(property
-            else {
-                if( c.getKey() != null ) keys.add(c.getKey());
-
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    values.add( c.getValue() );
-                    optType += 1;
-                    iter.remove();      // remove hasContainer!!
-                }
-                else if( c.getBiPredicate().toString().equals("within") ){
-                    List<Object> valueList = (List<Object>)c.getValue();
-                    values.addAll( valueList );
-                    optType += valueList.size();
-                    iter.remove();      // remove hasContainer!!
-                }
-            }
-        }
-        return optType;
     }
 
     @Override
@@ -479,15 +407,16 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.tx().readWrite();
         final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
 
+        final List<String> ids = new ArrayList<>();
         final List<String> labels = new ArrayList<>();
         final List<String> keys = new ArrayList<>();
         final List<Object> values = new ArrayList<>();
-        int optType = getOptimizedType(hasContainers, labels, keys, values);
+        int optType = AgensHelper.optimizeHasContainers(hasContainers, ids, labels, keys, values);
 
         final Iterator<Edge> iter;
         if ( edgeIds == null || edgeIds.length == 0) {
             if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName, labels, keys, values))
+                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName, ids, labels, keys, values))
                         .filter(relationshipPredicate)
                         .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
             else

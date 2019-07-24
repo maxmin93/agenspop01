@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.graph.process.traversal.step.map;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.step.ByModulating;
@@ -35,7 +36,7 @@ import java.util.Set;
 public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
         implements TraversalParent, ByModulating, Configuring {
 
-    protected final String[] propertyKeys;
+    protected String[] propertyKeys;
     protected final PropertyType returnType;
 
     protected int tokens;
@@ -43,6 +44,8 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
 
     private Parameters parameters = new Parameters();
     private TraversalRing<K, E> traversalRing;
+
+    // includeTokens = true => .valueMap(true) => [id, label, property...]
 
     @Deprecated
     public AgensPropertyMapStep(final Traversal.Admin traversal, final boolean includeTokens, final PropertyType propertyType, final String... propertyKeys) {
@@ -64,6 +67,7 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
         final Element element = traverser.get();
         final boolean isVertex = element instanceof Vertex;
 
+        // Deprecated
         if (this.returnType == PropertyType.VALUE) {
             if (includeToken(WithOptions.ids)) map.put(T.id, element.id());
             if (element instanceof VertexProperty) {
@@ -74,7 +78,19 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
             }
         }
 
-        final Iterator<? extends Property> properties = null == this.propertyTraversal ?
+        List<String> withOptions = Arrays.asList(this.propertyKeys);
+        if( withOptions.contains(T.id.name()) ){
+            map.put(T.id.name(), element.id());
+            // this.propertyKeys = (String[]) ArrayUtils.removeElement(this.propertyKeys, T.id.name());
+        }
+        if( withOptions.contains(T.label.name()) ){
+            map.put(T.label.name(), element.label());
+            // this.propertyKeys = (String[]) ArrayUtils.removeElement(this.propertyKeys, T.label.name());
+        }
+        // **NOTE: propertyKeys == [] 이면 모든 property 를 출력한다
+        //      => 어차피 properties 에 id, label 은 없으니 그냥 놔두자
+
+        final Iterator<? extends Property> properties = (null == this.propertyTraversal) ?
                 element.properties(this.propertyKeys) :
                 TraversalUtil.applyAll(traverser, this.propertyTraversal);
         //final Iterator<? extends Property> properties = element.properties(this.propertyKeys);
@@ -82,7 +98,8 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
             final Property<?> property = properties.next();
             map.put(property.key(), property.value());
 /*
-            // VertexProperty 인 경우 value 를 ArrayList 로 출력하는 부분 ==> 제거!
+            // **NOTE: VertexProperty 인 경우 value 를 ArrayList 로 출력하는 부분
+            //      ==> 제거!
             //
             final Object value = this.returnType == PropertyType.VALUE ? property.value() : property;
             if (isVertex) {
