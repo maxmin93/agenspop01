@@ -3,6 +3,7 @@ package net.bitnine.agenspop.service;
 import com.google.common.base.Joiner;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
+import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.web.dto.DetachedGraph;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -219,18 +220,14 @@ expected> type = LinkedHashMap()
     }
 
     @Async("agensExecutor")
-    public CompletableFuture<List<AgensVertex>> getVertices(String gName, String... labels) throws InterruptedException {
+    public CompletableFuture<List<AgensVertex>> getVertices(String gName
+            , List<String> ids, List<String> labels, List<String> keys, List<String> values
+    ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
-            return CompletableFuture.completedFuture( null );
+            return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
-        GraphTraversalSource ts = (GraphTraversalSource) graphManager.getTraversalSource(GRAPH_TRAVERSAL_NAME.apply(gName));
-        if( ts == null ) return CompletableFuture.completedFuture( null );
-
-        GraphTraversal t;
-        if( labels.length == 0 ) t = ts.V();
-        // **NOTE: 최적화 필요
-        // ex) AgensGraphStep(vertex,[~label.within([customer, order])])
-        else t = ts.V().hasLabel(labels[0], Arrays.copyOfRange(labels, 1, labels.length));
+        AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
+        Iterator<Vertex> t = g.vertices(ids, labels, keys, values);
 
         List<AgensVertex> vertices = new ArrayList<>();
         while( t.hasNext() ) vertices.add( (AgensVertex) t.next() );
@@ -239,20 +236,14 @@ expected> type = LinkedHashMap()
     }
 
     @Async("agensExecutor")
-    public CompletableFuture<List<AgensEdge>> getEdges(String gName, String... labels) throws InterruptedException {
+    public CompletableFuture<List<AgensEdge>> getEdges(String gName
+            , List<String> ids, List<String> labels, List<String> keys, List<String> values
+    ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
-            return CompletableFuture.completedFuture( null );
+            return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
-        GraphTraversalSource ts = (GraphTraversalSource) graphManager.getTraversalSource(GRAPH_TRAVERSAL_NAME.apply(gName));
-        if( ts == null ) return CompletableFuture.completedFuture( null );
-
-        GraphTraversal t;
-        if( labels.length == 0 ) t = ts.E();
-        // **NOTE: fetch size = 100 관련 중요 문제
-        // contains 데이터가 많아, sold/part_of 등의 소수의 label 들을 쿼리하면 나오지 않는다
-        // ==> V().hasLabel(), E().hasLabel() Step을 ES 쿼리에 적합하도록 최적화해야 함!!
-        // ==> 관련 클래스 : AgensGraphStepStrategy, AgensLabelStep (신규)
-        else t = ts.E().hasLabel(labels[0], Arrays.copyOfRange(labels, 1, labels.length));
+        AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
+        Iterator<Edge> t = g.edges(ids, labels, keys, values);
 
         List<AgensEdge> edges = new ArrayList<>();
         while( t.hasNext() ) edges.add( (AgensEdge) t.next() );

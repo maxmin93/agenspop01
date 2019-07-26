@@ -330,6 +330,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         return iter;
     }
 
+    public Iterator<Vertex> vertices(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
+        this.tx().readWrite();
+        return IteratorUtils.stream(
+                    this.baseGraph.findVertices(graphName, ids, labels, keys, values))
+                .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+    }
+
     public Iterator<Vertex> vertices(List<HasContainer> hasContainers, final Object... vertexIds) {
         this.tx().readWrite();
         final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
@@ -399,6 +406,13 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         }
         return iter;
+    }
+
+    public Iterator<Edge> edges(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
+        this.tx().readWrite();
+        return IteratorUtils.stream(
+                    this.baseGraph.findEdges(graphName, ids, labels, keys, values))
+                .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
     }
 
     public Iterator<Edge> edges(List<HasContainer> hasContainers, final Object... edgeIds) {
