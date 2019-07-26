@@ -16,14 +16,18 @@ public class ElasticProperties {
     private int port;           // = 9300;
     @NotBlank
     private String clusterName; // = "es-bitnine";
+    @NotBlank
+    private int pageSize;       // = 2500;
 
-    // ElasticProperties(){ }
+    // ElasticProperties(){ }   // default constructor
 
     public String getHost() { return host; }
     public int getPort() { return port; }
     public String getClusterName() { return clusterName; }
+    public int getPageSize() { return pageSize; }
 
     public void setHost(String host) { this.host = host; }
     public void setPort(int port) { this.port = port; }
     public void setClusterName(String clusterName) { this.clusterName = clusterName; }
+    public void setPageSize(int pageSize) { this.pageSize = pageSize; }
 }

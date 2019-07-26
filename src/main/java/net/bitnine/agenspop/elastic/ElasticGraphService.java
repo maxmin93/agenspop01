@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.elastic;
 
 import com.google.common.collect.Iterables;
+import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
 import net.bitnine.agenspop.elastic.document.ElasticElementDocument;
 import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
@@ -52,12 +53,10 @@ import static org.elasticsearch.index.query.QueryBuilders.*;
 public class ElasticGraphService implements ElasticGraphAPI {
 
     static final String VERTEX_INDEX_NAME = ElasticVertexDocument.class.getAnnotation(Document.class).indexName();
-//        "agensvertex";
     static final String EDGE_INDEX_NAME = ElasticEdgeDocument.class.getAnnotation(Document.class).indexName();
-//        "agensedge";
 
-    // default pageable
-    static final Pageable DEFAULT_PAGEABLE = PageRequest.of(0, 2500);
+    // property : {agens.elastic.page-size}
+    public final Pageable DEFAULT_PAGEABLE;
 
     private final ElasticVertexRepository vertexRepository;
     private final ElasticEdgeRepository edgeRepository;
@@ -69,13 +68,16 @@ public class ElasticGraphService implements ElasticGraphAPI {
             ElasticVertexRepository vertexRepository,
             ElasticEdgeRepository edgeRepository,
             ElasticsearchTemplate template,
-            TransportClient client
+            TransportClient client,
+            ElasticProperties elasticProperties
             //, ElasticsearchOperations operations
     ) {
         this.vertexRepository = vertexRepository;
         this.edgeRepository = edgeRepository;
         this.template = template;
 //        this.operations = operations;
+
+        DEFAULT_PAGEABLE = PageRequest.of(0, elasticProperties.getPageSize());
     }
 
 //    @PreDestroy
