@@ -22,6 +22,10 @@ agens:
   api:
     base-path: /api
     query-timeout: 600000       # 1000 ms = 1 sec
+  elastic:
+    host: localhost
+    port: 9300
+    cluster-name: es-bitnine
   datasource:
     driverClassName: org.postgresql.Driver
     url: jdbc:postgresql://27.117.163.21:15602/northwind?ApplicationName=AgensWeb2

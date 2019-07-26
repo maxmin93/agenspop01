@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.config;
 
+import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elastic.repository.ArticleRepository;
 import net.bitnine.agenspop.service.ArticleService;
 
@@ -24,42 +25,18 @@ import java.net.UnknownHostException;
 @ComponentScan(basePackages = { "net.bitnine.agenspop.elastic" })
 public class ElasticConfig {
 
+    // ** NOTE: local 접속이 아니면 안됨
+    //      ==> High Level RestClient 로 차후 변경해야
+    //          (spring-data-elasticsearch v3.2 에서 지원할 때 변경)
+    private final String host;
+    private final int port;
+    private final String clusterName;
+
     @Autowired
-    ElasticsearchOperations operations;
-    @Autowired
-    ArticleRepository repository;
-    @Autowired
-    ArticleService service;
-    @Autowired
-    ElasticsearchTemplate elasticsearchTemplate;
-
-    // ERROR : property 를 읽어오지 못하거나 타이밍이 안맞음 (null)
-    //
-//    @Value("${elasticsearch.host:localhost}")
-//    @Value("${elasticsearch.port:9300}")
-//    @Value("${elasticsearch.clustername")
-
-//    public String host = "27.117.163.21";           //"localhost";
-//    public String host = "tonyne.iptime.org";
-//    public int port = 15620;                        //9300;
-//    public int port = 9300;
-//    private String clusterName = "es-bgmin";
-
-
-    // ** NOTE: local 접속이 아니면 안됨 ==> High Level RestClient 로 차후 변경해야
-    //          (spring-data-elasticsearch 에서 지원할 때 변경)
-    public String host = "localhost";
-    public int port = 9300;
-    private String clusterName = "es-bitnine";
-
-    public String getHost() {
-        return host;
-    }
-    public int getPort() {
-        return port;
-    }
-    public String getClusterName() {
-        return clusterName;
+    ElasticConfig(ElasticProperties elasticProperties){
+        this.host = elasticProperties.getHost();
+        this.port = elasticProperties.getPort();
+        this.clusterName = elasticProperties.getClusterName();
     }
 
     @Bean
