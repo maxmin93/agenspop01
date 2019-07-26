@@ -130,7 +130,7 @@ public final class AgensHelper {
                     optType += 100000*valueList.size();
                     iter.remove();      // remove hasContainer!!
                 }
-                return optType;         // skips other hasContainers
+                // return optType;      // skips other hasContainers
             }
             // hasLabel(label...)
             else if( c.getKey().equals("~label") ){

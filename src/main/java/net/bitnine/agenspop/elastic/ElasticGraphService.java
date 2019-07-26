@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.elastic;
 
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
@@ -524,8 +525,37 @@ public class ElasticGraphService implements ElasticGraphAPI {
         List<? extends ElasticVertex> list = null;
         List<String> valuesList = values.stream().map(Object::toString).collect(Collectors.toList());
 
+        // case: ~id (id.eq or id.within)
+        if( ids.size() > 0 ) {
+            list = vertexRepository.findByIdIn(ids);    // datasource is no meaning
+            System.out.println(String.format("** optimized Vertices=%d : ~id.within='%s'", list.size(), String.join("&", ids)));
+
+            if( list.size() > 0 && labels.size() > 0 ) {
+                list = list.stream().filter(e -> labels.contains(e.getLabel())).collect(Collectors.toList());
+            }
+            if( list.size() > 0 && keys.size() > 0 ){
+                list = list.stream().filter(e -> {
+                    List<String> intersection = new ArrayList<>();
+                    for( String key : e.getKeys() ){
+                        if( keys.contains(key) ) intersection.add(key);             // same key
+                    }
+                    if( intersection.size() > 0 ) return true;
+                    return false;
+                }).collect(Collectors.toList());
+            }
+            if( list.size() > 0 && valuesList.size() > 0 ){
+                list = list.stream().filter(e -> {
+                    List<String> intersection = new ArrayList<>();
+                    for( String value : ((ElasticElementDocument)e).getValues() ){
+                        if( valuesList.contains(value) ) intersection.add(value);   // same value
+                    }
+                    if( intersection.size() > 0 ) return true;
+                    return false;
+                }).collect(Collectors.toList());
+            }
+        }
         // case: ~label.eq
-        if( labels.size() == 1 ){
+        else if( labels.size() == 1 ){
             // AND key.eq
             if( keys.size() == 1 && values.size() == 0 ){
                 list = vertexRepository.findByDatasourceAndLabelAndPropertiesKey(
@@ -745,12 +775,32 @@ public class ElasticGraphService implements ElasticGraphAPI {
         List<? extends ElasticEdge> list = null;
         List<String> valuesList = values.stream().map(Object::toString).collect(Collectors.toList());
 
-        // case: ~id
+        // case: ~id (id.eq or id.within)
         if( ids.size() > 0 ) {
-            // id.eq or id.within
-            if( ids.size() == 1 ){
-                list = edgeRepository.findByIdIn(ids);
-                System.out.println(String.format("** optimized Edges=%d : ~id.within='%s'", String.join("&", ids)));
+            list = edgeRepository.findByIdIn(ids);    // datasource is no meaning
+            System.out.println(String.format("** optimized Edges=%d : ~id.within='%s'", list.size(), String.join("&", ids)));
+
+            if( list.size() > 0 && labels.size() > 0 )
+                list = list.stream().filter(e -> labels.contains(e.getLabel())).collect(Collectors.toList());
+            if( list.size() > 0 && keys.size() > 0 ){
+                list = list.stream().filter(e -> {
+                    List<String> intersection = new ArrayList<>();
+                    for( String key : e.getKeys() ){
+                        if( keys.contains(key) ) intersection.add(key);             // same key
+                    }
+                    if( intersection.size() > 0 ) return true;
+                    return false;
+                }).collect(Collectors.toList());
+            }
+            if( list.size() > 0 && valuesList.size() > 0 ){
+                list = list.stream().filter(e -> {
+                    List<String> intersection = new ArrayList<>();
+                    for( String value : ((ElasticElementDocument)e).getValues() ){
+                        if( valuesList.contains(value) ) intersection.add(value);   // same value
+                    }
+                    if( intersection.size() > 0 ) return true;
+                    return false;
+                }).collect(Collectors.toList());
             }
         }
         // case: ~label.eq

@@ -55,7 +55,7 @@ public class ManagerController {
 
         return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), httpStatus);
     }
-
+/*
     // reload graphs
     @GetMapping("/reload")
     public ResponseEntity<?> reloadGraphs() throws Exception {
@@ -82,4 +82,5 @@ public class ManagerController {
 
         return new ResponseEntity<String>(graphs, productHeaders(), httpStatus);
     }
+ */
 }

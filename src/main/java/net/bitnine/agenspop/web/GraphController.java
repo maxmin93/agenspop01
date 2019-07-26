@@ -92,10 +92,10 @@ public class GraphController {
 
     @GetMapping("/{datasource}/v")
     public ResponseEntity<?> listVertices(@PathVariable String datasource
-            , @RequestParam(value="ids", required=false, defaultValue = "") List<String> ids
-            , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
-            , @RequestParam(value="keys", required=false, defaultValue = "") List<String> keys
-            , @RequestParam(value="values", required=false, defaultValue = "") List<String> values
+            , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
+            , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
+            , @RequestParam(value="key", required=false, defaultValue = "") List<String> keys
+            , @RequestParam(value="value", required=false, defaultValue = "") List<Object> values
     ) throws Exception {
         CompletableFuture<List<AgensVertex>> future =
                 gremlin.getVertices(datasource, ids, labels, keys, values);
@@ -109,10 +109,10 @@ public class GraphController {
 
     @GetMapping("/{datasource}/e")
     public ResponseEntity<?> listEdges(@PathVariable String datasource
-            , @RequestParam(value="ids", required=false, defaultValue = "") List<String> ids
-            , @RequestParam(value="labels", required=false, defaultValue = "") List<String> labels
-            , @RequestParam(value="keys", required=false, defaultValue = "") List<String> keys
-            , @RequestParam(value="values", required=false, defaultValue = "") List<String> values
+            , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
+            , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
+            , @RequestParam(value="key", required=false, defaultValue = "") List<String> keys
+            , @RequestParam(value="value", required=false, defaultValue = "") List<Object> values
     ) throws Exception {
         CompletableFuture<List<AgensEdge>> future =
                 gremlin.getEdges(datasource, ids, labels, keys, values);

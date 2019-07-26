@@ -81,6 +81,10 @@ public abstract class ElasticElementDocument implements ElasticElement {
         return this.properties;
     }
 
+    public Iterable<String> getValues(){
+        return properties.stream().map(ElasticProperty::getValue).collect(Collectors.toList());
+    }
+
     /////////////////////////////////////////
 
 //    @Override

@@ -221,13 +221,19 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensVertex>> getVertices(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<String> values
+            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
+        // for DEBUG
+//        System.out.println("ids=["+String.join(",",ids)+"]");
+//        System.out.println("labels=["+String.join(",",labels)+"]");
+//        System.out.println("keys=["+String.join(",",keys)+"]");
+//        System.out.println("values=["+String.join(",",values.stream().map(Object::toString).collect(Collectors.toList()))+"]");
+
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Vertex> t = g.vertices(ids, labels, keys, values);
+        Iterator<Vertex> t = g.verticesWithFilters(ids, labels, keys, values);
 
         List<AgensVertex> vertices = new ArrayList<>();
         while( t.hasNext() ) vertices.add( (AgensVertex) t.next() );
@@ -237,13 +243,13 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensEdge>> getEdges(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<String> values
+            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Edge> t = g.edges(ids, labels, keys, values);
+        Iterator<Edge> t = g.edgesWithFilters(ids, labels, keys, values);
 
         List<AgensEdge> edges = new ArrayList<>();
         while( t.hasNext() ) edges.add( (AgensEdge) t.next() );
