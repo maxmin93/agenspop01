@@ -25,9 +25,11 @@ public class Agenspop01Application {
 		// notify startup of server
 		String hello_msg = productProperties.getHelloMsg();
 		if( hello_msg != null ){
-			System.out.println("\n================================================");
+			StringBuilder sb = new StringBuilder();
+			for(int i=hello_msg.length()+2; i>0; i--) sb.append("=");
+			System.out.println("\n"+sb.toString());
 			System.out.println(" " + hello_msg);
-			System.out.println("================================================\n");
+			System.out.println(sb.toString()+"\n");
 		}
 	}
 

@@ -170,7 +170,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     public String toString() {
         long vSize = baseGraph.countV(graphName);
         long eSize = baseGraph.countE(graphName);
-        return this.getClass().getSimpleName()+"<"+graphName+">[V="+vSize+",E="+eSize+"]";
+        return graphName+"[V="+vSize+",E="+eSize+"]";
     }
 
     public String name() {

@@ -54,56 +54,6 @@ public class AgensGremlinService {
         this.cfog = new TranslationFacade();
     }
 
-/*
-String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
-expected> type = LinkedHashMap()
-==>[a:[cypher.element:[id:7,label:knows,weight:0.5],cypher.inv:2,cypher.outv:1]]
-==>[a:[cypher.element:[id:8,label:knows,weight:1.0],cypher.inv:4,cypher.outv:1]]
-
-==> modern_g.E().valueMap()
-** NOTE:
-  Cypher-for-Gremlin 변환기를 거치면 결과를 LinkedHashMap 형태로 뱉는다!!
-  ==> {country=[USA], age=[29], name=[marko]}   |LinkedHashMap
-  ==> {country=[USA], age=[27], name=[vadas]}   |LinkedHashMap
-  ==> {lang=[java], name=[lop]}                 |LinkedHashMap
-  ==> {country=[USA], age=[32], name=[josh]}    |LinkedHashMap
-  ==> {lang=[java], name=[ripple]}              |LinkedHashMap
-  ==> {country=[USA], age=[35], name=[peter]}   |LinkedHashMap
- */
-
-    @PostConstruct
-    private void ready() {
-//        String script = "v1='modern_1'; v2='modern_2'; vlist = modern_g.V(v1,v2);";
-//        String script = "modern_g.V().valueMap()";
-//        String script = "modern_g.V().as('a').hasLabel('person').has('name',eq('vadas'))";
-        String script = "modern_g.V().hasKey('age','name')";
-//        String script = "modern_g.E().as('a').hasLabel('knows').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element','cypher.inv','cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
-        try {
-            CompletableFuture<?> future = runGremlin(script);
-            CompletableFuture.allOf(future).join();
-            Object result = (Object)future.get();
-
-            if( result != null  && result instanceof List) {
-                List<Object> resultList = (List<Object>) future.get();
-                if (resultList != null && resultList.size() > 0) {
-                    if (resultList.get(0) instanceof LinkedHashMap) {
-                        for (Object item : resultList) {
-                            LinkedHashMap<String, Object> list = (LinkedHashMap<String, Object>) item;
-                            list.forEach((k, v) -> System.out.println("  " + k + " -> " + v + "|" + v.getClass().getSimpleName()));
-                        }
-                    } else {
-                        resultList.stream().forEach(r ->
-                                System.out.println("  ==> " + r.toString() + "|" + r.getClass().getSimpleName()));
-                    }
-                }
-            } else {
-                System.out.println("  ==> " + result.toString() + "|" + result.getClass().getSimpleName());
-            }
-        }catch (Exception ex){
-            System.out.println("** ERROR: runScript ==> " + ex.getMessage());
-        }
-    }
-
     @Async("agensExecutor")
     public CompletableFuture<?> runGremlin(String script){
         try{
@@ -138,6 +88,22 @@ expected> type = LinkedHashMap()
         }
     }
 
+/*
+String script = "modern_g.E().as('a').project('a').by(__.identity()).limit(2).project('a').by(__.select('a').project('cypher.element', 'cypher.inv', 'cypher.outv').by(__.valueMap().with('~tinkerpop.valueMap.tokens')).by(__.inV().id()).by(__.outV().id()))";
+expected> type = LinkedHashMap()
+==>[a:[cypher.element:[id:7,label:knows,weight:0.5],cypher.inv:2,cypher.outv:1]]
+==>[a:[cypher.element:[id:8,label:knows,weight:1.0],cypher.inv:4,cypher.outv:1]]
+
+==> modern_g.E().valueMap()
+** NOTE:
+  Cypher-for-Gremlin 변환기를 거치면 결과를 LinkedHashMap 형태로 뱉는다!!
+  ==> {country=[USA], age=[29], name=[marko]}   |LinkedHashMap
+  ==> {country=[USA], age=[27], name=[vadas]}   |LinkedHashMap
+  ==> {lang=[java], name=[lop]}                 |LinkedHashMap
+  ==> {country=[USA], age=[32], name=[josh]}    |LinkedHashMap
+  ==> {lang=[java], name=[ripple]}              |LinkedHashMap
+  ==> {country=[USA], age=[35], name=[peter]}   |LinkedHashMap
+ */
 
     @Async("agensExecutor")
     public CompletableFuture<?> runCypher(String cypher, String datasource){
@@ -148,6 +114,7 @@ expected> type = LinkedHashMap()
             // translate cypher query to gremlin
             String script = cfog.toGremlinGroovy(cypher);
 /*
+            // **NOTE: 기본 translator 와 별 다를게 없다
             String cypher = "MATCH (p:Person) WHERE p.age > 25 RETURN p.name";
             CypherAst ast = CypherAst.parse(cypher);
             Translator<String, GroovyPredicate> translator = Translator.builder().gremlinGroovy().build(TranslatorFlavor.cosmosDb());
@@ -233,7 +200,9 @@ expected> type = LinkedHashMap()
 //        System.out.println("values=["+String.join(",",values.stream().map(Object::toString).collect(Collectors.toList()))+"]");
 
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Vertex> t = g.verticesWithFilters(ids, labels, keys, values);
+        Iterator<Vertex> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
+                g.verticesWithFilters(ids, labels, keys, values)
+                : g.vertices();
 
         List<AgensVertex> vertices = new ArrayList<>();
         while( t.hasNext() ) vertices.add( (AgensVertex) t.next() );
@@ -249,7 +218,9 @@ expected> type = LinkedHashMap()
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Edge> t = g.edgesWithFilters(ids, labels, keys, values);
+        Iterator<Edge> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
+                g.edgesWithFilters(ids, labels, keys, values)
+                : g.edges();
 
         List<AgensEdge> edges = new ArrayList<>();
         while( t.hasNext() ) edges.add( (AgensEdge) t.next() );

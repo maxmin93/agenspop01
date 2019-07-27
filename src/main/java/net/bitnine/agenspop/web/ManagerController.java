@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.web;
 
 import net.bitnine.agenspop.config.properties.ProductProperties;
+import net.bitnine.agenspop.graph.AgensGraphManager;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,12 +19,12 @@ import java.util.Set;
 @RequestMapping(value = "${agens.api.base-path}/admin")
 public class ManagerController {
 
-    private final GraphManager manager;
+    private final AgensGraphManager manager;
     private final ProductProperties productProperties;
 
     @Autowired
     public ManagerController(
-            GraphManager manager,
+            AgensGraphManager manager,
             ProductProperties productProperties
     ){
         this.manager = manager;
@@ -63,14 +65,14 @@ public class ManagerController {
         return new ResponseEntity<String>(message, productHeaders(), HttpStatus.OK);
     }
 
+    // reload graphs
+    @GetMapping(value="/update", produces="application/json; charset=UTF-8")
+    public ResponseEntity<?> updateGraphs() throws Exception {
+        manager.updateGraphs();
+        return new ResponseEntity<Map<String,String>>( manager.getGraphStates(), productHeaders(), HttpStatus.OK);
+    }
 
     /*
-    // reload graphs
-    @GetMapping(value="/reload", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> reloadGraphs() throws Exception {
-
-        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), HttpStatus.OK);
-    }
 
     // list labels of graph
     @GetMapping(value="/labels/{graph}", produces="application/json; charset=UTF-8")

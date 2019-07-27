@@ -128,6 +128,9 @@ public class AgensGroovyServer {
                 .filter(kv -> kv.getValue() instanceof LifeCycleHook)
                 .map(kv -> (LifeCycleHook) kv.getValue())
                 .collect(Collectors.toList());
+
+        // graphManager.configureGremlinExecutor for ScheduledTask
+        this.graphManager.configureGremlinExecutor(gremlinExecutor);
     }
 
     /////////////////////////////////////////////////////

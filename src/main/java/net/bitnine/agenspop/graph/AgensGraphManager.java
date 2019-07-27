@@ -6,16 +6,19 @@ import net.bitnine.agenspop.graph.exception.AgensGraphManagerException;
 import net.bitnine.agenspop.graph.structure.AgensFactory;
 
 import net.bitnine.agenspop.graph.structure.AgensGraph;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.apache.tinkerpop.gremlin.groovy.engine.GremlinExecutor;
 
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.Set;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -40,17 +43,17 @@ public class AgensGraphManager implements GraphManager {
     // Datasources based on Vertex index
     private final Map<String, Graph> graphs = new ConcurrentHashMap<>();
     private final Map<String, TraversalSource> traversalSources = new ConcurrentHashMap<>();
-
+    private Map<String,String> graphStates;
     // ?
     private final Object instantiateGraphLock = new Object();
 
-    private final ElasticGraphAPI baseGraph;
+    private final ElasticGraphAPI baseAPI;
     private static AgensGraphManager instance = null;
     private GremlinExecutor gremlinExecutor = null;
 
     @Autowired
-    public AgensGraphManager(ElasticGraphService baseGraph) {
-        this.baseGraph = baseGraph;
+    public AgensGraphManager(ElasticGraphService baseAPI) {
+        this.baseAPI = baseAPI;
         this.instance = this;
 
         // for DEBUG
@@ -61,16 +64,17 @@ public class AgensGraphManager implements GraphManager {
         return instance;
     }
 
+/*
     @PostConstruct
     private synchronized void ready(){
         // check exist datasources
-        Map<String, Long> dsVlist = baseGraph.listVertexDatasources();
-        Map<String, Long> dsElist = baseGraph.listEdgeDatasources();
+        Map<String, Long> dsVlist = baseAPI.listVertexDatasources();
+        Map<String, Long> dsElist = baseAPI.listEdgeDatasources();
 
         // if not exists, insert sample of modern graph
         if( dsVlist.size() == 0 || !dsVlist.keySet().contains("modern") || dsVlist.get("modern") < 6L ){
             String gName = "modern";
-            AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
+            AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
             AgensFactory.generateModern(g);
             putGraph(gName, g);
             updateTraversalSource(gName, g);
@@ -79,7 +83,7 @@ public class AgensGraphManager implements GraphManager {
         // graphs loading
         StringBuilder sb = new StringBuilder();
         for(Map.Entry<String, Long> ds : dsVlist.entrySet() ){
-            AgensGraph g = AgensFactory.createEmpty(baseGraph, ds.getKey());
+            AgensGraph g = AgensFactory.createEmpty(baseAPI, ds.getKey());
             putGraph(ds.getKey(), g);
             updateTraversalSource(ds.getKey(), g);
             sb.append(" ").append(ds.getKey()).append("[V=").append(ds.getValue()).append(",E=")
@@ -89,14 +93,16 @@ public class AgensGraphManager implements GraphManager {
         if( sb.length() > 1 ) sb.setLength(sb.length() - 1);
         System.out.println("AgensGraphManager ready ==>"+sb.toString()+"\n");
     }
+*/
 
-/*
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
         this.gremlinExecutor = gremlinExecutor;
         final ScheduledExecutorService bindExecutor = Executors.newScheduledThreadPool(1);
         // Dynamically created graphs created with the ConfiguredGraphFactory are
         // bound across all nodes in the cluster and in the face of server restarts
-        bindExecutor.scheduleWithFixedDelay(new GremlinExecutorGraphBinder(this, this.gremlinExecutor), 0, 20L, TimeUnit.SECONDS);
+        bindExecutor.scheduleWithFixedDelay(
+                new GremlinExecutorGraphBinder(this, this.gremlinExecutor)
+                , 0, 20L, TimeUnit.SECONDS);
     }
 
     private class GremlinExecutorGraphBinder implements Runnable {
@@ -110,11 +116,9 @@ public class AgensGraphManager implements GraphManager {
 
         @Override
         public void run() {
-//            final Graph graph = ConfiguredGraphFactory.open(it);
-//            updateTraversalSource(it, graph, this.gremlinExecutor, this.graphManager);
+            graphManager.updateGraphs();
         }
     }
-*/
 
     @Override
     public Set<String> getGraphNames() {
@@ -235,7 +239,7 @@ public class AgensGraphManager implements GraphManager {
             return graph;
         } else {
             synchronized (instantiateGraphLock) {
-                graph = AgensFactory.createEmpty(baseGraph, gName);
+                graph = AgensFactory.createEmpty(baseAPI, gName);
                 if (graph != null) graphs.put(gName, graph);
             }
             updateTraversalSource(gName, graph);
@@ -247,29 +251,51 @@ public class AgensGraphManager implements GraphManager {
     public Graph removeGraph(String gName) {
         if (gName == null) return null;
 
-        boolean isDone = this.baseGraph.removeDatasource(gName);
+        boolean isDone = this.baseAPI.removeDatasource(gName);
         System.out.println("** remove graph["+gName+"] ==> "+isDone );
 
         return graphs.remove(gName);
     }
 
-    private void updateTraversalSource(String graphName, Graph graph){
-        String traversalName = GRAPH_TRAVERSAL_NAME.apply(graphName);
-        TraversalSource traversalSource = graph.traversal();
-        putTraversalSource(traversalName, traversalSource);
-//        if (null != gremlinExecutor) {
-//            updateTraversalSource(graphName, graph, gremlinExecutor, this);
-//        }
+    //////////////////////////////////////////////////////////////////
+
+    public Map<String,String> getGraphStates(){ return this.graphStates; }
+
+    public synchronized void updateGraphs(){
+        boolean isFirst = graphs.size() == 0 ? true : false;
+        graphStates = new HashMap<>();
+
+        // check exist datasources
+        Map<String, Long> dsVlist = baseAPI.listVertexDatasources();
+        Map<String, Long> dsElist = baseAPI.listEdgeDatasources();
+
+        // graphs loading
+        for(Map.Entry<String, Long> ds : dsVlist.entrySet() ){
+            AgensGraph g = (AgensGraph) graphs.get( ds.getKey() );
+            // if not exists, then create new graph
+            if( g == null ){
+                g = AgensFactory.createEmpty(baseAPI, ds.getKey());
+                putGraph(ds.getKey(), g);
+            }
+            updateTraversalSource(ds.getKey(), g);
+            graphStates.put(ds.getKey(), ds.getKey()+"[V="+ds.getValue()+",E="+dsElist.getOrDefault(ds.getKey(), 0L)+"]");
+        }
+
+        if( isFirst ){
+            System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+        }
     }
 
-/*
-    private void updateTraversalSource(String graphName, Graph graph, GremlinExecutor gremlinExecutor,
-                                       AgensGraphManager graphManager){
-        gremlinExecutor.getScriptEngineManager().put(graphName, graph);
-        String traversalName = graphName + "_traversal";
-        TraversalSource traversalSource = graph.traversal();
-        gremlinExecutor.getScriptEngineManager().put(traversalName, traversalSource);
-        graphManager.putTraversalSource(traversalName, traversalSource);
+    // **참고 : JanusGraphManager
+    private void updateTraversalSource(String graphName, Graph graph){
+        if (gremlinExecutor != null) {
+            // ==> updateTraversalSource(graphName, graph, gremlinExecutor, this);
+            gremlinExecutor.getScriptEngineManager().put(graphName, graph);
+            String traversalName = GRAPH_TRAVERSAL_NAME.apply(graphName);
+            GraphTraversalSource traversalSource = graph.traversal();
+            gremlinExecutor.getScriptEngineManager().put(traversalName, traversalSource);
+            putTraversalSource(traversalName, traversalSource);
+        }
     }
-*/
+
 }
