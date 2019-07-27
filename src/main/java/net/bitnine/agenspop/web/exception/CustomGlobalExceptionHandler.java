@@ -20,6 +20,7 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(AgensGremlinException.class)
     public ResponseEntity<CustomErrorResponse> handleAgensWebServiceException(
             Exception ex, WebRequest request) {
+        System.out.println("CustomGlobalExceptionHandler ==> "+ex);
 
         CustomErrorResponse errors = new CustomErrorResponse();
         errors.setStatus(HttpStatus.NOT_FOUND.value());
@@ -34,6 +35,7 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(AgensGraphManagerException.class)
     public ResponseEntity<CustomErrorResponse> handleAgensGraphManagerException(
             Exception ex, WebRequest request) {
+        System.out.println("CustomGlobalExceptionHandler ==> "+ex);
 
         CustomErrorResponse errors = new CustomErrorResponse();
         errors.setStatus(HttpStatus.NOT_FOUND.value());
@@ -48,6 +50,7 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(AgensGraphException.class)
     public ResponseEntity<CustomErrorResponse> handleAgensGraphException(
             Exception ex, WebRequest request) {
+        System.out.println("CustomGlobalExceptionHandler ==> "+ex);
 
         CustomErrorResponse errors = new CustomErrorResponse();
         errors.setStatus(HttpStatus.NOT_FOUND.value());
@@ -62,6 +65,7 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CustomErrorResponse> handleIllegalArgumentException(
             Exception ex, WebRequest request) {
+        System.out.println("CustomGlobalExceptionHandler ==> "+ex);
 
         CustomErrorResponse errors = new CustomErrorResponse();
         errors.setStatus(HttpStatus.NOT_FOUND.value());
@@ -76,6 +80,8 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CustomErrorResponse> handleDefaultException(
             Exception ex, WebRequest request) {
+        System.out.println("CustomGlobalExceptionHandler ==> "+ex);
+
         CustomErrorResponse errors = new CustomErrorResponse();
         errors.setStatus(HttpStatus.BAD_REQUEST.value());
         errors.setTimestamp(LocalDateTime.now());

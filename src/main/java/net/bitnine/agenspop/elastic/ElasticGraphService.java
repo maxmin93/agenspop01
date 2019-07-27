@@ -318,11 +318,11 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
     // <S extends T> Iterable<S> saveAll(Iterable<S> entities)
 
-    public Iterable<ElasticVertexDocument> bulkInsertV(Iterable<ElasticVertexDocument> vlist){
+    public Iterable<ElasticVertexDocument> bulkInsertVertices(Iterable<ElasticVertexDocument> vlist){
         return vertexRepository.saveAll(vlist);
     }
 
-    public Iterable<ElasticEdgeDocument> bulkInsertE(Iterable<ElasticEdgeDocument> elist){
+    public Iterable<ElasticEdgeDocument> bulkInsertEdges(Iterable<ElasticEdgeDocument> elist){
         return edgeRepository.saveAll(elist);
     }
 
@@ -530,9 +530,11 @@ public class ElasticGraphService implements ElasticGraphAPI {
             list = vertexRepository.findByIdIn(ids);    // datasource is no meaning
             System.out.println(String.format("** optimized Vertices=%d : ~id.within='%s'", list.size(), String.join("&", ids)));
 
+            // AND label.within
             if( list.size() > 0 && labels.size() > 0 ) {
                 list = list.stream().filter(e -> labels.contains(e.getLabel())).collect(Collectors.toList());
             }
+            // AND key.within
             if( list.size() > 0 && keys.size() > 0 ){
                 list = list.stream().filter(e -> {
                     List<String> intersection = new ArrayList<>();
@@ -543,6 +545,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
                     return false;
                 }).collect(Collectors.toList());
             }
+            // AND value.within
             if( list.size() > 0 && valuesList.size() > 0 ){
                 list = list.stream().filter(e -> {
                     List<String> intersection = new ArrayList<>();
@@ -780,8 +783,10 @@ public class ElasticGraphService implements ElasticGraphAPI {
             list = edgeRepository.findByIdIn(ids);    // datasource is no meaning
             System.out.println(String.format("** optimized Edges=%d : ~id.within='%s'", list.size(), String.join("&", ids)));
 
+            // AND label.within
             if( list.size() > 0 && labels.size() > 0 )
                 list = list.stream().filter(e -> labels.contains(e.getLabel())).collect(Collectors.toList());
+            // AND key.within
             if( list.size() > 0 && keys.size() > 0 ){
                 list = list.stream().filter(e -> {
                     List<String> intersection = new ArrayList<>();
@@ -792,6 +797,7 @@ public class ElasticGraphService implements ElasticGraphAPI {
                     return false;
                 }).collect(Collectors.toList());
             }
+            // AND value.within
             if( list.size() > 0 && valuesList.size() > 0 ){
                 list = list.stream().filter(e -> {
                     List<String> intersection = new ArrayList<>();

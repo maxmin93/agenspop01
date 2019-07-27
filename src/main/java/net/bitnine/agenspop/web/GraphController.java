@@ -47,19 +47,14 @@ public class GraphController {
             version(GraphSONVersion.V1_0).create().createMapper();
 
     private final AgensGremlinService gremlin;
-    private final AgensGraphManager manager;
-    private final String gName = "modern";
-
     private final ProductProperties productProperties;
 
     @Autowired
     public GraphController(
-            AgensGraphManager manager,
             AgensGremlinService gremlin,
             ProductProperties productProperties
     ){
         this.gremlin = gremlin;
-        this.manager = manager;
         this.productProperties = productProperties;
     }
 
@@ -72,25 +67,22 @@ public class GraphController {
 
     ///////////////////////////////////////////
 
-    @GetMapping("/hello")
+    @GetMapping(value="/hello", produces="application/json; charset=UTF-8")
     @ResponseStatus(HttpStatus.OK)
     public String hello() throws Exception {
         return "{ \"msg\": \"Hello, graph!\"}";
     }
 
-    @GetMapping("/{datasource}")
+    @GetMapping(value="/{datasource}", produces="application/json; charset=UTF-8")
     public ResponseEntity<DetachedGraph> graphData(@PathVariable String datasource) throws Exception {
         CompletableFuture<DetachedGraph> future = gremlin.getGraph(datasource);
         CompletableFuture.allOf(future).join();
         DetachedGraph graph = future.get();
 
-        HttpStatus httpStatus = HttpStatus.OK;
-        if( graph == null ) httpStatus = HttpStatus.NO_CONTENT;
-
-        return new ResponseEntity<DetachedGraph>(graph, productHeaders(), httpStatus);
+        return new ResponseEntity<DetachedGraph>(graph, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/{datasource}/v")
+    @GetMapping(value="/{datasource}/v", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> listVertices(@PathVariable String datasource
             , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
             , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
@@ -107,7 +99,7 @@ public class GraphController {
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/{datasource}/e")
+    @GetMapping(value="/{datasource}/e", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> listEdges(@PathVariable String datasource
             , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
             , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
@@ -126,7 +118,7 @@ public class GraphController {
 
     ///////////////////////////////////////////
 
-    @GetMapping("/gremlin")
+    @GetMapping(value="/gremlin", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> runGremlin(@RequestParam("q") String script
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
         if( script == null || script.length() == 0 )
@@ -154,7 +146,7 @@ public class GraphController {
         return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping("/cypher")
+    @GetMapping(value="/cypher", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> runCypher(@RequestParam("q") String script
             , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource
             , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {

@@ -41,25 +41,18 @@ public class AgensGraphManager implements GraphManager {
     private final Map<String, Graph> graphs = new ConcurrentHashMap<>();
     private final Map<String, TraversalSource> traversalSources = new ConcurrentHashMap<>();
 
+    // ?
     private final Object instantiateGraphLock = new Object();
-    private GremlinExecutor gremlinExecutor = null;
 
     private final ElasticGraphAPI baseGraph;
     private static AgensGraphManager instance = null;
+    private GremlinExecutor gremlinExecutor = null;
 
-    private final Map<String, Long> datasources = new ConcurrentHashMap<>();
-
-    /**
-     * This class adheres to the TinkerPop graphManager specifications. It provides a coordinated
-     * mechanism by which to instantiate graph references on a given AgensGraph node and a graph
-     * reference tracker (or graph cache). Any graph created using the property \"graph.graphname\" and
-     * any graph defined at server start, i.e. in the server's YAML file, will go through this
-     * AgensGraphManager.
-     */
     @Autowired
     public AgensGraphManager(ElasticGraphService baseGraph) {
         this.baseGraph = baseGraph;
         this.instance = this;
+
         // for DEBUG
         System.out.println("AgensGraphManager is initializing.");
     }
@@ -75,7 +68,6 @@ public class AgensGraphManager implements GraphManager {
         Map<String, Long> dsElist = baseGraph.listEdgeDatasources();
 
         // if not exists, insert sample of modern graph
-//        if( dsVlist.size() == 0 || dsVlist.values().stream().reduce(0L, (a,b)->a+b) == 0L ){
         if( dsVlist.size() == 0 || !dsVlist.keySet().contains("modern") || dsVlist.get("modern") < 6L ){
             String gName = "modern";
             AgensGraph g = AgensFactory.createEmpty(baseGraph, gName);
@@ -95,7 +87,7 @@ public class AgensGraphManager implements GraphManager {
                     .append("],");
         }
         if( sb.length() > 1 ) sb.setLength(sb.length() - 1);
-        System.out.println("AgensGraphManager ready ==>"+sb.toString());
+        System.out.println("AgensGraphManager ready ==>"+sb.toString()+"\n");
     }
 
 /*
@@ -123,10 +115,6 @@ public class AgensGraphManager implements GraphManager {
         }
     }
 */
-    // To be used for testing purposes
-    protected static void shutdownAgensGraphManager() {
-        instance = null;
-    }
 
     @Override
     public Set<String> getGraphNames() {
@@ -258,6 +246,10 @@ public class AgensGraphManager implements GraphManager {
     @Override
     public Graph removeGraph(String gName) {
         if (gName == null) return null;
+
+        boolean isDone = this.baseGraph.removeDatasource(gName);
+        System.out.println("** remove graph["+gName+"] ==> "+isDone );
+
         return graphs.remove(gName);
     }
 

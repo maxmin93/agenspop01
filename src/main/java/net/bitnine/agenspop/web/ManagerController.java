@@ -2,6 +2,7 @@ package net.bitnine.agenspop.web;
 
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -37,50 +38,45 @@ public class ManagerController {
 
     ///////////////////////////////////////////
 
-    @GetMapping("/hello")
+    @GetMapping(value="/hello", produces="application/json; charset=UTF-8")
     @ResponseStatus(HttpStatus.OK)
     public String hello() throws Exception {
         return "{ \"msg\": \"Hello, admin!\"}";
     }
 
-    @GetMapping("/graphs")
+    @GetMapping(value="/graphs", produces="application/json; charset=UTF-8")
     public ResponseEntity<Map<String, String>> listGraphs() throws Exception {
         Set<String> names = manager.getGraphNames();
         Map<String, String> graphs = new HashMap<>();
         for( String name : names ){
             graphs.put(name, manager.getGraph(name).toString());
         }
-        HttpStatus httpStatus = HttpStatus.OK;
-        if( graphs == null ) httpStatus = HttpStatus.NO_CONTENT;
-
-        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), httpStatus);
-    }
-/*
-    // reload graphs
-    @GetMapping("/reload")
-    public ResponseEntity<?> reloadGraphs() throws Exception {
-        HttpStatus httpStatus = HttpStatus.OK;
-        if( graphs == null ) httpStatus = HttpStatus.NO_CONTENT;
-
-        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), httpStatus);
+        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), HttpStatus.OK);
     }
 
     // remove graph
-    @GetMapping("/remove/{graph}")
+    @GetMapping(value="/remove/{graph}", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> removeGraph(@PathVariable String graph) throws Exception {
-        HttpStatus httpStatus = HttpStatus.OK;
-        if( graphs == null ) httpStatus = HttpStatus.NO_CONTENT;
+        Graph g = manager.removeGraph(graph);
 
-        return new ResponseEntity<String>(graphs, productHeaders(), httpStatus);
+        String message = "{\"remove\" : \""+(g==null ? "null":g.toString())+"\"}";
+        return new ResponseEntity<String>(message, productHeaders(), HttpStatus.OK);
+    }
+
+
+    /*
+    // reload graphs
+    @GetMapping(value="/reload", produces="application/json; charset=UTF-8")
+    public ResponseEntity<?> reloadGraphs() throws Exception {
+
+        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), HttpStatus.OK);
     }
 
     // list labels of graph
-    @GetMapping("/labels/{graph}")
+    @GetMapping(value="/labels/{graph}", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> listLabels(@PathVariable String graph) throws Exception {
-        HttpStatus httpStatus = HttpStatus.OK;
-        if( graphs == null ) httpStatus = HttpStatus.NO_CONTENT;
 
-        return new ResponseEntity<String>(graphs, productHeaders(), httpStatus);
+        return new ResponseEntity<String>(graphs, productHeaders(), HttpStatus.OK);
     }
  */
 }
