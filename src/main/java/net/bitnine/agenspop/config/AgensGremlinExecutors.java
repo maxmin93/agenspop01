@@ -14,13 +14,13 @@ import java.util.concurrent.ThreadFactory;
 public class AgensGremlinExecutors {
 
     @Primary
-    @Bean("gremlinExecutor")
+    @Bean("gremlinExecutorService")
     public ExecutorService getGremlinExecutor() {
         ThreadFactory threadFactory = ThreadFactoryUtil.create("exec-%d");
         return Executors.newFixedThreadPool(5, threadFactory);
     }
 
-    @Bean("scheduledExecutor")
+    @Bean("scheduledExecutorService")
     public ScheduledExecutorService getScheduledExecutor() {
         ThreadFactory threadFactory = ThreadFactoryUtil.create("worker-%d");
         return Executors.newScheduledThreadPool(1, threadFactory);

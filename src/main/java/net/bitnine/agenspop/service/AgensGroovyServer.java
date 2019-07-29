@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 // groovy service
 //
 // **참고
+// 소스 org.apache.tinkerpop.gremlin.server.util.ServerGremlinExecutor
 // https://github.com/eugenp/tutorials/blob/master/core-groovy-2/src/main/java/com/baeldung/MyJointCompilationApp.java
 
 @Service
@@ -61,12 +62,12 @@ public class AgensGroovyServer {
     @Autowired
     public AgensGroovyServer(
             AgensGraphManager graphManager
-            , ExecutorService gremlinService
-            , ScheduledExecutorService scheduledService
+            , ExecutorService gremlinExecutorService
+            , ScheduledExecutorService scheduledExecutorService
     ) {
         this.graphManager = graphManager;
-        this.gremlinExecutorService = gremlinService;
-        this.scheduledExecutorService = scheduledService;
+        this.gremlinExecutorService = gremlinExecutorService;
+        this.scheduledExecutorService = scheduledExecutorService;
         this.settings = new Settings();     // default settings
 
         logger.info("Initialized Gremlin thread pool.  Threads in pool named with pattern gremlin-*");
