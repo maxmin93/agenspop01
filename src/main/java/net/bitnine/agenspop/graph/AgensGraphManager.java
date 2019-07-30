@@ -47,7 +47,8 @@ public class AgensGraphManager implements GraphManager {
     // ?
     private final Object instantiateGraphLock = new Object();
 
-    private final ElasticGraphAPI baseAPI;
+    // private final ElasticGraphAPI baseAPI;
+    private final ElasticGraphService baseAPI;
     private static AgensGraphManager instance = null;
     private GremlinExecutor gremlinExecutor = null;
 
@@ -260,6 +261,14 @@ public class AgensGraphManager implements GraphManager {
     //////////////////////////////////////////////////////////////////
 
     public Map<String,String> getGraphStates(){ return this.graphStates; }
+
+    public Map<String,Map<String,Long>> getGraphLabels(){
+        return baseAPI.getGraphLabels();
+    }
+
+    public Map<String,Map<String,Long>> getGraphKeys(String datasource){
+        return baseAPI.getGraphKeys(datasource);
+    }
 
     public synchronized void updateGraphs(){
         boolean isFirst = graphs.size() == 0 ? true : false;

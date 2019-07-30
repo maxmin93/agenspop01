@@ -23,6 +23,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.util.stream.Collectors.joining;
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
 // http://localhost:9200/_cat/indices?v
@@ -922,15 +924,78 @@ public class ElasticGraphService implements ElasticGraphAPI {
     //
     // aggregation services of Vertex
     //
+    // **참고
+    // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_bucket_aggregations.html#_order
+    // https://www.baeldung.com/spring-data-elasticsearch-queries
+    //
+    // **참고: 멀티 필드 그룹핑
+    // https://stackoverflow.com/a/42647596/6811653
 
-    public List<String> verticesAggTest1(){
+/*
+CustomGlobalExceptionHandler ==>
+Failed to execute phase [query], all shards failed; shardFailures {[ZJ1ScLxSQWGdwAcYJFUEqQ][agensvertex][0]
+: RemoteTransportException[[bgmin-pc][127.0.0.1:9300][indices:data/read/search[phase/query]]]; nested
+: IllegalArgumentException[Fielddata is disabled on text fields by default.
+  Set fielddata=true on [properties.key] in order to load fielddata in memory by uninverting the inverted index.
+  Note that this can however use significant memory. Alternatively use a keyword field instead.];
+}
+ */
+    public Map<String,Map<String,Long>> getGraphKeys(String datasource){
 
-        // **참고
-        // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_bucket_aggregations.html#_order
-        // https://www.baeldung.com/spring-data-elasticsearch-queries
-        //
-        // **참고: 멀티 필드 그룹핑
-        // https://stackoverflow.com/a/42647596/6811653
+        // given
+        SearchQuery searchQuery = new NativeSearchQueryBuilder() //
+                // .withQuery(matchAllQuery()) //
+                .withQuery(termQuery("datasource" , datasource))
+                .withSearchType(SearchType.DEFAULT) //
+                .withIndices(VERTEX_INDEX_NAME).withTypes(VERTEX_INDEX_NAME) //
+                .addAggregation(
+//                    AggregationBuilders.terms("labels").field("label")
+//                        .subAggregation(
+                            AggregationBuilders.nested("agg", "properties")
+                                .subAggregation(
+                                    AggregationBuilders.terms("keys").field("properties.key")
+                                        .subAggregation(
+                                            AggregationBuilders.reverseNested("label_to_key")
+                                        )
+                                )
+//                        )
+                )
+                .build();
+
+        // when
+        Aggregations aggregations = template.query(searchQuery, new ResultsExtractor<Aggregations>() {
+            @Override
+            public Aggregations extract(SearchResponse response) {
+                return response.getAggregations();
+            }
+        });
+
+        Map<String,Map<String,Long>> results = new HashMap<>();
+        // response
+/*
+        Terms labels = aggregations.get("labels");
+        labels.getBuckets().stream().forEach(b1 -> {
+            // label's count = total
+            Map<String,Long> rows = new HashMap<>();
+            String labelName = b1.getKey().toString();
+            rows.put("__total", b1.getDocCount());
+//            // keys's count
+//            Nested agg = b1.getAggregations().get("agg");
+//            Terms keys = agg.getAggregations().get("keys");
+//            keys.getBuckets().stream().forEach(b2 -> {
+//                rows.put(b2.getKey().toString(), b2.getDocCount());
+//            });
+            results.put(labelName, rows);
+            // for DEBUG
+            System.out.println("** label["+labelName+"] ==> "
+                    + rows.entrySet().stream().map(e -> e.getKey()+"="+e.getValue()).collect(joining("&"))
+            );
+        });
+*/
+        return results;
+    }
+
+    public Map<String,Map<String,Long>> getGraphLabels(){
 
         // given
         SearchQuery searchQuery = new NativeSearchQueryBuilder() //
@@ -938,12 +1003,13 @@ public class ElasticGraphService implements ElasticGraphAPI {
                 .withSearchType(SearchType.DEFAULT) //
                 .withIndices(VERTEX_INDEX_NAME).withTypes(VERTEX_INDEX_NAME) //
                 .addAggregation(
-                        AggregationBuilders.terms("labels").field("label")
+                        AggregationBuilders.terms("datasources").field("datasource")
                                 .subAggregation(
-                                        AggregationBuilders.terms("datasources").field("datasource")
+                                        AggregationBuilders.terms("labels").field("label")
                                 )
                 )
                 .build();
+
         // when
         Aggregations aggregations = template.query(searchQuery, new ResultsExtractor<Aggregations>() {
             @Override
@@ -952,129 +1018,27 @@ public class ElasticGraphService implements ElasticGraphAPI {
             }
         });
 
-        // for DEBUG
-        aggregations.asList().stream().forEach(r -> {
-            System.out.println("** Aggregation ==> "+r.toString());
-        });
-
-        List<String> result = new ArrayList<>();
-
+        Map<String,Map<String,Long>> results = new HashMap<>();
         // response
-        Terms labels = aggregations.get("labels");
-        labels.getBuckets().stream().forEach(b1 -> {
-            String subKey1 = b1.getKey().toString();
-            Long count1 = b1.getDocCount();
-            result.add(String.format("  - subKey: %s (=%d)", subKey1, count1));
-
-            Terms datasources = b1.getAggregations().get("datasources");
-            datasources.getBuckets().stream().forEach(b2 -> {
-                String subKey2 = b2.getKey().toString();
-                Long count2 = b2.getDocCount();
-                result.add(String.format("    + %s: %d", subKey2, count2));
+        Terms datasources = aggregations.get("datasources");
+        datasources.getBuckets().stream().forEach(b1 -> {
+            // label's count = total
+            Map<String,Long> rows = new HashMap<>();
+            String dsName = b1.getKey().toString();
+            rows.put("__total", b1.getDocCount());
+            // keys's count
+            Terms labels = b1.getAggregations().get("labels");
+            labels.getBuckets().stream().forEach(b2 -> {
+                rows.put(b2.getKey().toString(), b2.getDocCount());
             });
-        });
-/*
-{
-    "labels":{
-        "doc_count_error_upper_bound":0,
-        "sum_other_doc_count":0,
-        "buckets":[
-            {
-                "key":"person",
-                "doc_count":5,
-                "datasources":{
-                    "doc_count_error_upper_bound":0,
-                    "sum_other_doc_count":0,
-                    "buckets":[
-                        {"key":"default","doc_count":4},
-                        {"key":"mysql","doc_count":1}
-                    ]
-                }
-            },{
-                "key":"software",
-                "doc_count":2,
-                "datasources":{
-                    "doc_count_error_upper_bound":0,
-                    "sum_other_doc_count":0,
-                    "buckets":[
-                        {"key":"default","doc_count":2}
-                    ]
-                }
-            }
-        ]
-    }
-}
- */
-
-        return result;
-    }
-
-    public List<String> verticesAggTest2(){
-
-        // **참고
-        // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_bucket_aggregations.html#_order
-        // https://www.baeldung.com/spring-data-elasticsearch-queries
-        //
-
-        // given
-        SearchQuery searchQuery = new NativeSearchQueryBuilder() //
-                .withQuery(matchAllQuery()) //
-                .withSearchType(SearchType.DEFAULT) //
-                .withIndices(VERTEX_INDEX_NAME).withTypes(VERTEX_INDEX_NAME) //
-                .addAggregation(AggregationBuilders.terms("labels")
-                        .field("label")
-                        .order(BucketOrder.key(true))
-                )
-                .addAggregation(AggregationBuilders.terms("datasources")
-                        .field("datasource")
-                        .order(BucketOrder.key(true))
-                )
-                .build();
-        // when
-        Aggregations aggregations = template.query(searchQuery, new ResultsExtractor<Aggregations>() {
-            @Override
-            public Aggregations extract(SearchResponse response) {
-                return response.getAggregations();
-            }
-        });
-/*
-{
-    "datasources":{
-        "doc_count_error_upper_bound":0,
-        "sum_other_doc_count":0,
-        "buckets":[
-            {"key":"default","doc_count":6},
-            {"key":"mysql","doc_count":1}
-        ]
-    }
-},
-{
-    "labels":{
-        "doc_count_error_upper_bound":0,
-        "sum_other_doc_count":0,
-        "buckets":[
-            {"key":"person","doc_count":5},
-            {"key":"software","doc_count":2}
-        ]
-    }
-}
- */
-
-        List<String> result = new ArrayList<>();
-        // for DEBUG
-        aggregations.asList().stream().forEach(r -> {
-            result.add(r.toString());
-            System.out.println("** Aggregation ==> "+r.toString());
+            results.put(dsName, rows);
+            // for DEBUG
+            System.out.println("** graph["+dsName+"] ==> "
+                    + rows.entrySet().stream().map(e -> e.getKey()+"="+e.getValue()).collect(joining("&"))
+            );
         });
 
-        // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-search-aggs.html
-        Terms labels = aggregations.get("datasources");
-        if( labels != null ){
-            labels.getBuckets().forEach(b->{
-                System.out.println("  - key="+b.getKeyAsString() + ", cnt=" + b.getDocCount());
-            });
-        }
-
-        return result;
+        return results;
     }
+
 }
