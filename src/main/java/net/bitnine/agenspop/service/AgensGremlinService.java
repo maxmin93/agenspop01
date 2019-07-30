@@ -78,7 +78,7 @@ public class AgensGremlinService {
                 return CompletableFuture.completedFuture(resultList);
             }
             // for DEBUG
-            System.out.print("  ==> "+result.toString()+"|"+result.getClass().getSimpleName());
+            System.out.println("  ==> "+result.toString()+"|"+result.getClass().getSimpleName()+"\n");
             return CompletableFuture.completedFuture(result);
 
         } catch (Exception ex) {
