@@ -1,23 +1,21 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
+public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<BaseEdge> {
 
-    public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
+    public AgensEdge(final BaseEdge edge, final AgensGraph graph) {
         super(edge, graph);
     }
 
@@ -32,7 +30,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     @Override
     public Vertex outVertex() {     // source v of edge
-        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
+        Optional<? extends BaseVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(v.get(), this.graph);
         }
@@ -41,7 +39,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     @Override
     public Vertex inVertex() {      // target v of edge
-        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
+        Optional<? extends BaseVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(v.get(), this.graph);
         }
@@ -49,8 +47,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     }
 
     @Override
-    public ElasticEdge getBaseEdge() {
-        return (ElasticEdge) this.baseElement;
+    public BaseEdge getBaseEdge() {
+        return (BaseEdge) this.baseElement;
     }
 
     ////////////////////////////////
@@ -81,7 +79,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 //        if( this.properties == null ) this.properties = new HashMap<>();
 
         this.graph.tx().readWrite();
-        ElasticProperty propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), value);
+        BaseProperty propertyBase = new BaseProperty(key, value.getClass().getName(), value);
         baseElement.setProperty(propertyBase);
         return new AgensProperty<V>(this, propertyBase);
     }
@@ -95,7 +93,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
         this.removed = true;
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
-        ElasticEdge baseEdge = this.getBaseEdge();
+        BaseEdge baseEdge = this.getBaseEdge();
         try {
             baseEdge.delete();                          // marking deleted
             this.graph.baseGraph.deleteEdge(baseEdge);  // delete ElasticEdgeDocument

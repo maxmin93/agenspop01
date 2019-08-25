@@ -1,9 +1,9 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.ElasticTx;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
+import net.bitnine.agenspop.basegraph.BaseTx;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
@@ -48,7 +48,7 @@ import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphson;
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_STANDARD)
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_INTEGRATE)
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
-public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
+public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AgensGraph.class);
     static {
@@ -74,7 +74,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
-    protected ElasticGraphAPI baseGraph;
+    protected BaseGraphAPI baseGraph;
     protected BaseConfiguration configuration = new BaseConfiguration();
     protected AgensTrait trait;
 
@@ -99,7 +99,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     private String graphLocation;
     private String graphFormat;
 
-    private void initialize(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+    private void initialize(final BaseGraphAPI baseGraph, final Configuration configuration) {
         this.configuration.copy(configuration);
         this.baseGraph = baseGraph;
         this.graphVariables = new AgensGraphVariables(this);
@@ -124,18 +124,18 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.tx().commit();
     }
 
-    protected AgensGraph(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+    protected AgensGraph(final BaseGraphAPI baseGraph, final Configuration configuration) {
         this.graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
         this.initialize(baseGraph, configuration);
     }
 
-    public static AgensGraph open(final ElasticGraphAPI baseGraph){
+    public static AgensGraph open(final BaseGraphAPI baseGraph){
         final Configuration config = new BaseConfiguration();
         config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
         return new AgensGraph(baseGraph, config);
     }
 
-    public static AgensGraph open(final ElasticGraphAPI baseGraph, final Configuration config){
+    public static AgensGraph open(final BaseGraphAPI baseGraph, final Configuration config){
         if( !config.containsKey( GREMLIN_AGENSGRAPH_GRAPH_NAME )){
             config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
         }
@@ -200,7 +200,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     }
 
     @Override
-    public ElasticGraphAPI getBaseGraph() {
+    public BaseGraphAPI getBaseGraph() {
         return this.baseGraph;
     }
 
@@ -281,7 +281,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         }
 
         // @Todo : type of idValue must be Long!!
-        final ElasticVertex baseElement = this.baseGraph.createVertex(idValue.toString(), label);
+        final BaseVertex baseElement = this.baseGraph.createVertex(idValue.toString(), label);
         final AgensVertex vertex = new AgensVertex( baseElement, this);
         for (int i = 0; i < keyValues.length; i = i + 2) {
             if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label))
@@ -295,7 +295,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     @Override
     public Iterator<Vertex> vertices(final Object... vertexIds) {
         this.tx().readWrite();
-        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+        final Predicate<BaseVertex> nodePredicate = this.trait.getVertexPredicate();
         final Iterator<Vertex> iter;
         if (0 == vertexIds.length) {
             iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
@@ -316,8 +316,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            Optional<? extends ElasticVertex> base = this.baseGraph.getVertexById(id.toString());
-                            if( base.isPresent() ) return Stream.of((ElasticVertex)base.get());
+                            Optional<? extends BaseVertex> base = this.baseGraph.getVertexById(id.toString());
+                            if( base.isPresent() ) return Stream.of((BaseVertex)base.get());
                             return Stream.empty();
                         } catch (final RuntimeException e) {
                             if (AgensHelper.isNotFound(e)) return Stream.empty();
@@ -339,7 +339,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     public Iterator<Vertex> vertices(List<HasContainer> hasContainers, final Object... vertexIds) {
         this.tx().readWrite();
-        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
+        final Predicate<BaseVertex> nodePredicate = this.trait.getVertexPredicate();
 
         final List<String> ids = new ArrayList<>();
         final List<String> labels = new ArrayList<>();
@@ -374,7 +374,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
         this.tx().readWrite();
-        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+        final Predicate<BaseEdge> relationshipPredicate = this.trait.getEdgePredicate();
         final Iterator<Edge> iter;
         if (0 == edgeIds.length) {
             iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName))
@@ -395,8 +395,8 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            Optional<? extends ElasticEdge> base = this.baseGraph.getEdgeById(id.toString());
-                            if( base.isPresent() ) return Stream.of((ElasticEdge)base.get());
+                            Optional<? extends BaseEdge> base = this.baseGraph.getEdgeById(id.toString());
+                            if( base.isPresent() ) return Stream.of((BaseEdge)base.get());
                             else return Stream.empty();
                         } catch (final RuntimeException e) {
                             if (AgensHelper.isNotFound(e)) return Stream.empty();
@@ -419,7 +419,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     public Iterator<Edge> edges(List<HasContainer> hasContainers, final Object... edgeIds) {
         System.out.println("** graph.edges() with hasContainers="+hasContainers.size());
         this.tx().readWrite();
-        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+        final Predicate<BaseEdge> relationshipPredicate = this.trait.getEdgePredicate();
 
         final List<String> ids = new ArrayList<>();
         final List<String> labels = new ArrayList<>();
@@ -626,7 +626,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     class AgensTransaction extends AbstractThreadLocalTransaction {
 
-        protected final ThreadLocal<ElasticTx> threadLocalTx = ThreadLocal.withInitial(() -> null);
+        protected final ThreadLocal<BaseTx> threadLocalTx = ThreadLocal.withInitial(() -> null);
 
         public AgensTransaction() {
             super(AgensGraph.this);
@@ -639,7 +639,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         @Override
         public void doCommit() throws TransactionException {
-            try (ElasticTx tx = threadLocalTx.get()) {
+            try (BaseTx tx = threadLocalTx.get()) {
                 tx.success();
             } catch (Exception ex) {
                 throw new TransactionException(ex);
@@ -650,7 +650,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         @Override
         public void doRollback() throws TransactionException {
-            try (ElasticTx tx = threadLocalTx.get()) {
+            try (BaseTx tx = threadLocalTx.get()) {
                 tx.failure();
             } catch (Exception e) {
                 throw new TransactionException(e);

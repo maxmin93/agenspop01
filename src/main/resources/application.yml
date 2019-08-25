@@ -23,14 +23,15 @@ agens:
     base-path: /api
     query-timeout: 600000       # 1000 ms = 1 sec
   elastic:
-    host: localhost
-    port: 9300
-    cluster-name: es-bitnine
+    host: 27.117.163.21
+    port: 15619
+    username:
+    password:
     page-size: 2500
   product:
     name: agenspop-es
-    version: 0.7-dev
-    hello-msg: agenspop-elasticsearch v1.0 (since 2019-08-01)
+    version: 0.7.3-dev
+    hello-msg: agenspop-elasticgraph v1.0 (since 2019-08-01)
   drivers:
     #path: ./drivers
     path: classpath:bin

@@ -1,23 +1,14 @@
 package net.bitnine.agenspop.graph.structure;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticElement;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
@@ -61,7 +52,7 @@ public final class AgensHelper {
         }
 
         graph.tx().readWrite();
-        final ElasticEdge elasticEdge = graph.baseGraph.createEdge(
+        final BaseEdge elasticEdge = graph.baseGraph.createEdge(
                 idValue.toString(), label, outVertex.id().toString(), inVertex.id().toString()
         );
         edge = new AgensEdge(elasticEdge, graph);
@@ -93,7 +84,7 @@ public final class AgensHelper {
 
     //////////////////////////////////////////
 
-    public static boolean isDeleted(final ElasticVertex vertex) {
+    public static boolean isDeleted(final BaseVertex vertex) {
         try {
             vertex.getKeys();
             return vertex.isDeleted();

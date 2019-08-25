@@ -1,8 +1,5 @@
 package net.bitnine.agenspop;
 
-import net.bitnine.agenspop.elastic.ElasticGraphService;
-import net.bitnine.agenspop.elastic.document.ElasticEdgeDocument;
-import net.bitnine.agenspop.elastic.document.ElasticVertexDocument;
 import net.bitnine.agenspop.graph.structure.*;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
@@ -19,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -56,6 +52,7 @@ public class Agenspop01ApplicationTests {
 	private TestRestTemplate template;
 	@Autowired
 	private GraphManager manager;
+/*
 	@Autowired
 	private ElasticGraphService baseGraph;
 	@Autowired
@@ -209,5 +206,6 @@ public class Agenspop01ApplicationTests {
 		System.out.println("Removing all vertices : "+testGraphName+".V() = "+sizeV);
 		System.out.println("Removing all edges : "+testGraphName+".E() = "+sizeE);
 	}
+*/
 
 }

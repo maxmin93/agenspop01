@@ -1,8 +1,6 @@
 package net.bitnine.agenspop.graph;
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.ElasticGraphService;
-import net.bitnine.agenspop.graph.exception.AgensGraphManagerException;
+import net.bitnine.agenspop.elasticgraph.ElasticGraphAPI;
 import net.bitnine.agenspop.graph.structure.AgensFactory;
 
 import net.bitnine.agenspop.graph.structure.AgensGraph;
@@ -48,12 +46,12 @@ public class AgensGraphManager implements GraphManager {
     private final Object instantiateGraphLock = new Object();
 
     // private final ElasticGraphAPI baseAPI;
-    private final ElasticGraphService baseAPI;
+    private final ElasticGraphAPI baseAPI;
     private static AgensGraphManager instance = null;
     private GremlinExecutor gremlinExecutor = null;
 
     @Autowired
-    public AgensGraphManager(ElasticGraphService baseAPI) {
+    public AgensGraphManager(ElasticGraphAPI baseAPI) {
         this.baseAPI = baseAPI;
         this.instance = this;
 

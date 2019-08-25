@@ -1,8 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
@@ -51,7 +50,7 @@ public final class AgensFactory {
 
     /////////////////////////////////////
 
-    public static AgensGraph createEmpty(ElasticGraphAPI baseGraph, String gName) {
+    public static AgensGraph createEmpty(BaseGraphAPI baseGraph, String gName) {
         final Configuration conf = getMixIdManagerConfiguration();
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
         return AgensGraph.open(baseGraph, conf);
@@ -61,7 +60,7 @@ public final class AgensFactory {
      * Create the "modern" graph which has the same structure as the "classic" graph from AgensPop 2.x but includes
      * 3.x features like vertex labels.
      */
-    public static AgensGraph createModern(ElasticGraphAPI baseGraph) {
+    public static AgensGraph createModern(BaseGraphAPI baseGraph) {
         final Configuration conf = getMixIdManagerConfiguration();
         final AgensGraph g = AgensGraph.open(baseGraph, conf);
         generateModern(g);

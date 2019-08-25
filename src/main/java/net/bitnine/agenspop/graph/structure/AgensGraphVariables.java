@@ -1,7 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
-
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.GraphVariableHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class AgensGraphVariables implements Graph.Variables {
 
     private final AgensGraph graph;
-    private final ElasticGraphAPI baseGraph;
+    private final BaseGraphAPI baseGraph;
 
     private final Map<String, Object> variables = new ConcurrentHashMap<>();
 

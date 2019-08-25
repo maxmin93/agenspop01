@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 @Configuration
 @EnableElasticsearchRepositories(basePackages = "net.bitnine.agenspop.elastic.repository")
 @ComponentScan(basePackages = { "net.bitnine.agenspop.elastic" })
-public class ElasticConfig {
+public class AgensElasticConfig {
 
     // ** NOTE: local 접속이 아니면 안됨
     //      ==> High Level RestClient 로 차후 변경해야
@@ -33,7 +33,7 @@ public class ElasticConfig {
     private final String clusterName;
 
     @Autowired
-    ElasticConfig(ElasticProperties elasticProperties){
+    AgensElasticConfig(ElasticProperties elasticProperties){
         this.host = elasticProperties.getHost();
         this.port = elasticProperties.getPort();
         this.clusterName = elasticProperties.getClusterName();
@@ -56,13 +56,5 @@ public class ElasticConfig {
         return client;
     }
 
-// ** [ERROR] An exception occurred while running. null:
-// ** InvocationTargetException: Invalid bean definition with name 'elasticsearchTemplate' defined in class path
-// ** resource [org/springframework/boot/autoconfigure/data/elasticsearch/ElasticsearchDataAutoConfiguration.class]
-//
-//    @Bean
-//    public ElasticsearchOperations elasticsearchTemplate() throws Exception {
-//        return new ElasticsearchTemplate(client());
-//    }
 
 }

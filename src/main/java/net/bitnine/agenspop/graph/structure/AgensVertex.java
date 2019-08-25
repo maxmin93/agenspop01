@@ -1,5 +1,8 @@
 package net.bitnine.agenspop.graph.structure;
 
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.elastic.model.ElasticEdge;
 import net.bitnine.agenspop.elastic.model.ElasticProperty;
 import net.bitnine.agenspop.elastic.model.ElasticVertex;
@@ -14,16 +17,14 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertex> {
+public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<BaseVertex> {
 
     protected Map<String, VertexProperty> properties;
-//    protected Map<String, Set<Edge>> outEdges;
-//    protected Map<String, Set<Edge>> inEdges;
 
-    public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
+    public AgensVertex(final BaseVertex vertex, final AgensGraph graph) {
         super(vertex, graph);
         this.properties = new HashMap<>();
-        for( ElasticProperty item : vertex.getProperties() ){
+        for( BaseProperty item : vertex.getProperties() ){
             AgensVertexProperty property = new AgensVertexProperty(this, item);
             this.properties.put( property.key(), property );
         }
@@ -37,8 +38,8 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public Graph graph(){ return this.graph; }
 
     @Override
-    public ElasticVertex getBaseVertex() {
-        return (ElasticVertex) this.baseElement;
+    public BaseVertex getBaseVertex() {
+        return (BaseVertex) this.baseElement;
     }
 
     ////////////////////////////////////
@@ -54,8 +55,8 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public void remove() {
         this.graph.tx().readWrite();
         // remove connected AgensEdges and AgensVertex
-        final Iterable<ElasticEdge> edges = graph.baseGraph.findEdgesOfVertex(id().toString(), Direction.BOTH);
-        for( ElasticEdge edge : edges ) {
+        final Iterable<BaseEdge> edges = graph.baseGraph.findEdgesOfVertex(id().toString(), Direction.BOTH);
+        for( BaseEdge edge : edges ) {
             edge.delete();
             graph.baseGraph.deleteEdge(edge);
         }
@@ -107,9 +108,9 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
 
         this.graph.tx().readWrite();
-        Iterable<ElasticVertex> bases = graph.baseGraph.findNeighborVertices(id().toString(), direction, edgeLabels);
+        Iterable<BaseVertex> bases = graph.baseGraph.findNeighborVertices(id().toString(), direction, edgeLabels);
         final List<Vertex> vertices = new ArrayList<>();
-        for( ElasticVertex base : bases ){
+        for( BaseVertex base : bases ){
             vertices.add( new AgensVertex(base, graph));
         }
 
@@ -123,9 +124,9 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return edgeIterator;
 
         this.graph.tx().readWrite();
-        Iterable<ElasticEdge> bases = graph.baseGraph.findEdgesOfVertex(id().toString(), direction, edgeLabels);
+        Iterable<BaseEdge> bases = graph.baseGraph.findEdgesOfVertex(id().toString(), direction, edgeLabels);
         final List<Edge> edges = new ArrayList<>();
-        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));
         return edges.iterator();
     }
 
@@ -134,10 +135,10 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public Iterator<Edge> edges(final Direction direction, final String label, final String key, final Object value) {
         this.graph.tx().readWrite();
-        Iterable<ElasticEdge> bases = graph.baseGraph
+        Iterable<BaseEdge> bases = graph.baseGraph
                 .findEdgesOfVertex(id().toString(), direction, label, key, value);
         final List<Edge> edges = new ArrayList<>();
-        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));
         return edges.iterator();
     }
 

@@ -1,8 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.io.GraphReader;
 import org.apache.tinkerpop.gremlin.structure.io.GraphWriter;
@@ -47,7 +46,7 @@ import java.util.stream.StreamSupport;
 public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
     private static final AgensIoRegistryV1 INSTANCE = new AgensIoRegistryV1();
-    protected static ElasticGraphAPI baseGraph = null;
+    protected static BaseGraphAPI baseGraph = null;
 
     private AgensIoRegistryV1() {
         register(GryoIo.class, AgensGraph.class, new AgensGraphGryoSerializer());
@@ -58,7 +57,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         return INSTANCE;
     }
 
-    public void setBaseGraph(ElasticGraphAPI baseGraph){
+    public void setBaseGraph(BaseGraphAPI baseGraph){
         this.baseGraph = baseGraph;
     }
 
@@ -114,7 +113,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             addSerializer(AgensVertexProperty.class, new AgensIoRegistryV1.AgensVertexPropertyJacksonSerializer(false));
             addSerializer(AgensProperty.class, new AgensIoRegistryV1.AgensPropertyJacksonSerializer());
 
-            addSerializer(ElasticProperty.class, new AgensIoRegistryV1.ElasticPropertyJacksonSerializer());
+            addSerializer(BaseProperty.class, new AgensIoRegistryV1.ElasticPropertyJacksonSerializer());
         }
     }
 
@@ -346,29 +345,29 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
         }
     }
 
-    final static class ElasticPropertyJacksonSerializer extends StdSerializer<ElasticProperty> {
+    final static class ElasticPropertyJacksonSerializer extends StdSerializer<BaseProperty> {
 
         public ElasticPropertyJacksonSerializer() {
-            super(ElasticProperty.class);
+            super(BaseProperty.class);
         }
 
         @Override
-        public void serialize(final ElasticProperty property, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
+        public void serialize(final BaseProperty property, final JsonGenerator jsonGenerator, final SerializerProvider serializerProvider)
                 throws IOException {
             ser(property, jsonGenerator, serializerProvider, null);
         }
 
         @Override
-        public void serializeWithType(final ElasticProperty property, final JsonGenerator jsonGenerator,
+        public void serializeWithType(final BaseProperty property, final JsonGenerator jsonGenerator,
                                       final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             ser(property, jsonGenerator, serializerProvider, typeSerializer);
         }
 
-        private static void ser(final ElasticProperty property, final JsonGenerator jsonGenerator,
+        private static void ser(final BaseProperty property, final JsonGenerator jsonGenerator,
                                 final SerializerProvider serializerProvider, final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeStartObject();
             if (typeSerializer != null) jsonGenerator.writeStringField(GraphSONTokens.CLASS, HashMap.class.getName());
-            serializerProvider.defaultSerializeField(GraphSONTokens.KEY, property.getKey(), jsonGenerator);
+            serializerProvider.defaultSerializeField(GraphSONTokens.KEY, property.key(), jsonGenerator);
             serializerProvider.defaultSerializeField(GraphSONTokens.VALUE, property.value(), jsonGenerator);
             jsonGenerator.writeEndObject();
         }
@@ -438,11 +437,11 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                                      final SerializerProvider serializerProvider,
                                      final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeObjectFieldStart(GraphSONTokens.PROPERTIES);
-            List<ElasticProperty> properties = new ArrayList<>(edge.getBaseEdge().getProperties());
-            Iterator<ElasticProperty> iter = properties.iterator();
+            List<BaseProperty> properties = new ArrayList<>(edge.getBaseEdge().getProperties());
+            Iterator<BaseProperty> iter = properties.iterator();
             while( iter.hasNext() ){
-                ElasticProperty p = (ElasticProperty)iter.next();
-                GraphSONUtil.writeWithType(p.getKey(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
+                BaseProperty p = (BaseProperty)iter.next();
+                GraphSONUtil.writeWithType(p.key(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
             }
             jsonGenerator.writeEndObject();
         }

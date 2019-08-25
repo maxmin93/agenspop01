@@ -1,10 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-import net.bitnine.agenspop.elastic.model.ElasticElement;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
@@ -18,9 +15,9 @@ import java.util.stream.Collectors;
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexProperty<ElasticProperty> {
+public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexProperty<BaseProperty> {
 
-    protected final ElasticProperty propertyBase;
+    protected final BaseProperty propertyBase;
     protected final AgensVertex vertex;
 
     // **NOTE: new AgensVertexProperty 의 경우
@@ -31,19 +28,19 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     public AgensVertexProperty(final AgensVertex vertex, final String key, final V value) {
         Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
         this.vertex = vertex;
-        this.propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), (Object)value );
+        this.propertyBase = new BaseProperty(key, value.getClass().getName(), (Object)value );
         // add property to ElasticVertex
         this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
     // case2 : baseElement.properties 에 이미 존재하는 key-value 를 AgensVertex 로 가져오는 경우
-    public AgensVertexProperty(final AgensVertex vertex, final ElasticProperty propertyBase) {
+    public AgensVertexProperty(final AgensVertex vertex, final BaseProperty propertyBase) {
         this.vertex = vertex;
         this.propertyBase = propertyBase;
     }
 
     @Override
-    public ElasticProperty getBaseVertexProperty(){
+    public BaseProperty getBaseVertexProperty(){
         return this.propertyBase;
     }
 
