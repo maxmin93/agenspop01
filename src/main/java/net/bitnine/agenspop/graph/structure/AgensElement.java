@@ -17,9 +17,9 @@ public abstract class AgensElement implements Element, WrappedElement<BaseElemen
     protected final AgensGraph graph;
     protected final BaseElement baseElement;
 
-    protected AgensElement(final BaseElement baseElement, final AgensGraph graph) {
-        this.baseElement = baseElement;
+    protected AgensElement(final AgensGraph graph, final BaseElement baseElement) {
         this.graph = graph;
+        this.baseElement = baseElement;
     }
 
     @Override

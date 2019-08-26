@@ -2,7 +2,6 @@ package net.bitnine.agenspop.config;
 
 import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elastic.repository.ArticleRepository;
-import net.bitnine.agenspop.service.ArticleService;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;

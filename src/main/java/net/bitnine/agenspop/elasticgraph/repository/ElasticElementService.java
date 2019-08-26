@@ -166,6 +166,15 @@ public class ElasticElementService {
     }
 
     // DS.hasLabel(label..)
+    protected <T> List<T> findByDatasourceAndLabel(String index, Class<T> tClass, int size, String datasource, String label) throws Exception {
+        // match to datasource
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .filter(termQuery("label", label));
+        // search
+        return doSearch(index, size, queryBuilder, client, mapper, tClass);
+    }
+    // DS.hasLabel(label..)
     protected <T> List<T> findByDatasourceAndLabels(String index, Class<T> tClass, int size, String datasource, String[] labels) throws Exception {
         // match to datasource
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
@@ -245,6 +254,25 @@ public class ElasticElementService {
         return filteredList;
     }
 
+    // DS.hasValue(value)
+    protected <T> List<T> findByDatasourceAndPropertyValue(
+            String index, Class<T> tClass, int size, String datasource, String value) throws Exception{
+        // define : nested query
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .must(QueryBuilders.nestedQuery("properties",
+                        QueryBuilders.boolQuery().must(
+                                QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\"")
+                        ), ScoreMode.Total));
+        // search
+        List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
+        return list.stream().filter(r-> {
+            for(ElasticProperty p : ((ElasticElement)r).getProperties()){
+                if( p.getValue().equalsIgnoreCase(value) ) return true;
+            }
+            return false;
+        }).collect(Collectors.toList());
+    }
     // DS.hasValuePartial(value)
     protected <T> List<T> findByDatasourceAndPropertyValuePartial(
             String index, Class<T> tClass, int size, String datasource, String value) throws Exception{

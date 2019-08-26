@@ -54,7 +54,7 @@ public class Agenspop01ApplicationTests {
 	private GraphManager manager;
 /*
 	@Autowired
-	private ElasticGraphService baseGraph;
+	private ElasticGraphService api;
 	@Autowired
 	private ElasticsearchTemplate elastic;
 
@@ -65,7 +65,7 @@ public class Agenspop01ApplicationTests {
 		this.base = new URL("http://localhost:" + port + basePath);
 		logger.info("##### base url is {}", base.toString());
 
-		if( baseGraph.removeDatasource(testGraphName) )
+		if( api.removeDatasource(testGraphName) )
 			System.out.println("  .. Remove data of ["+testGraphName+"]");
 	}
 
@@ -99,7 +99,7 @@ public class Agenspop01ApplicationTests {
 
 	@Test
 	public void managerGraphCreate() {
-		AgensGraph g = AgensFactory.createEmpty(baseGraph, testGraphName);
+		AgensGraph g = AgensFactory.createEmpty(api, testGraphName);
 		final Graph newGraph = manager.openGraph(testGraphName, (String gName) -> {
 			return g;	// graph 바꿔치기
 		});
@@ -127,8 +127,8 @@ public class Agenspop01ApplicationTests {
 //			e.printStackTrace();
 //		}
 
-		long sizeV = baseGraph.countV(testGraphName);
-		long sizeE = baseGraph.countE(testGraphName);
+		long sizeV = api.countV(testGraphName);
+		long sizeE = api.countE(testGraphName);
 
 		assertThat("Some vertex insert fails", sizeV, is(6L));
 		assertThat("Some edge insert fails", sizeE, is(6L));
@@ -181,8 +181,8 @@ public class Agenspop01ApplicationTests {
 //			e.printStackTrace();
 //		}
 
-		sizeV = baseGraph.countV(testGraphName);
-		sizeE = baseGraph.countE(testGraphName);
+		sizeV = api.countV(testGraphName);
+		sizeE = api.countE(testGraphName);
 
 		assertThat("Removing "+v1.toString()+" fails", sizeV, is(5L));
 		assertThat("Removing some edges fails", sizeE, is(3L));
@@ -200,8 +200,8 @@ public class Agenspop01ApplicationTests {
 			((AgensVertex)vertex).remove();
 		}
 
-		sizeV = (int) baseGraph.countV(testGraphName);
-		sizeE = (int) baseGraph.countE(testGraphName);
+		sizeV = (int) api.countV(testGraphName);
+		sizeE = (int) api.countE(testGraphName);
 
 		System.out.println("Removing all vertices : "+testGraphName+".V() = "+sizeV);
 		System.out.println("Removing all edges : "+testGraphName+".E() = "+sizeE);

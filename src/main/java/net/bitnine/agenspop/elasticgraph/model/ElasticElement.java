@@ -15,6 +15,13 @@ public class ElasticElement implements BaseElement {
     protected String datasource;
     protected List<ElasticProperty> properties;
 
+    protected ElasticElement(String datasource, String id, String label){
+        this.datasource = datasource;
+        this.id = id;
+        this.label = label;
+        this.properties = new ArrayList<>();
+    }
+
     @Override
     public List<String> keys(){
         List<String> keys = new ArrayList<>();
@@ -44,7 +51,7 @@ public class ElasticElement implements BaseElement {
     }
 
     @Override
-    public boolean exists(String key){
+    public boolean hasProperty(String key){
         return keys().contains(key);
     }
 
@@ -64,7 +71,7 @@ public class ElasticElement implements BaseElement {
 
     @Override
     public void setProperty(BaseProperty property){
-        if( exists(property.key()) ) removeProperty(property.key());
+        if( hasProperty(property.key()) ) removeProperty(property.key());
         properties.add((ElasticProperty) property);
     }
 

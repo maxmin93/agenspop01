@@ -37,27 +37,50 @@ public final class AgensHelper {
         }
     }
 
+    protected static Vertex addVertex(final AgensGraph graph, final String label, final Object... keyValues) {
+        ElementHelper.validateLabel(label);
+        ElementHelper.legalPropertyKeyValueArray(keyValues);
+
+        final Vertex vertex;    // if throw exception, then null
+
+        Object idValue = graph.vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
+        if (null != idValue) {
+            if (graph.api.existsVertex(idValue.toString()))
+                throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
+        } else {
+            idValue = graph.vertexIdManager.getNextId(graph);
+        }
+
+        graph.tx().readWrite();
+        final BaseVertex baseVertex = graph.api.createVertex(graph.name(), idValue.toString(), label);
+        vertex = new AgensVertex(baseVertex, graph);
+        ElementHelper.attachProperties(vertex, keyValues);
+        graph.api.saveVertex(baseVertex);     // write to elasticsearch index
+
+        return edge;
+    }
+
     protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
         ElementHelper.validateLabel(label);
         ElementHelper.legalPropertyKeyValueArray(keyValues);
 
         final Edge edge;    // if throw exception, then null
 
-        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), graph);
+        Object idValue = graph.edgeIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
         if (null != idValue) {
-            if (graph.baseGraph.existsEdge(idValue.toString()))
+            if (graph.api.existsEdge(idValue.toString()))
                 throw Graph.Exceptions.edgeWithIdAlreadyExists(idValue);
         } else {
             idValue = graph.edgeIdManager.getNextId(graph);
         }
 
         graph.tx().readWrite();
-        final BaseEdge elasticEdge = graph.baseGraph.createEdge(
+        final BaseEdge elasticEdge = graph.api.createEdge(
                 idValue.toString(), label, outVertex.id().toString(), inVertex.id().toString()
         );
         edge = new AgensEdge(elasticEdge, graph);
         ElementHelper.attachProperties(edge, keyValues);
-        graph.baseGraph.saveEdge(elasticEdge);     // write to elasticsearch index
+        graph.api.saveEdge(elasticEdge);     // write to elasticsearch index
 
         return edge;
     }

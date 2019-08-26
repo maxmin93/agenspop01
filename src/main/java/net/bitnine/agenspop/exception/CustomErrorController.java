@@ -1,4 +1,4 @@
-package net.bitnine.agenspop.web.exception;
+package net.bitnine.agenspop.exception;
 
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.web.bind.annotation.RequestMapping;

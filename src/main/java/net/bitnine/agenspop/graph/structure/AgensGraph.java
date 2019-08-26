@@ -7,7 +7,6 @@ import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
-import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensPropertyMapStepStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensVertexStepStrategy;
 import net.bitnine.agenspop.graph.structure.trait.AgensTrait;
 import net.bitnine.agenspop.graph.structure.trait.SimpleAgensTrait;
@@ -22,17 +21,13 @@ import org.apache.tinkerpop.gremlin.structure.io.IoCore;
 import org.apache.tinkerpop.gremlin.structure.util.*;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedGraph;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
-import org.jruby.RubyProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
@@ -64,9 +59,6 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         this.setProperty(Graph.GRAPH, AgensGraph.class.getName());
     }};
 
-    public static final String GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER = "gremlin.agensgraph.vertexIdManager";
-    public static final String GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER = "gremlin.agensgraph.edgeIdManager";
-    public static final String GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER = "gremlin.agensgraph.vertexPropertyIdManager";
     public static final String GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY = "gremlin.agensgraph.defaultVertexPropertyCardinality";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_LOCATION = "gremlin.agensgraph.graphLocation";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_FORMAT = "gremlin.agensgraph.graphFormat";
@@ -74,41 +66,35 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
-    protected BaseGraphAPI baseGraph;
+    protected final BaseGraphAPI api;
     protected BaseConfiguration configuration = new BaseConfiguration();
     protected AgensTrait trait;
 
     private final AgensTransaction transaction = new AgensTransaction();
     protected AgensGraphVariables graphVariables;
 
-    protected AtomicInteger currentId = new AtomicInteger(0);
-    // **NOTE: 그래프의 vertex, edge 는 모두 elastic-index 에서 가져와야 함
-    //      -- AgensVertex 의 in/out edges 들은 어떻게 관리?
-    //         => ElasticVertex 에 연결 정보 없음
-    //      -- AgensEdge 의 in/out vertex 들은 어떻게 관리?  => 자체 id 로 요청때 가져오는 방식
-    //
+    protected Object graphComputerView = null;          // excluded
 
-    protected Object graphComputerView = null;  // excluded
-
-    protected AgensIdManager vertexIdManager;   // IdManager<?>
-    protected AgensIdManager edgeIdManager;     // IdManager<?>
-    // protected IdManager<?> vertexPropertyIdManager;
+    protected AtomicLong currentId = new AtomicLong(1L);
+    protected AgensIdManager vertexIdManager;
+    protected AgensIdManager edgeIdManager;
+    protected AgensIdManager vertexPropertyIdManager;   // not used
     protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
-    protected final String graphName;
+    private final String graphName;
     private String graphLocation;
     private String graphFormat;
 
-    private void initialize(final BaseGraphAPI baseGraph, final Configuration configuration) {
+    private void initialize(final Configuration configuration) {
         this.configuration.copy(configuration);
-        this.baseGraph = baseGraph;
         this.graphVariables = new AgensGraphVariables(this);
         this.trait = SimpleAgensTrait.instance();
 
         this.tx().readWrite();
 
-        vertexIdManager = AgensIdManager.MIX_ID;
-        edgeIdManager = AgensIdManager.MIX_ID;
+        vertexIdManager = AgensIdManager.ANY;
+        edgeIdManager = AgensIdManager.ANY;
+        vertexPropertyIdManager = AgensIdManager.ANY;
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.single;   // fixed!
 
         // added
@@ -126,7 +112,8 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     protected AgensGraph(final BaseGraphAPI baseGraph, final Configuration configuration) {
         this.graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
-        this.initialize(baseGraph, configuration);
+        this.api = baseGraph;
+        this.initialize(configuration);
     }
 
     public static AgensGraph open(final BaseGraphAPI baseGraph){
@@ -168,14 +155,13 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     @Override
     public String toString() {
-        long vSize = baseGraph.countV(graphName);
-        long eSize = baseGraph.countE(graphName);
+        long vSize = api.countV(graphName);
+        long eSize = api.countE(graphName);
         return graphName+"[V="+vSize+",E="+eSize+"]";
     }
 
-    public String name() {
-        return this.graphName;
-    }
+    public String name() { return this.graphName; }
+    public BaseGraphAPI api() { return this.api; }
 
     public void clear() {
         this.graphVariables = null;
@@ -195,13 +181,12 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     @Override
     public Transaction tx() {
-//        throw Exceptions.transactionsNotSupported();
         return this.transaction;
     }
 
     @Override
     public BaseGraphAPI getBaseGraph() {
-        return this.baseGraph;
+        return this.api;
     }
 
     @Override
@@ -270,25 +255,26 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
     @Override
     public Vertex addVertex(final Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), this);
+        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
         final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
 
         if (null != idValue) {
-            if( baseGraph.existsVertex(idValue.toString()) )
+            if( api.existsVertex(idValue.toString()) )
                 throw Exceptions.vertexWithIdAlreadyExists(idValue);
         } else {
             idValue = vertexIdManager.getNextId(this);
         }
 
-        // @Todo : type of idValue must be Long!!
-        final BaseVertex baseElement = this.baseGraph.createVertex(idValue.toString(), label);
+        // create BaseVertex with BaseProperties
+        final BaseVertex baseElement = this.api.createVertex(graphName, idValue.toString(), label);
+        baseElement.properties().add(api.createProperty("",""));
         final AgensVertex vertex = new AgensVertex( baseElement, this);
         for (int i = 0; i < keyValues.length; i = i + 2) {
             if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label))
                 vertex.property((String) keyValues[i], keyValues[i + 1]);
         }
 
-        this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
+        this.api.saveVertex(baseElement);     // write to elasticsearch index
         return vertex;
     }
 
@@ -298,17 +284,15 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         final Predicate<BaseVertex> nodePredicate = this.trait.getVertexPredicate();
         final Iterator<Vertex> iter;
         if (0 == vertexIds.length) {
-            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
+            iter = IteratorUtils.stream(this.api.vertices(graphName))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
             iter = Stream.of(vertexIds)
                     .map(id -> {
-                        if (id instanceof Number)
-                            return vertexIdManager.convert(((Number) id).longValue(), this);
-                        else if (id instanceof String)
-                            return (String) id.toString();
+                        if (id instanceof String)
+                            return id.toString();
                         else if (id instanceof Vertex) {
                             return (String) ((Vertex) id).id();
                         } else
@@ -316,7 +300,7 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            Optional<? extends BaseVertex> base = this.baseGraph.getVertexById(id.toString());
+                            Optional<? extends BaseVertex> base = this.api.getVertexById(id);
                             if( base.isPresent() ) return Stream.of((BaseVertex)base.get());
                             return Stream.empty();
                         } catch (final RuntimeException e) {
@@ -333,7 +317,7 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
     public Iterator<Vertex> verticesWithFilters(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
         this.tx().readWrite();
         return IteratorUtils.stream(
-                    this.baseGraph.findVertices(graphName, ids, labels, keys, values))
+                    this.api.findVertices(graphName, ids, labels, keys, values))
                 .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
     }
 
@@ -350,16 +334,16 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         final Iterator<Vertex> iter;
         if ( vertexIds == null || vertexIds.length == 0) {
             if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, ids, labels, keys, values))
+                iter = IteratorUtils.stream(this.api.findVertices(graphName, ids, labels, keys, values))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
             else
-                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName))
+                iter = IteratorUtils.stream(this.api.vertices(graphName))
                         .filter(nodePredicate)
                         .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName, (String[]) vertexIds))
+            iter = IteratorUtils.stream(this.api.findVertices(graphName, (String[]) vertexIds))
                     .filter(nodePredicate)
                     .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
         }
@@ -395,7 +379,7 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                     })
                     .flatMap(id -> {
                         try {
-                            Optional<? extends BaseEdge> base = this.baseGraph.getEdgeById(id.toString());
+                            Optional<? extends BaseEdge> base = this.api.getEdgeById(id.toString());
                             if( base.isPresent() ) return Stream.of((BaseEdge)base.get());
                             else return Stream.empty();
                         } catch (final RuntimeException e) {
@@ -412,7 +396,7 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
     public Iterator<Edge> edgesWithFilters(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
         this.tx().readWrite();
         return IteratorUtils.stream(
-                    this.baseGraph.findEdges(graphName, ids, labels, keys, values))
+                    this.api.findEdges(graphName, ids, labels, keys, values))
                 .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
     }
 
@@ -430,11 +414,11 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         final Iterator<Edge> iter;
         if ( edgeIds == null || edgeIds.length == 0) {
             if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName, ids, labels, keys, values))
+                iter = IteratorUtils.stream(this.api.findEdges(graphName, ids, labels, keys, values))
                         .filter(relationshipPredicate)
                         .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
             else
-                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName))
+                iter = IteratorUtils.stream(this.api.findEdges(graphName))
                         .filter(relationshipPredicate)
                         .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
         } else {
@@ -615,7 +599,6 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
          * Convert an identifier to the type required by the manager.
          */
         T convert(final Object id);
-        T convert(final Object id, final AgensGraph graph);
         /**
          * Determine if an identifier is allowed by this manager given its type.
          */

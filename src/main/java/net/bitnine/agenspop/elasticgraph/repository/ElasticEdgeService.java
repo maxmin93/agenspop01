@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
+import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -81,11 +82,14 @@ public final class ElasticEdgeService extends ElasticElementService {
         return super.findByDatasource(INDEX, ElasticEdge.class, size, datasource);
     }
 
-    public List<ElasticEdge> findByDatasourceAndLabels(int size, String datasource, String[] labels) throws Exception {
+    public List<ElasticEdge> findByDatasourceAndLabel(int size, String datasource, String label) throws Exception {
+        return super.findByDatasourceAndLabel(INDEX, ElasticEdge.class, size, datasource, label);
+    }
+    public List<ElasticEdge> findByDatasourceAndLabels(int size, String datasource, final String[] labels) throws Exception {
         return super.findByDatasourceAndLabels(INDEX, ElasticEdge.class, size, datasource, labels);
     }
 
-    public List<ElasticEdge> findByDatasourceAndPropertyKeys(int size, String datasource, String[] keys) throws Exception{
+    public List<ElasticEdge> findByDatasourceAndPropertyKeys(int size, String datasource, final String[] keys) throws Exception{
         return super.findByDatasourceAndPropertyKeys(INDEX, ElasticEdge.class, size, datasource, keys);
     }
 
@@ -93,14 +97,17 @@ public final class ElasticEdgeService extends ElasticElementService {
         return super.findByDatasourceAndPropertyKey(INDEX, ElasticEdge.class, size, datasource, key);
     }
 
-    public List<ElasticEdge> findByDatasourceAndPropertyKeyNot(int size, String datasource, String key) throws Exception{
-        return super.findByDatasourceAndPropertyKeyNot(INDEX, ElasticEdge.class, size, datasource, key);
+    public List<ElasticEdge> findByDatasourceAndPropertyKeyNot(int size, String datasource, String keyNot) throws Exception{
+        return super.findByDatasourceAndPropertyKeyNot(INDEX, ElasticEdge.class, size, datasource, keyNot);
     }
 
-    public List<ElasticEdge> findByDatasourceAndPropertyValues(int size, String datasource, String[] values) throws Exception{
+    public List<ElasticEdge> findByDatasourceAndPropertyValues(int size, String datasource, final String[] values) throws Exception{
         return super.findByDatasourceAndPropertyValues(INDEX, ElasticEdge.class, size, datasource, values);
     }
 
+    public List<ElasticEdge> findByDatasourceAndPropertyValue(int size, String datasource, String value) throws Exception{
+        return super.findByDatasourceAndPropertyValue(INDEX, ElasticEdge.class, size, datasource, value);
+    }
     public List<ElasticEdge> findByDatasourceAndPropertyValuePartial(int size, String datasource, String value) throws Exception{
         return super.findByDatasourceAndPropertyValuePartial(INDEX, ElasticEdge.class, size, datasource, value);
     }
@@ -114,9 +121,9 @@ public final class ElasticEdgeService extends ElasticElementService {
     }
 
     public List<ElasticEdge> findByHasContainers(int size, String datasource
-            , String label, String[] labels
-            , String key, String keyNot, String[] keys
-            , String[] values, Map<String,String> kvPairs) throws Exception {
+            , String label, final String[] labels
+            , String key, String keyNot, final String[] keys
+            , final String[] values, final Map<String,String> kvPairs) throws Exception {
         return super.findByHasContainers(INDEX, ElasticEdge.class, size, datasource
                 , label, labels, key, keyNot, keys, values, kvPairs);
     }
@@ -124,14 +131,14 @@ public final class ElasticEdgeService extends ElasticElementService {
     ///////////////////////////////////////////////////////////////
 
     public List<ElasticEdge> findByDatasourceAndDirection(
-            int size, String datasource, String vid, BaseGraphAPI.Direction direction) throws Exception{
+            int size, String datasource, String vid, Direction direction) throws Exception{
         // define : nested query
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
                 .filter(termQuery("datasource", datasource));
         // with direction
-        if( direction.equals(BaseGraphAPI.Direction.IN))
+        if( direction.equals(Direction.IN))
             queryBuilder = queryBuilder.must(termQuery("tid", vid));
-        else if( direction.equals(BaseGraphAPI.Direction.OUT))
+        else if( direction.equals(Direction.OUT))
             queryBuilder = queryBuilder.must(termQuery("sid", vid));
         else{
             queryBuilder = queryBuilder.should(termQuery("tid", vid));

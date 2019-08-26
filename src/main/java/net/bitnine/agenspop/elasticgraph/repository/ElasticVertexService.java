@@ -76,11 +76,14 @@ public class ElasticVertexService extends ElasticElementService {
         return super.findByDatasource(INDEX, ElasticVertex.class, size, datasource);
     }
 
-    public List<ElasticVertex> findByDatasourceAndLabels(int size, String datasource, String[] labels) throws Exception {
+    public List<ElasticVertex> findByDatasourceAndLabel(int size, String datasource, String label) throws Exception {
+        return super.findByDatasourceAndLabel(INDEX, ElasticVertex.class, size, datasource, label);
+    }
+    public List<ElasticVertex> findByDatasourceAndLabels(int size, String datasource, final String[] labels) throws Exception {
         return super.findByDatasourceAndLabels(INDEX, ElasticVertex.class, size, datasource, labels);
     }
 
-    public List<ElasticVertex> findByDatasourceAndPropertyKeys(int size, String datasource, String[] keys) throws Exception{
+    public List<ElasticVertex> findByDatasourceAndPropertyKeys(int size, String datasource, final String[] keys) throws Exception{
         return super.findByDatasourceAndPropertyKeys(INDEX, ElasticVertex.class, size, datasource, keys);
     }
 
@@ -88,14 +91,17 @@ public class ElasticVertexService extends ElasticElementService {
         return super.findByDatasourceAndPropertyKey(INDEX, ElasticVertex.class, size, datasource, key);
     }
 
-    public List<ElasticVertex> findByDatasourceAndPropertyKeyNot(int size, String datasource, String key) throws Exception{
-        return super.findByDatasourceAndPropertyKeyNot(INDEX, ElasticVertex.class, size, datasource, key);
+    public List<ElasticVertex> findByDatasourceAndPropertyKeyNot(int size, String datasource, String keyNot) throws Exception{
+        return super.findByDatasourceAndPropertyKeyNot(INDEX, ElasticVertex.class, size, datasource, keyNot);
     }
 
-    public List<ElasticVertex> findByDatasourceAndPropertyValues(int size, String datasource, String[] values) throws Exception{
+    public List<ElasticVertex> findByDatasourceAndPropertyValues(int size, String datasource, final String[] values) throws Exception{
         return super.findByDatasourceAndPropertyValues(INDEX, ElasticVertex.class, size, datasource, values);
     }
 
+    public List<ElasticVertex> findByDatasourceAndPropertyValue(int size, String datasource, String value) throws Exception{
+        return super.findByDatasourceAndPropertyValue(INDEX, ElasticVertex.class, size, datasource, value);
+    }
     public List<ElasticVertex> findByDatasourceAndPropertyValuePartial(int size, String datasource, String value) throws Exception{
         return super.findByDatasourceAndPropertyValuePartial(INDEX, ElasticVertex.class, size, datasource, value);
     }
@@ -109,9 +115,9 @@ public class ElasticVertexService extends ElasticElementService {
     }
 
     public List<ElasticVertex> findByHasContainers(int size, String datasource
-            , String label, String[] labels
-            , String key, String keyNot, String[] keys
-            , String[] values, Map<String,String> kvPairs) throws Exception {
+            , String label, final String[] labels
+            , String key, String keyNot, final String[] keys
+            , final String[] values, final Map<String,String> kvPairs) throws Exception {
         return super.findByHasContainers(INDEX, ElasticVertex.class, size, datasource
                 , label, labels, key, keyNot, keys, values, kvPairs);
     }

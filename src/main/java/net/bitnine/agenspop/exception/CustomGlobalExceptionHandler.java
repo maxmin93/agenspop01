@@ -1,4 +1,4 @@
-package net.bitnine.agenspop.web.exception;
+package net.bitnine.agenspop.exception;
 
 import net.bitnine.agenspop.graph.exception.AgensGraphException;
 import net.bitnine.agenspop.graph.exception.AgensGraphManagerException;

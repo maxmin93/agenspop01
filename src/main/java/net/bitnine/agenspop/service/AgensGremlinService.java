@@ -1,11 +1,10 @@
 package net.bitnine.agenspop.service;
 
-import com.google.common.base.Joiner;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
-import net.bitnine.agenspop.web.dto.DetachedGraph;
+import net.bitnine.agenspop.dto.DetachedGraph;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.groovy.engine.GremlinExecutor;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
@@ -13,21 +12,15 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.opencypher.gremlin.translation.CypherAst;
 import org.opencypher.gremlin.translation.TranslationFacade;
-import org.opencypher.gremlin.translation.groovy.GroovyPredicate;
-import org.opencypher.gremlin.translation.translator.Translator;
-import org.opencypher.gremlin.translation.translator.TranslatorFlavor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;

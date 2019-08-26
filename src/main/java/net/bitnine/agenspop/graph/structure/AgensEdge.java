@@ -21,7 +21,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
         super(
-            outVertex.graph.baseGraph.createEdge(id.toString(), label
+            outVertex.graph.api.createEdge(id.toString(), label
                 , outVertex.baseElement.getId(), inVertex.baseElement.getId()
             )                           // elasticedge
             , outVertex.graph           // graph
@@ -30,7 +30,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public Vertex outVertex() {     // source v of edge
-        Optional<? extends BaseVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getSid());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(v.get(), this.graph);
         }
@@ -39,7 +39,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public Vertex inVertex() {      // target v of edge
-        Optional<? extends BaseVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getTid());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(v.get(), this.graph);
         }
@@ -56,7 +56,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     @Override
     public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
         this.graph.tx().readWrite();
-        Iterable<String> keys = this.baseElement.getKeys();
+        Iterable<String> keys = this.baseElement.keys();
         Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
                 key -> ElementHelper.keyExists(key, propertyKeys));
         return IteratorUtils.map(filter,
@@ -96,7 +96,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
         BaseEdge baseEdge = this.getBaseEdge();
         try {
             baseEdge.delete();                          // marking deleted
-            this.graph.baseGraph.deleteEdge(baseEdge);  // delete ElasticEdgeDocument
+            this.graph.api.deleteEdge(baseEdge);  // delete ElasticEdgeDocument
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;

@@ -12,11 +12,10 @@ public interface BaseElement {
     List<String> keys();
     List<Object> values();
 
-    boolean exists(String key);
-
     Collection<BaseProperty> properties();
     void properties(Collection<? extends BaseProperty> properties);
 
+    boolean hasProperty(String key);
     BaseProperty getProperty(String key);
     BaseProperty getProperty(String key, BaseProperty defaultProperty);
 

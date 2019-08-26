@@ -8,12 +8,15 @@ import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import net.bitnine.agenspop.basegraph.BaseTx;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
+import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticEdgeService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticGraphService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticVertexService;
+import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ElasticGraphAPI implements BaseGraphAPI {
 
+    private final static String ID_DELIMITER = "_";
     private final static int DEFAULT_SIZE = 2500;
 
     private final RestHighLevelClient client;
@@ -106,7 +110,6 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     //
     // schema services
     //
-
 
     @Override
     public Map<String, Long> listVertexLabels(String datasource) {
@@ -203,6 +206,19 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
 
     @Override
+    public BaseVertex createVertex(String datasource, String id, String label){
+        return new ElasticVertex(datasource, id, label);
+    }
+    @Override
+    public BaseEdge createEdge(String datasource, String id, String label, String sid, String tid){
+        return new ElasticEdge(datasource, id, label, sid, tid);
+    }
+    @Override
+    public BaseProperty createProperty(String key, Object value){
+        return new ElasticProperty(key, value);
+    }
+
+    @Override
     public boolean saveVertex(BaseVertex vertex){
         try{
             if( existsVertex(vertex.getId()) )
@@ -260,6 +276,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch(Exception e){ return Collections.EMPTY_LIST; }
     }
     @Override
+    public Collection<BaseVertex> findVertices(String datasource, String label){
+        try{
+            return vertices.findByDatasourceAndLabel(DEFAULT_SIZE, datasource, label)
+                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
+    @Override
     public Collection<BaseVertex> findVertices(String datasource, final String[] labels){
         try{
             return vertices.findByDatasourceAndLabels(DEFAULT_SIZE, datasource, labels)
@@ -298,6 +322,16 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         try{
             return vertices.findByDatasourceAndPropertyKeys(DEFAULT_SIZE, datasource, keys)
                     .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
+    @Override
+    public Collection<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial){
+        try{
+            Collection<ElasticVertex> list = !isPartial
+                    ? vertices.findByDatasourceAndPropertyValue(DEFAULT_SIZE, datasource, value)
+                    : vertices.findByDatasourceAndPropertyValuePartial(DEFAULT_SIZE, datasource, value);
+            return list.stream().map(r->(BaseVertex)r).collect(Collectors.toList());
         }
         catch(Exception e){ return Collections.EMPTY_LIST; }
     }
@@ -410,6 +444,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch(Exception e){ return Collections.EMPTY_LIST; }
     }
     @Override
+    public Collection<BaseEdge> findEdges(String datasource, String label){
+        try{
+            return edges.findByDatasourceAndLabel(DEFAULT_SIZE, datasource, label)
+                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
+    @Override
     public Collection<BaseEdge> findEdges(String datasource, final String[] labels){
         try{
             return edges.findByDatasourceAndLabels(DEFAULT_SIZE, datasource, labels)
@@ -452,6 +494,16 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch(Exception e){ return Collections.EMPTY_LIST; }
     }
     @Override
+    public Collection<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial){
+        try{
+            Collection<ElasticEdge> list = !isPartial
+                    ? edges.findByDatasourceAndPropertyValue(DEFAULT_SIZE, datasource, value)
+                    : edges.findByDatasourceAndPropertyValuePartial(DEFAULT_SIZE, datasource, value);
+            return list.stream().map(r->(BaseEdge)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
+    @Override
     public Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values){
         try{
             return edges.findByDatasourceAndPropertyValues(DEFAULT_SIZE, datasource, values)
@@ -473,7 +525,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
 
     @Override
-    public Collection<BaseEdge> findEdgesByDirection(String datasource, String vid, Direction direction){
+    public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction){
         try{
             return edges.findByDatasourceAndDirection(DEFAULT_SIZE, datasource, vid, direction)
                     .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
@@ -485,15 +537,15 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels){
         if( labels.length > 0 ){
             List<String> filterLabels = Arrays.asList(labels);
-            return findEdgesByDirection(datasource, vid, direction).stream()
+            return findEdgesOfVertex(datasource, vid, direction).stream()
                     .filter(r->filterLabels.contains(r.getLabel())).collect(Collectors.toList());
         }
-        return findEdgesByDirection(datasource, vid, direction);
+        return findEdgesOfVertex(datasource, vid, direction);
     }
 
     @Override
     public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value){
-        return findEdgesByDirection(datasource, vid, direction).stream()
+        return findEdgesOfVertex(datasource, vid, direction).stream()
                 .filter(r->{
                     if( label != null && !label.equals(r.getLabel()) ) return false;
                     if( key != null ){

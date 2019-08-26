@@ -19,16 +19,17 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
     protected final Element element;
     protected boolean removed = false;
 
-    public AgensProperty(final Element element, final BaseProperty propertyBase) {
-        Objects.requireNonNull(propertyBase.getValue(), "AgensProperty.propertyBase might be null");
-        this.propertyBase = propertyBase;
-        this.element = element;
-    }
+    // 외부 생성
     public AgensProperty(final Element element, final String key, final V value) {
         Objects.requireNonNull(value, "AgensProperty.value might be null");
+        propertyBase = ((AgensGraph)element.graph()).api.createProperty(key, value);
         this.element = element;
-        this.propertyBase = new BaseProperty(key, value.getClass().getName(), value );
-        // add property to ElasticElement
+        ((AgensElement)this.element).getBaseElement().setProperty(this.propertyBase);
+    }
+    // 내부 생성
+    public AgensProperty(final Element element, final BaseProperty propertyBase) {
+        this.propertyBase = propertyBase;
+        this.element = element;
         ((AgensElement)this.element).getBaseElement().setProperty(this.propertyBase);
     }
 
@@ -57,7 +58,7 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
 
     @Override
     public String toString() {
-        return "p["+key()+":"+this.propertyBase.getValue()+"]";
+        return "p["+key()+":"+this.propertyBase.value()+"]";
     }
 
     @Override

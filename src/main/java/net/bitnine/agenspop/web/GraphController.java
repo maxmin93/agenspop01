@@ -1,24 +1,17 @@
 package net.bitnine.agenspop.web;
 
 import net.bitnine.agenspop.config.properties.ProductProperties;
-import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
-import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.service.AgensGremlinService;
-import net.bitnine.agenspop.web.dto.DetachedGraph;
+import net.bitnine.agenspop.dto.DetachedGraph;
 import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONVersion;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.TypeInfo;
 import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/graph")
@@ -119,8 +109,7 @@ public class GraphController {
     ///////////////////////////////////////////
 
     @GetMapping(value="/gremlin", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> runGremlin(@RequestParam("q") String script
-            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
+    public ResponseEntity<?> runGremlin(@RequestParam("q") String script) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
 
@@ -148,8 +137,7 @@ public class GraphController {
 
     @GetMapping(value="/cypher", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> runCypher(@RequestParam("q") String script
-            , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource
-            , @PageableDefault(sort={"id"}, value = 50) Pageable pageable) throws Exception {
+            , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
 

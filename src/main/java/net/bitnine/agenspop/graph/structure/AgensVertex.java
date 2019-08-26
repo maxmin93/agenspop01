@@ -9,29 +9,20 @@ import net.bitnine.agenspop.elastic.model.ElasticVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
-import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
 public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<BaseVertex> {
 
-    protected Map<String, VertexProperty> properties;
-
-    public AgensVertex(final BaseVertex vertex, final AgensGraph graph) {
-        super(vertex, graph);
-        this.properties = new HashMap<>();
-        for( BaseProperty item : vertex.getProperties() ){
-            AgensVertexProperty property = new AgensVertexProperty(this, item);
-            this.properties.put( property.key(), property );
-        }
+    public AgensVertex(final AgensGraph graph, final BaseVertex vertex) {
+        super(graph, vertex);
     }
 
-    public AgensVertex(final Object id, final String label, final AgensGraph graph) {
-        super(graph.baseGraph.createVertex(id.toString(), label), graph);
+    public AgensVertex(final AgensGraph graph, final Object id, final String label) {
+        super(graph, graph.api.createVertex(graph.name(), id.toString(), label));
     }
 
     @Override
@@ -54,19 +45,19 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     @Override
     public void remove() {
         this.graph.tx().readWrite();
-        // remove connected AgensEdges and AgensVertex
-        final Iterable<BaseEdge> edges = graph.baseGraph.findEdgesOfVertex(id().toString(), Direction.BOTH);
+        // 1) remove connected AgensEdges and 2) remove AgensVertex
+        final Iterable<BaseEdge> edges = graph.api.findEdgesOfVertex(graph.name(), id().toString(), Direction.BOTH);
         for( BaseEdge edge : edges ) {
-            edge.delete();
-            graph.baseGraph.deleteEdge(edge);
+            graph.api.dropEdge(edge.getId());
         }
         // post processes of remove vertex : properties, graph, marking
-        this.properties = null;
         this.removed = true;
         // remove connected ElasticEdges and ElasticVertex
         this.graph.trait.removeVertex(this);
     }
 
+    // **NOTE: Cardinality.single 만 다룬다 ==> multi(set or list) 인 경우 Exception 처리
+    //
     @Override
     public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality
             , final String key, final V value, final Object... keyValues) {
@@ -74,13 +65,12 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateProperty(key, value);
-        if (cardinality.equals(VertexProperty.Cardinality.single) && properties != null )
-            properties.remove(key);
 
         this.graph.tx().readWrite();
-        final VertexProperty<V> vertexProperty = this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
-        if( this.properties == null ) this.properties = new HashMap<>();
-        this.properties.put(key, vertexProperty);
+        final VertexProperty<V> vertexProperty = new AgensVertexProperty<>(this, key, value);
+                // this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
+        // rest keyValues
+        ElementHelper.attachProperties(vertexProperty, keyValues);
         return vertexProperty;
     }
 
@@ -108,7 +98,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
 
         this.graph.tx().readWrite();
-        Iterable<BaseVertex> bases = graph.baseGraph.findNeighborVertices(id().toString(), direction, edgeLabels);
+        Iterable<BaseVertex> bases = graph.api.findNeighborVertices(id().toString(), direction, edgeLabels);
         final List<Vertex> vertices = new ArrayList<>();
         for( BaseVertex base : bases ){
             vertices.add( new AgensVertex(base, graph));
@@ -124,7 +114,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 //        return edgeIterator;
 
         this.graph.tx().readWrite();
-        Iterable<BaseEdge> bases = graph.baseGraph.findEdgesOfVertex(id().toString(), direction, edgeLabels);
+        Iterable<BaseEdge> bases = graph.api.findEdgesOfVertex(id().toString(), direction, edgeLabels);
         final List<Edge> edges = new ArrayList<>();
         for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));
         return edges.iterator();
@@ -135,7 +125,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public Iterator<Edge> edges(final Direction direction, final String label, final String key, final Object value) {
         this.graph.tx().readWrite();
-        Iterable<BaseEdge> bases = graph.baseGraph
+        Iterable<BaseEdge> bases = graph.api
                 .findEdgesOfVertex(id().toString(), direction, label, key, value);
         final List<Edge> edges = new ArrayList<>();
         for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));

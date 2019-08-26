@@ -1,4 +1,4 @@
-package net.bitnine.agenspop.web.exception;
+package net.bitnine.agenspop.exception;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 

@@ -20,23 +20,19 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     protected final BaseProperty propertyBase;
     protected final AgensVertex vertex;
 
-    // **NOTE: new AgensVertexProperty 의 경우
-    //      ==> baseElement.properties 에 존재하지 않던 key-value 생성하는 경우
-    //      ==> 이미 존재하는 key-value 를 AgensVertex 로 가져오는 경우
-
-    // case1 : baseElement.properties 에 존재하지 않던 key-value 생성하는 경우
+    // case1 : AgensGraph 외부인 사용자단으로부터 생성되는 경우
     public AgensVertexProperty(final AgensVertex vertex, final String key, final V value) {
         Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
+        this.propertyBase = ((AgensGraph)vertex.graph()).api.createProperty(key, value);
         this.vertex = vertex;
-        this.propertyBase = new BaseProperty(key, value.getClass().getName(), (Object)value );
-        // add property to ElasticVertex
         this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
-    // case2 : baseElement.properties 에 이미 존재하는 key-value 를 AgensVertex 로 가져오는 경우
+    // case2 : baseGraphAPI 로부터 생성되는 경우
     public AgensVertexProperty(final AgensVertex vertex, final BaseProperty propertyBase) {
-        this.vertex = vertex;
         this.propertyBase = propertyBase;
+        this.vertex = vertex;
+        this.vertex.baseElement.setProperty(this.propertyBase);
     }
 
     @Override
@@ -52,17 +48,18 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     @Override
     public Object id() {
         // TODO: ElasticVertex needs a better ID system for VertexProperties
-        return (long) (this.key().hashCode() + this.vertex.id().hashCode());
+        return (String) "vp_"+this.vertex.id().hashCode()+"_"+this.key().hashCode();
     }
 
     @Override
-    public String key() { return this.propertyBase.getKey(); }
+    public String key() { return this.propertyBase.key(); }
 
+    // **NOTE: Cardinality.single 때문에 사용되어서는 안됨
     @Override
     public Set<String> keys() {
         if(null == this.propertyBase) return Collections.emptySet();
         final Set<String> keys = new HashSet<>();
-        keys.add(this.propertyBase.getKey());       // Cardinality.single
+        keys.add(this.propertyBase.key());
         return Collections.unmodifiableSet(keys);
     }
 
@@ -89,7 +86,7 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     public void remove() {
         this.vertex.graph.tx().readWrite();
         this.vertex.graph.trait.removeVertexProperty(this);
-        this.vertex.properties.remove(propertyBase.getKey());
+        this.vertex.properties.remove(propertyBase.key());
     }
 
 
@@ -105,6 +102,6 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
 
     @Override
     public String toString() {
-        return "p["+key()+":"+this.propertyBase.getValue()+"]";
+        return "p["+key()+":"+this.propertyBase.value()+"]";
     }
 }

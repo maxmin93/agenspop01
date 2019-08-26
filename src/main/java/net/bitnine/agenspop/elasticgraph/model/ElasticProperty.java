@@ -13,6 +13,15 @@ public final class ElasticProperty implements BaseProperty {
     private String type;
     private String value;
 
+    public ElasticProperty(String key, Object value){
+        this.key = key;
+        this.type = value.getClass().getName();
+        this.value = value.toString();      // simple style
+
+        // ObjectMapper objectMapper = new ObjectMapper();
+        // this.value = objectMapper.writeValueAsString(value);
+    }
+
     @Override
     public String key(){ return key; }
 

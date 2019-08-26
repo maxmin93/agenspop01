@@ -1,7 +1,9 @@
 package net.bitnine.agenspop.basegraph;
 
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
+import org.apache.tinkerpop.gremlin.structure.Direction;
 
 import java.util.Collection;
 import java.util.Map;
@@ -9,7 +11,7 @@ import java.util.Optional;
 
 public interface BaseGraphAPI {
 
-    enum Direction { BOTH, IN, OUT };
+    // enum Direction { BOTH, IN, OUT };        // use tinkerpop.core
 
     BaseTx tx();
 
@@ -26,6 +28,10 @@ public interface BaseGraphAPI {
 
     Optional<BaseVertex> getVertexById(String id);
     Optional<BaseEdge> getEdgeById(String id);
+
+    BaseVertex createVertex(String datasource, String id, String label);
+    BaseEdge createEdge(String datasource, String id, String label, String sid, String tid);
+    BaseProperty createProperty(String key, Object value);
 
     boolean saveVertex(BaseVertex vertex);
     boolean saveEdge(BaseEdge edge);
@@ -62,11 +68,13 @@ public interface BaseGraphAPI {
     //
 
     Collection<BaseVertex> findVertices(final String[] ids);
+    Collection<BaseVertex> findVertices(String datasource, String label);
     Collection<BaseVertex> findVertices(String datasource, final String[] labels);
     Collection<BaseVertex> findVertices(String datasource, String key, String value);
     Collection<BaseVertex> findVertices(String datasource, String label, String key, String value);
     Collection<BaseVertex> findVertices(String datasource, String key, boolean hasNot);
     Collection<BaseVertex> findVerticesWithKeys(String datasource, final String[] keys);
+    Collection<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseVertex> findVerticesWithValues(String datasource, final String[] values);
 
     BaseVertex findOtherVertexOfEdge(String eid, String vid);
@@ -82,14 +90,16 @@ public interface BaseGraphAPI {
     //
 
     Collection<BaseEdge> findEdges(final String[] ids);
+    Collection<BaseEdge> findEdges(String datasource, String label);
     Collection<BaseEdge> findEdges(String datasource, final String[] labels);
     Collection<BaseEdge> findEdges(String datasource, String key, String value);
     Collection<BaseEdge> findEdges(String datasource, String label, String key, String value);
     Collection<BaseEdge> findEdges(String datasource, String key, boolean hasNot);
     Collection<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys);
+    Collection<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values);
 
-    Collection<BaseEdge> findEdgesByDirection(String datasource, String vid, Direction direction);
+    Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value);
 

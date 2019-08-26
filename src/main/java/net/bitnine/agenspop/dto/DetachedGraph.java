@@ -1,17 +1,12 @@
-package net.bitnine.agenspop.web.dto;
+package net.bitnine.agenspop.dto;
 
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensFactory;
-import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
-import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedEdge;
-import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertex;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class DetachedGraph implements Serializable /*, Cloneable */ {
 
