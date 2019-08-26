@@ -42,6 +42,9 @@ public interface BaseGraphAPI {
     long countV(String datasource);
     long countE(String datasource);
 
+    Map<String, Long> listVertexDatasources();
+    Map<String, Long> listEdgeDatasources();
+
     Map<String, Long> listVertexLabels(String datasource);
     Map<String, Long> listEdgeLabels(String datasource);
 

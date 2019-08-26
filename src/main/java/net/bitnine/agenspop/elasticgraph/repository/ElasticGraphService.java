@@ -110,6 +110,27 @@ public class ElasticGraphService {
     // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_metrics_aggregations.html
     // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_bucket_aggregations.html
 
+    public Map<String, Long> listDatasources(String index) throws Exception {
+        // query : aggregation
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery())
+                .aggregation(AggregationBuilders.terms("datasources").field("datasource").order(BucketOrder.key(true)));
+
+        // request
+        SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        // response
+        Aggregations aggregations = searchResponse.getAggregations();
+        Terms labels = aggregations.get("datasources");
+
+        Map<String, Long> result = new HashMap<>();
+        labels.getBuckets().forEach(b->{
+            result.put(b.getKeyAsString(), b.getDocCount());
+        });
+        return result;
+    }
+
     public Map<String, Long> listLabels(String index, String datasource) throws Exception {
         // query : aggregation
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();

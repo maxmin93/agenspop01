@@ -247,11 +247,11 @@ public class AgensGraphManager implements GraphManager {
     }
 
     @Override
-    public Graph removeGraph(String gName) {
+    public Graph removeGraph(String gName) throws Exception {
         if (gName == null) return null;
 
-        boolean isDone = this.baseAPI.removeDatasource(gName);
-        System.out.println("** remove graph["+gName+"] ==> "+isDone );
+        String result = this.baseAPI.remove(gName);
+        System.out.println("** remove graph["+gName+"] ==> "+result );
 
         return graphs.remove(gName);
     }
@@ -260,12 +260,18 @@ public class AgensGraphManager implements GraphManager {
 
     public Map<String,String> getGraphStates(){ return this.graphStates; }
 
-    public Map<String,Map<String,Long>> getGraphLabels(){
-        return baseAPI.getGraphLabels();
+    public Map<String,Map<String,Long>> getGraphLabels(String datasource){
+        Map<String,Map<String,Long>> agg = new HashMap<>();
+        agg.put("V", baseAPI.listVertexLabels(datasource));
+        agg.put("E", baseAPI.listEdgeLabels(datasource));
+        return agg;
     }
 
-    public Map<String,Map<String,Long>> getGraphKeys(String datasource){
-        return baseAPI.getGraphKeys(datasource);
+    public Map<String,Map<String,Long>> getGraphKeys(String datasource, String label){
+        Map<String,Map<String,Long>> agg = new HashMap<>();
+        agg.put("V", baseAPI.listVertexLabelKeys(datasource, label));
+        agg.put("E", baseAPI.listEdgeLabelKeys(datasource, label));
+        return agg;
     }
 
     public synchronized void updateGraphs(){

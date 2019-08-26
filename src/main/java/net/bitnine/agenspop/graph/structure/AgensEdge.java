@@ -95,8 +95,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
         // post processes of remove vertex : properties, graph, marking
         BaseEdge baseEdge = this.getBaseEdge();
         try {
-            baseEdge.delete();                          // marking deleted
-            this.graph.api.deleteEdge(baseEdge);  // delete ElasticEdgeDocument
+            this.graph.api.dropEdge(baseEdge.getId());
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;

@@ -112,6 +112,21 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     //
 
     @Override
+    public Map<String, Long> listVertexDatasources() {
+        try {
+            return graph.listDatasources(ElasticGraphService.INDEX_VERTEX);
+        }
+        catch (Exception e) { return Collections.EMPTY_MAP; }
+    }
+    @Override
+    public Map<String, Long> listEdgeDatasources(){
+        try {
+            return graph.listDatasources(ElasticGraphService.INDEX_EDGE);
+        }
+        catch (Exception e) { return Collections.EMPTY_MAP; }
+    }
+
+    @Override
     public Map<String, Long> listVertexLabels(String datasource) {
         try {
             return graph.listLabels(ElasticGraphService.INDEX_VERTEX, datasource);

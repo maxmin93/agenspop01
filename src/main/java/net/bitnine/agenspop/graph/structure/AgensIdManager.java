@@ -34,7 +34,7 @@ public enum AgensIdManager implements AgensGraph.IdManager {
     ANY {
         @Override
         public String getNextId(final AgensGraph graph) {
-            return Stream.generate(() -> graph.graphName+"_"+graph.currentId.incrementAndGet())
+            return Stream.generate(() -> graph.name()+"_"+graph.currentId.incrementAndGet())
                     .filter(id -> !graph.api.existsVertex(id) && !graph.api.existsEdge(id))
                     .findAny().get();
         }
