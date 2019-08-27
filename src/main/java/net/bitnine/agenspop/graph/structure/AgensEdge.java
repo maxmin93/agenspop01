@@ -15,24 +15,20 @@ import java.util.*;
  */
 public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<BaseEdge> {
 
-    public AgensEdge(final BaseEdge edge, final AgensGraph graph) {
-        super(edge, graph);
+    public AgensEdge(final AgensGraph graph, final BaseEdge edge) {
+        super(graph, edge);
     }
 
-    public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
-        super(
-            outVertex.graph.api.createEdge(id.toString(), label
-                , outVertex.baseElement.getId(), inVertex.baseElement.getId()
-            )                           // elasticedge
-            , outVertex.graph           // graph
-        );
+    public AgensEdge(final AgensGraph graph, final Object id, final String label, final AgensVertex outVertex, final AgensVertex inVertex) {
+        super(graph, graph.api.createEdge(graph.name(), id.toString(), label
+                , outVertex.baseElement.getId(), inVertex.baseElement.getId()));
     }
 
     @Override
     public Vertex outVertex() {     // source v of edge
         Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getSid());
         if( v.isPresent() ){
-            return (Vertex) new AgensVertex(v.get(), this.graph);
+            return (Vertex) new AgensVertex(this.graph, v.get());
         }
         return (Vertex) null;
     }
@@ -41,7 +37,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     public Vertex inVertex() {      // target v of edge
         Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getTid());
         if( v.isPresent() ){
-            return (Vertex) new AgensVertex(v.get(), this.graph);
+            return (Vertex) new AgensVertex(this.graph, v.get());
         }
         return (Vertex) null;
     }
@@ -51,12 +47,18 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
         return (BaseEdge) this.baseElement;
     }
 
+    public AgensEdge save(){
+        this.graph.tx().readWrite();
+        this.graph.api.saveEdge(getBaseEdge());
+        return this;
+    }
+
     ////////////////////////////////
 
     @Override
     public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
         this.graph.tx().readWrite();
-        Iterable<String> keys = this.baseElement.keys();
+        List<String> keys = this.baseElement.keys();
         Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
                 key -> ElementHelper.keyExists(key, propertyKeys));
         return IteratorUtils.map(filter,
@@ -66,8 +68,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     @Override
     public <V> Property<V> property(final String key) {
         this.graph.tx().readWrite();
-        // properties 에 없으면 가져오기
-        if (this.baseElement.hasProperty(key))
+        if( this.baseElement.hasProperty(key) )
             return new AgensProperty<>(this, this.baseElement.getProperty(key));
         else
             return Property.empty();
@@ -76,10 +77,9 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     @Override
     public <V> Property<V> property(final String key, final V value) {
         ElementHelper.validateProperty(key, value);
-//        if( this.properties == null ) this.properties = new HashMap<>();
+        BaseProperty propertyBase = this.graph.api.createProperty(key, value);
 
         this.graph.tx().readWrite();
-        BaseProperty propertyBase = new BaseProperty(key, value.getClass().getName(), value);
         baseElement.setProperty(propertyBase);
         return new AgensProperty<V>(this, propertyBase);
     }
@@ -89,8 +89,8 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     @Override
     public void remove() {
         if( this.removed ) return;
-
         this.removed = true;
+
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
         BaseEdge baseEdge = this.getBaseEdge();
@@ -112,11 +112,11 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
         if (removed) return Collections.emptyIterator();
         switch (direction) {
             case OUT:
-                return IteratorUtils.of(this.outVertex());
+                return IteratorUtils.of(this.outVertex());  // source
             case IN:
-                return IteratorUtils.of(this.inVertex());
+                return IteratorUtils.of(this.inVertex());   // target
             default:
-                return IteratorUtils.of(this.outVertex(), this.inVertex());
+                return IteratorUtils.of(this.outVertex(), this.inVertex()); // BOTH
         }
     }
 

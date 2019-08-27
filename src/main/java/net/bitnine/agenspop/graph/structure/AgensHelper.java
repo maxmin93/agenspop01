@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseElement;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
@@ -21,20 +24,27 @@ public final class AgensHelper {
 
     private AgensHelper() { }
 
-    public static void attachProperties(final Vertex vertex, final Object... propertyKeyValues) {
-        if (vertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+    public static void attachProperties(final BaseGraphAPI api, final BaseElement element, final Object... propertyKeyValues) {
+        if (api == null) throw Graph.Exceptions.argumentCanNotBeNull("baseGraphAPI");
+        if (element == null) throw Graph.Exceptions.argumentCanNotBeNull("baseElement");
         for (int i = 0; i < propertyKeyValues.length; i = i + 2) {
             if (!propertyKeyValues[i].equals(T.id) && !propertyKeyValues[i].equals(T.label)){
-                ((AgensVertex)vertex).property((String)propertyKeyValues[i], propertyKeyValues[i + 1]);
+                BaseProperty propertyBase = api.createProperty((String)propertyKeyValues[i], propertyKeyValues[i + 1]);
+                element.setProperty(propertyBase);
             }
         }
     }
+    public static void attachProperties(final Vertex vertex, final Object... propertyKeyValues) {
+        if (vertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
+        BaseGraphAPI api = ((AgensVertex)vertex).graph.getBaseGraph();
+        BaseElement baseElement = ((AgensVertex)vertex).baseElement;
+        attachProperties(api, baseElement, propertyKeyValues);
+    }
     public static void attachProperties(final Edge edge, final Object... propertyKeyValues) {
         if (edge == null) throw Graph.Exceptions.argumentCanNotBeNull("edge");
-        for (int i = 0; i < propertyKeyValues.length; i = i + 2) {
-            if (!propertyKeyValues[i].equals(T.id) && !propertyKeyValues[i].equals(T.label))
-                ((AgensEdge)edge).property((String) propertyKeyValues[i], propertyKeyValues[i + 1]);
-        }
+        BaseGraphAPI api = ((AgensEdge)edge).graph.getBaseGraph();
+        BaseElement baseElement = ((AgensEdge)edge).baseElement;
+        attachProperties(api, baseElement, propertyKeyValues);
     }
 
     protected static Vertex addVertex(final AgensGraph graph, final String label, final Object... keyValues) {
@@ -53,11 +63,10 @@ public final class AgensHelper {
 
         graph.tx().readWrite();
         final BaseVertex baseVertex = graph.api.createVertex(graph.name(), idValue.toString(), label);
-        vertex = new AgensVertex(baseVertex, graph);
-        ElementHelper.attachProperties(vertex, keyValues);
+        AgensHelper.attachProperties(graph.api, baseVertex, keyValues);
         graph.api.saveVertex(baseVertex);     // write to elasticsearch index
 
-        return edge;
+        return new AgensVertex(graph, baseVertex);
     }
 
     protected static Edge addEdge(final AgensGraph graph, final AgensVertex outVertex, final AgensVertex inVertex, final String label, final Object... keyValues) {
@@ -75,14 +84,12 @@ public final class AgensHelper {
         }
 
         graph.tx().readWrite();
-        final BaseEdge elasticEdge = graph.api.createEdge(
-                idValue.toString(), label, outVertex.id().toString(), inVertex.id().toString()
-        );
-        edge = new AgensEdge(elasticEdge, graph);
-        ElementHelper.attachProperties(edge, keyValues);
-        graph.api.saveEdge(elasticEdge);     // write to elasticsearch index
+        final BaseEdge baseEdge = graph.api.createEdge(graph.name(), idValue.toString(), label
+                , outVertex.id().toString(), inVertex.id().toString());
+        AgensHelper.attachProperties(graph.api, baseEdge, keyValues);
+        graph.api.saveEdge(baseEdge);     // write to elasticsearch index
 
-        return edge;
+        return new AgensEdge(graph, baseEdge);
     }
 
     public static boolean inComputerMode(final AgensGraph graph) {

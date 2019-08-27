@@ -27,6 +27,11 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         return (BaseVertex) this.baseElement;
     }
 
+    public AgensVertex save(){
+        this.graph.api.saveVertex(getBaseVertex());
+        return this;
+    }
+
     ////////////////////////////////////
 
     @Override
@@ -105,7 +110,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         Iterable<BaseEdge> bases = graph.api
                 .findEdgesOfVertex(graph.name(), id().toString(), direction, edgeLabels);
         final List<Edge> edges = new ArrayList<>();
-        for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        for( BaseEdge base : bases ) edges.add( new AgensEdge(graph, base));
         return edges.iterator();
     }
 
@@ -117,7 +122,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         Iterable<BaseEdge> bases = graph.api
                 .findEdgesOfVertex(graph.name(), id().toString(), direction, label, key, value);
         final List<Edge> edges = new ArrayList<>();
-        for( BaseEdge base : bases ) edges.add( new AgensEdge(base, graph));
+        for( BaseEdge base : bases ) edges.add( new AgensEdge(graph, base));
         return edges.iterator();
     }
 

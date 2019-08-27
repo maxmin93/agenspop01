@@ -17,27 +17,36 @@ import java.util.stream.Collectors;
  */
 public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexProperty<BaseProperty> {
 
-    protected final BaseProperty propertyBase;
-    protected final AgensVertex vertex;
+    protected BaseProperty baseProperty;
+    protected AgensVertex vertex;
 
-    // case1 : AgensGraph 외부인 사용자단으로부터 생성되는 경우
-    public AgensVertexProperty(final AgensVertex vertex, final String key, final V value) {
-        Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
-        this.propertyBase = ((AgensGraph)vertex.graph()).api.createProperty(key, value);
-        this.vertex = vertex;
-        this.vertex.baseElement.setProperty(this.propertyBase);
+    // case1 : baseGraphAPI 로부터 생성되는 경우
+    public AgensVertexProperty(final AgensVertex vertex, final BaseProperty baseProperty) {
+        Objects.requireNonNull(baseProperty, "AgensVertexProperty.value might be null");
+        initVertexProperty(vertex, baseProperty);
     }
 
-    // case2 : baseGraphAPI 로부터 생성되는 경우
-    public AgensVertexProperty(final AgensVertex vertex, final BaseProperty propertyBase) {
-        this.propertyBase = propertyBase;
+    // case2 : AgensGraph 외부인 사용자단으로부터 생성되는 경우
+    public AgensVertexProperty(final AgensVertex vertex, final String key, final V value, final Object... propertyKeyValues) {
+        Objects.requireNonNull(value, "AgensVertexProperty.value might be null");
+        BaseProperty baseProperty = ((AgensGraph)vertex.graph()).api.createProperty(key, value);
+        initVertexProperty(vertex, baseProperty);
+
+        // **NOTE : Cardinality.single 에서는 property 에서 multi-value 를 허용하지 않음
+        //      ==> 그냥 별개의 property 로 추가하도록 수정
+        if( propertyKeyValues.length > 0 )
+            AgensHelper.attachProperties(vertex, propertyKeyValues);
+    }
+
+    private void initVertexProperty(final AgensVertex vertex, final BaseProperty baseProperty){
+        this.baseProperty = baseProperty;
         this.vertex = vertex;
-        this.vertex.baseElement.setProperty(this.propertyBase);
+        this.vertex.baseElement.setProperty(this.baseProperty);
     }
 
     @Override
     public BaseProperty getBaseVertexProperty(){
-        return this.propertyBase;
+        return this.baseProperty;
     }
 
     ////////////////////////////////////
@@ -52,41 +61,43 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     }
 
     @Override
-    public String key() { return this.propertyBase.key(); }
+    public String key() { return this.baseProperty.key(); }
 
     // **NOTE: Cardinality.single 때문에 사용되어서는 안됨
     @Override
     public Set<String> keys() {
-        if(null == this.propertyBase) return Collections.emptySet();
+        if(this.baseProperty == null) return Collections.emptySet();
         final Set<String> keys = new HashSet<>();
-        keys.add(this.propertyBase.key());
+        keys.add(this.baseProperty.key());
         return Collections.unmodifiableSet(keys);
     }
 
     @Override
-    public V value() throws NoSuchElementException { return (V)this.propertyBase.value(); }
+    public V value() throws NoSuchElementException { return (V)this.baseProperty.value(); }
 
     @Override
-    public boolean isPresent() { return this.propertyBase.isPresent(); }
+    public boolean isPresent() { return this.baseProperty.isPresent(); }
 
+    // **NOTE: Cardinality.single 에서는 사용하지 않는 메서드
     @Override
     public <U> Iterator<Property<U>> properties(final String... propertyKeys) {
-        this.vertex.graph.tx().readWrite();
-        return this.vertex.graph.trait.getProperties(this, propertyKeys);
+        throw VertexProperty.Exceptions.metaPropertiesNotSupported();
+//        List<Property<U>> valueList = new ArrayList<>();
+//        valueList.add( new AgensProperty<U>(this, baseProperty) );
+//        return valueList.iterator();
     }
 
     @Override
     public <U> Property<U> property(final String key, final U value) {
-        this.vertex.graph.tx().readWrite();
-        ElementHelper.validateProperty(key, value);
-        return this.vertex.graph.trait.setProperty(this, key, value);
+        throw VertexProperty.Exceptions.metaPropertiesNotSupported();
     }
 
     @Override
     public void remove() {
+        //**NOTE: baseProperty 에 removed 플래그를 두어야 하지 않을까 싶다 (나중에)
+        //   ==> removed 추가시 isPresent() 와도 연결해야함
         this.vertex.graph.tx().readWrite();
-        this.vertex.graph.trait.removeVertexProperty(this);
-        this.vertex.properties.remove(propertyBase.key());
+        ((AgensVertex)this.element()).baseElement.removeProperty(this.key());
     }
 
 
@@ -102,6 +113,7 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
 
     @Override
     public String toString() {
-        return "p["+key()+":"+this.propertyBase.value()+"]";
+        return StringFactory.propertyString(this);
+        // return "p["+key()+"->"+this.baseProperty.value()+"]";
     }
 }
