@@ -40,8 +40,8 @@ public final class AgensFactory {
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, defaultGraphName());
         // **NOTE: 필요 없음.
         //      AgensGraph 초기화시 IdManager 고정
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.MIX_ID.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.MIX_ID.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.ANY.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.ANY.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single);
         return conf;
     }

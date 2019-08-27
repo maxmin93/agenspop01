@@ -1,10 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import net.bitnine.agenspop.basegraph.BaseGraphAPI;
@@ -92,32 +88,11 @@ public final class AgensHelper {
         return new AgensEdge(graph, baseEdge);
     }
 
-    public static boolean inComputerMode(final AgensGraph graph) {
-        return null != graph.graphComputerView;
-    }
-
-    public static Object createGraphComputerView(final AgensGraph graph, final GraphFilter graphFilter, final Set<VertexComputeKey> computeKeys) {
-        return graph.graphComputerView = null;
-    }
-
-    public static Object getGraphComputerView(final AgensGraph graph) {
-        return graph.graphComputerView;
-    }
-
-    public static void dropGraphComputerView(final AgensGraph graph) {
-        graph.graphComputerView = null;
-    }
-
-    public static Map<String, VertexProperty> getProperties(final AgensVertex vertex) {
-        return null == vertex.properties ? Collections.emptyMap() : vertex.properties;
-    }
-
     //////////////////////////////////////////
 
     public static boolean isDeleted(final BaseVertex vertex) {
         try {
-            vertex.getKeys();
-            return vertex.isDeleted();
+            return vertex.removed();
         } catch (final RuntimeException e) {
             if (isNotFound(e))
                 return true;
@@ -132,8 +107,7 @@ public final class AgensHelper {
 
     // **NOTE: 최적화된 hasContainer 는 삭제!!
     //      ==> hasContainer.test(element) 에서 실패 방지
-    public static int optimizeHasContainers(List<HasContainer> hasContainers,
-                       List<String> ids, List<String> labels, List<String> keys, List<Object> values){
+    public static Map<String, Object> optimizeHasContainers(List<HasContainer> hasContainers){
         int optType = 0;
         Iterator<HasContainer> iter = hasContainers.iterator();
         while( iter.hasNext() ){
@@ -214,4 +188,35 @@ public final class AgensHelper {
         }
         return optType;
     }
+
+    public static Collection<Vertex> verticesWithHasContainers(AgensGraph graph, Map<String, Object> optimizedParams) {
+        String label = !optimizedParams.containsKey("label") ? null : optimizedParams.get("label").toString();
+        List<String> labelParams = !optimizedParams.containsKey("labels") ? null : (List<String>) optimizedParams.get("labels");
+        String key = !optimizedParams.containsKey("key") ? null : optimizedParams.get("key").toString();
+        String keyNot = !optimizedParams.containsKey("keyNot") ? null : optimizedParams.get("keyNot").toString();
+        List<String> keyParams = !optimizedParams.containsKey("keys") ? null : (List<String>) optimizedParams.get("keys");
+        List<String> valueParams = !optimizedParams.containsKey("values") ? null : (List<String>) optimizedParams.get("values");
+        Map<String, String> kvPairs = !optimizedParams.containsKey("kvPairs") ? null : (Map<String, String>) optimizedParams.get("kvPairs");
+
+        // Parameters
+        String[] labels = labelParams==null ? null : labelParams.stream().toArray(String[]::new);
+        String[] keys = keyParams==null ? null : keyParams.stream().toArray(String[]::new);
+        String[] values = valueParams==null ? null : valueParams.stream().toArray(String[]::new);
+
+        // for DEBUG
+        System.out.println("V.hasContainers :: datasource => "+graph.name());
+        System.out.println("  , label => "+label);
+        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
+        System.out.println("  , key => "+key);
+        System.out.println("  , keyNot => "+keyNot);
+        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
+        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
+        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
+
+        return graph.api.findVertices(graph.name()
+                , label, labels, key, keyNot, keys, values, kvPairs).stream()
+                .map(node -> (Vertex) new AgensVertex(graph, node)).collect(Collectors.toList());
+    }
+
+
 }

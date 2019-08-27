@@ -58,7 +58,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
     @Override
     public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
         this.graph.tx().readWrite();
-        List<String> keys = this.baseElement.keys();
+        Collection<String> keys = this.baseElement.keys();
         Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
                 key -> ElementHelper.keyExists(key, propertyKeys));
         return IteratorUtils.map(filter,
@@ -88,14 +88,13 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public void remove() {
-        if( this.removed ) return;
-        this.removed = true;
+        if( this.baseElement.removed() ) return;
 
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
         BaseEdge baseEdge = this.getBaseEdge();
         try {
-            this.graph.api.dropEdge(baseEdge.getId());
+            this.graph.api.dropEdge(baseEdge);
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;
@@ -109,7 +108,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction) {
-        if (removed) return Collections.emptyIterator();
+        if ( this.baseElement.removed() ) return Collections.emptyIterator();
         switch (direction) {
             case OUT:
                 return IteratorUtils.of(this.outVertex());  // source

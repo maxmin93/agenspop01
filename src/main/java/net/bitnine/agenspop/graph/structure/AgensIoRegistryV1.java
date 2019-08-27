@@ -437,7 +437,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
                                      final SerializerProvider serializerProvider,
                                      final TypeSerializer typeSerializer) throws IOException {
             jsonGenerator.writeObjectFieldStart(GraphSONTokens.PROPERTIES);
-            List<BaseProperty> properties = new ArrayList<>(edge.getBaseEdge().getProperties());
+            List<BaseProperty> properties = new ArrayList<>(edge.getBaseEdge().properties());
             Iterator<BaseProperty> iter = properties.iterator();
             while( iter.hasNext() ){
                 BaseProperty p = (BaseProperty)iter.next();

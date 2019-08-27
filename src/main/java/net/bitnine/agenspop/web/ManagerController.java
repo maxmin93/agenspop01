@@ -56,16 +56,16 @@ public class ManagerController {
         return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping(value="/labels", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> listLabels() throws Exception {
-        Map<String,Map<String,Long>> labels = manager.getGraphLabels();
-        return new ResponseEntity<Map<String,Map<String,Long>>>(labels, productHeaders(), HttpStatus.OK);
+    @GetMapping(value="/labels/{datasource}", produces="application/json; charset=UTF-8")
+    public ResponseEntity listLabels(@PathVariable String datasource) throws Exception {
+        Map<String,Map<String,Long>> labels = manager.getGraphLabels(datasource);
+        return new ResponseEntity(labels, productHeaders(), HttpStatus.OK);
     }
 
-    @GetMapping(value="/keys/{datasource}", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> listKeys(@PathVariable String datasource) throws Exception {
-        Map<String,Map<String,Long>> keys = manager.getGraphKeys(datasource);
-        return new ResponseEntity<Map<String,Map<String,Long>>>(keys, productHeaders(), HttpStatus.OK);
+    @GetMapping(value="/keys/{datasource}/{label}", produces="application/json; charset=UTF-8")
+    public ResponseEntity listKeys(@PathVariable String datasource, @PathVariable String label) throws Exception {
+        Map<String,Map<String,Long>> keys = manager.getGraphKeys(datasource, label);
+        return new ResponseEntity(keys, productHeaders(), HttpStatus.OK);
     }
 
     // remove graph

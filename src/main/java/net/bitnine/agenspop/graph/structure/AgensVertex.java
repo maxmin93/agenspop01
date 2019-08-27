@@ -37,7 +37,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     @Override
     public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
         if (inVertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if (this.baseElement.removed()) throw elementAlreadyRemoved(Vertex.class, this.id());
         return AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
     }
 
@@ -47,11 +47,10 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         // 1) remove connected AgensEdges
         final Iterable<BaseEdge> edges = graph.api.findEdgesOfVertex(graph.name(), id().toString(), Direction.BOTH);
         for( BaseEdge edge : edges ) {
-            graph.api.dropEdge(edge.getId());
+            graph.api.dropEdge(edge);
         }
         // 2) remove AgensVertex
-        this.removed = true;
-        this.graph.api.dropVertex(baseElement.getId());
+        this.graph.api.dropVertex((BaseVertex)baseElement);
     }
 
     // **NOTE: Cardinality.single 만 다룬다 ==> multi(set or list) 인 경우 Exception 처리
@@ -60,7 +59,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality
             , final String key, final V value, final Object... keyValues) {
 
-        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if( this.baseElement.removed() ) throw elementAlreadyRemoved(Vertex.class, this.id());
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateProperty(key, value);
 

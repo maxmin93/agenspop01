@@ -255,9 +255,19 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
 
     @Override
+    public void dropVertex(BaseVertex vertex){
+        vertex.remove();
+        dropVertex(vertex.getId());
+    }
+    @Override
     public void dropVertex(String id){
         try{ vertices.deleteDocument(id); }
         catch (Exception e){ }
+    }
+    @Override
+    public void dropEdge(BaseEdge edge){
+        edge.remove();
+        dropEdge(edge.getId());
     }
     @Override
     public void dropEdge(String id){
@@ -360,6 +370,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
 
     // V : hasContainers
+    @Override
     public Collection<BaseVertex> findVertices(String datasource
             , String label, String[] labels
             , String key, String keyNot, String[] keys
@@ -528,6 +539,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
 
     // V : hasContainers
+    @Override
     public Collection<BaseEdge> findEdges(String datasource
             , String label, String[] labels
             , String key, String keyNot, String[] keys

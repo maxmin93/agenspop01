@@ -76,12 +76,15 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
     public V value() throws NoSuchElementException { return (V)this.baseProperty.value(); }
 
     @Override
-    public boolean isPresent() { return this.baseProperty.isPresent(); }
+    public boolean isPresent() {
+        return vertex.baseElement.removed() ? false : this.baseProperty.isPresent();
+    }
 
     // **NOTE: Cardinality.single 에서는 사용하지 않는 메서드
     @Override
     public <U> Iterator<Property<U>> properties(final String... propertyKeys) {
         throw VertexProperty.Exceptions.metaPropertiesNotSupported();
+//        if (!isPresent()) return Collections.emptyIterator();
 //        List<Property<U>> valueList = new ArrayList<>();
 //        valueList.add( new AgensProperty<U>(this, baseProperty) );
 //        return valueList.iterator();
@@ -99,7 +102,6 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
         this.vertex.graph.tx().readWrite();
         ((AgensVertex)this.element()).baseElement.removeProperty(this.key());
     }
-
 
     @Override
     public boolean equals(final Object object) {

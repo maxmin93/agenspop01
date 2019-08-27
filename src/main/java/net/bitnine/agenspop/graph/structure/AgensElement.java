@@ -12,8 +12,6 @@ import java.util.Set;
 
 public abstract class AgensElement implements Element, WrappedElement<BaseElement> {
 
-    protected boolean removed = false;
-
     protected final AgensGraph graph;
     protected final BaseElement baseElement;
 

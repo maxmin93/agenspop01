@@ -13,7 +13,6 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
 
     protected final BaseProperty baseProperty;
     protected final Element element;
-    protected boolean removed = false;
 
     // 외부 생성
     public AgensProperty(final Element element, final String key, final V value) {
@@ -50,7 +49,7 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
 
     @Override
     public boolean isPresent() {
-        return this.baseProperty.isPresent();
+        return ((AgensElement)element).baseElement.removed() ? false : this.baseProperty.isPresent();
     }
 
     @Override
@@ -70,9 +69,6 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
 
     @Override
     public void remove() {
-        if (this.removed) return;
-        this.removed = true;
-
         this.element.graph().tx().readWrite();
         final BaseElement entity = ((AgensElement) this.element).getBaseElement();
         if (entity.hasProperty(this.key())) entity.removeProperty(this.key());

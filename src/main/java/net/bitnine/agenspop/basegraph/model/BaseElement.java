@@ -9,8 +9,11 @@ public interface BaseElement {
     String getLabel();
     String getDatasource();
 
-    List<String> keys();
-    List<Object> values();
+    boolean removed();
+    void remove();
+
+    Collection<String> keys();
+    Collection<Object> values();
 
     Collection<BaseProperty> properties();
     void properties(Collection<? extends BaseProperty> properties);

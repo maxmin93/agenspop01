@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 @Data
 public class ElasticElement implements BaseElement {
 
+    private boolean removed;
+
     protected String id;
     protected String label;
     protected String datasource;
@@ -20,10 +22,18 @@ public class ElasticElement implements BaseElement {
         this.id = id;
         this.label = label;
         this.properties = new ArrayList<>();
+        this.removed = false;
     }
 
     @Override
-    public List<String> keys(){
+    public boolean removed(){ return this.removed; }
+    @Override
+    public void remove(){ this.removed = true; }
+
+    @Override
+    public Collection<String> keys(){
+        if( this.removed ) return Collections.EMPTY_LIST;
+
         List<String> keys = new ArrayList<>();
         for(ElasticProperty p : properties ){
             if( p.isPresent() ) keys.add(p.getKey());   // pre-check exception
@@ -32,7 +42,9 @@ public class ElasticElement implements BaseElement {
     }
 
     @Override
-    public List<Object> values(){
+    public Collection<Object> values(){
+        if( this.removed ) return Collections.EMPTY_LIST;
+
         List<Object> values = new ArrayList<>();
         for(ElasticProperty p : properties ){
             if( p.isPresent() ) values.add(p.value());  // pre-check exception
@@ -42,21 +54,28 @@ public class ElasticElement implements BaseElement {
 
     @Override
     public Collection<BaseProperty> properties(){
+        if( this.removed ) return Collections.EMPTY_SET;
+
         return new HashSet<>(properties);
     }
 
     @Override
     public void properties(Collection<? extends BaseProperty> properties){
+        if( this.removed ) return;
+
         this.properties = properties.stream().map(r->(ElasticProperty)r).collect(Collectors.toList());
     }
 
     @Override
     public boolean hasProperty(String key){
+        if( this.removed ) return false;
         return keys().contains(key);
     }
 
     @Override
     public BaseProperty getProperty(String key){
+        if( this.removed ) return null;
+
         for( ElasticProperty property : properties ){
             if( property.getKey().equals(key) ) return property;
         }
@@ -65,18 +84,24 @@ public class ElasticElement implements BaseElement {
 
     @Override
     public BaseProperty getProperty(String key, BaseProperty defaultProperty){
+        if( this.removed ) return null;
+
         BaseProperty property = getProperty(key);
         return property == null ? defaultProperty : property;
     }
 
     @Override
     public void setProperty(BaseProperty property){
+        if( this.removed ) return;
+
         if( hasProperty(property.key()) ) removeProperty(property.key());
         properties.add((ElasticProperty) property);
     }
 
     @Override
     public BaseProperty removeProperty(String key){
+        if( this.removed ) return null;
+
         Iterator<ElasticProperty> iter = properties.iterator();
         while(iter.hasNext()){
             BaseProperty property = iter.next();

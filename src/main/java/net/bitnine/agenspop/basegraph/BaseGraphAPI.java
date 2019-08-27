@@ -36,7 +36,9 @@ public interface BaseGraphAPI {
     boolean saveVertex(BaseVertex vertex);
     boolean saveEdge(BaseEdge edge);
 
+    void dropVertex(BaseVertex vertex);
     void dropVertex(String id);
+    void dropEdge(BaseEdge edge);
     void dropEdge(String id);
 
     long countV(String datasource);
@@ -79,12 +81,13 @@ public interface BaseGraphAPI {
     Collection<BaseVertex> findVerticesWithKeys(String datasource, final String[] keys);
     Collection<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseVertex> findVerticesWithValues(String datasource, final String[] values);
+    Collection<BaseVertex> findVertices(String datasource
+            , String label, String[] labels
+            , String key, String keyNot, String[] keys
+            , String[] values, Map<String,String> kvPairs);
 
     BaseVertex findOtherVertexOfEdge(String eid, String vid);
     Collection<BaseVertex> findNeighborVertices(String datasource, String vid, Direction direction, final String[] labels);
-
-//    Collection<BaseVertex> findVertices(String datasource
-//            , List<String> ids, List<String> labels, List<String> keys, List<Object> values);
 
 
     //////////////////////////////////////////////////
@@ -101,12 +104,13 @@ public interface BaseGraphAPI {
     Collection<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys);
     Collection<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values);
+    Collection<BaseEdge> findEdges(String datasource
+            , String label, String[] labels
+            , String key, String keyNot, String[] keys
+            , String[] values, Map<String,String> kvPairs);
 
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value);
-
-//    Collection<BaseEdge> findEdges(String datasource
-//            , List<String> ids, List<String> labels, List<String> keys, List<Object> values);
 
 }
