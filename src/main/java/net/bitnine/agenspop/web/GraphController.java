@@ -119,7 +119,7 @@ public class GraphController {
                     .map(r->r.split(delimter)).filter(r->r.length==2)
                     .collect(Collectors.toMap(r->r[0], r->r[1]));
         }
-        
+
         CompletableFuture<List<AgensEdge>> future = gremlin.getEdges(datasource
                 , label, labelParams, key, keyNot, keyParams, valueParams, kvPairs);
         CompletableFuture.allOf(future).join();

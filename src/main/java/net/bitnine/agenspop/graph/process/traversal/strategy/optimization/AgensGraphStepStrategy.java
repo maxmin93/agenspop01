@@ -2,17 +2,26 @@ package net.bitnine.agenspop.graph.process.traversal.strategy.optimization;
 
 import net.bitnine.agenspop.graph.process.traversal.step.map.AgensPropertyMapStep;
 import net.bitnine.agenspop.graph.process.traversal.step.sideEffect.AgensGraphStep;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategy;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.step.HasContainerHolder;
 import org.apache.tinkerpop.gremlin.process.traversal.step.filter.HasStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.filter.NotStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.GraphStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.NoOpBarrierStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.PropertiesStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.PropertyMapStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalHelper;
+
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class AgensGraphStepStrategy
         extends AbstractTraversalStrategy<TraversalStrategy.ProviderOptimizationStrategy>
@@ -63,9 +72,9 @@ public final class AgensGraphStepStrategy
 
             // 이어지는 과정이 HasStep 또는 NoOpBarrierStep 이면
             Step<?, ?> currentStep = agensGraphStep.getNextStep();
-            while (currentStep instanceof HasStep || currentStep instanceof NoOpBarrierStep) {
+            while (currentStep instanceof HasStep || currentStep instanceof NotStep || currentStep instanceof NoOpBarrierStep) {
                 // GraphStep 으로부터 이어지는 HasStep 인 경우
-                if (currentStep instanceof HasStep) {
+                if( currentStep instanceof HasStep ){
                     // HasStep 의 모든 filter container 들에 대해서
                     for (final HasContainer hasContainer : ((HasContainerHolder) currentStep).getHasContainers()) {
                         // 지정 id 가 있거나, eq 또는 within 연산자가 있는 경우가 아니면
@@ -79,6 +88,26 @@ public final class AgensGraphStepStrategy
                     // void copyLabels(final Step<?, ?> fromStep, final Step<?, ?> toStep, final boolean moveLabels)
                     TraversalHelper.copyLabels(currentStep, currentStep.getPreviousStep(), false);
                     traversal.removeStep(currentStep);
+                }
+                else if( currentStep instanceof NotStep ){
+                    // ~keyNot(key) => [GraphStep(vertex,[]), NotStep([PropertiesStep([java],value)])]
+                    for (Object child : ((NotStep)currentStep).getLocalChildren() ) {
+                        if( child instanceof DefaultGraphTraversal && ((DefaultGraphTraversal)child).getSteps().size() == 1 ){
+                            Step step = (Step) ((DefaultGraphTraversal)child).getSteps().get(0);
+                            // **NOTE: hasNot(key) 는 단 하나의 key 만 가질 수 있음
+                            if( step instanceof PropertiesStep && ((PropertiesStep)step).getPropertyKeys().length == 1 ){
+                                String keyNot = ((PropertiesStep)step).getPropertyKeys()[0];
+                                // Set<String> labels = ((PropertiesStep)step).getLabels();
+                                // for DEBUG
+                                System.out.println("  ....NotStep[PropertiesStep] => ~keyNot : "+keyNot);
+                                agensGraphStep.addHasContainer(new HasContainer("~key", P.neq(keyNot)));
+                                // **NOTE: 나중에 확인 필요!!
+                                TraversalHelper.copyLabels(currentStep, currentStep.getPreviousStep(), false);
+                                traversal.removeStep(currentStep);
+                                break;
+                            }
+                        }
+                    }
                 }
                 currentStep = currentStep.getNextStep();
             }
