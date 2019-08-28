@@ -231,5 +231,46 @@ public final class AgensHelper {
                 .map(node -> (Vertex) new AgensVertex(graph, node)).collect(Collectors.toList());
     }
 
+    public static Collection<Edge> edgesWithHasContainers(AgensGraph graph, Map<String, Object> optimizedParams) {
+        String label = !optimizedParams.containsKey("label") ? null : optimizedParams.get("label").toString();
+        List<String> labelParams = !optimizedParams.containsKey("labels") ? null : (List<String>) optimizedParams.get("labels");
+        String key = !optimizedParams.containsKey("key") ? null : optimizedParams.get("key").toString();
+        String keyNot = !optimizedParams.containsKey("keyNot") ? null : optimizedParams.get("keyNot").toString();
+        List<String> keyParams = !optimizedParams.containsKey("keys") ? null : (List<String>) optimizedParams.get("keys");
+        List<String> valueParams = !optimizedParams.containsKey("values") ? null : (List<String>) optimizedParams.get("values");
+        Map<String, String> kvPairs = !optimizedParams.containsKey("kvPairs") ? null : (Map<String, String>) optimizedParams.get("kvPairs");
 
+        // Parameters
+        String[] labels = labelParams==null ? null : labelParams.stream().toArray(String[]::new);
+        String[] keys = keyParams==null ? null : keyParams.stream().toArray(String[]::new);
+        String[] values = valueParams==null ? null : valueParams.stream().toArray(String[]::new);
+
+        // for DEBUG
+        System.out.println("E.hasContainers :: datasource => "+graph.name());
+        System.out.println("  , label => "+label);
+        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
+        System.out.println("  , key => "+key);
+        System.out.println("  , keyNot => "+keyNot);
+        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
+        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
+        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
+
+        return graph.api.findEdges(graph.name()
+                , label, labels, key, keyNot, keys, values, kvPairs).stream()
+                .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+    }
+
+    public static Map<String, Object> optimizedParams(String label, List<String> labelParams
+            , String key, String keyNot, List<String> keyParams, List<String> valueParams
+            , Map<String, String> kvPairs){
+        Map<String, Object> params = new HashMap<>();
+        if( label != null ) params.put("label", label);
+        if( labelParams != null ) params.put("labels", labelParams);
+        if( key != null ) params.put("key", key);
+        if( keyNot != null ) params.put("keyNot", keyNot);
+        if( keyParams != null ) params.put("keys", keyParams);
+        if( valueParams != null ) params.put("values", valueParams);
+        if( kvPairs != null ) params.put("kvPairs", kvPairs);
+        return params;
+    }
 }

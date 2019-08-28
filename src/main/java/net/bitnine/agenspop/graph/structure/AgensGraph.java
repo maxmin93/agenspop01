@@ -304,21 +304,32 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         return iter;
     }
 
-    public Iterator<Vertex> vertices(List<HasContainer> hasContainers, final Object... vertexIds) {
+    public Iterator<Vertex> vertices(List<HasContainer> hasContainers, Object... vertexIds) {
         this.tx().readWrite();
         Map<String, Object> optimizedParams = AgensHelper.optimizeHasContainers(hasContainers);
+
+        String[] vids = null;
         if( optimizedParams.containsKey("ids") ){
             if( vertexIds == null || vertexIds.length == 0 ){
                 // ids 의 내용을 vertexIds 로 바꿔치기
+                vids = ((List<Object>)optimizedParams.get("ids")).stream().toArray(String[]::new);
             }
             else{
                 // ids 의 내용과 vertexIds 의 교집합으로 vertexIds 바꾸기
+                List<String> intersection = new ArrayList<>();
+                for( Object id : vertexIds ){
+                    if( id instanceof Vertex ) id = ((Vertex)id).id();
+                    else if( id instanceof String ){
+                        if( ((List<String>)optimizedParams.get("ids")).contains(id) )
+                            intersection.add( id.toString() );
+                    }
+                }
+                vids = intersection.stream().toArray(String[]::new);
             }
-            optimizedParams.remove("ids");
         }
 
         final Iterator<Vertex> iter;
-        if ( vertexIds == null || vertexIds.length == 0) {
+        if ( vids == null || vids.length == 0) {
             if( optimizedParams.size() > 0 )
                 // optimizeHasContainers 내용 실행
                 iter = AgensHelper.verticesWithHasContainers(this, optimizedParams).iterator();
@@ -326,13 +337,14 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                 iter = IteratorUtils.stream(this.api.vertices(graphName))
                         .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         } else {
-            ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = IteratorUtils.stream(this.api.findVertices(graphName, (String[]) vertexIds))
+            iter = IteratorUtils.stream(this.api.findVertices(graphName, vids))
                     .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         }
 
         return iter;
     }
+
+    //////////////////////////////////////////////////////
 
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
@@ -367,40 +379,46 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         return iter;
     }
 
-    public Iterator<Edge> edgesWithFilters(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
-        this.tx().readWrite();
-        return IteratorUtils.stream(
-                    this.api.findEdges(graphName, ids, labels, keys, values))
-                .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
-    }
-
     public Iterator<Edge> edges(List<HasContainer> hasContainers, final Object... edgeIds) {
-        System.out.println("** graph.edges() with hasContainers="+hasContainers.size());
         this.tx().readWrite();
+        Map<String, Object> optimizedParams = AgensHelper.optimizeHasContainers(hasContainers);
 
-        final List<String> ids = new ArrayList<>();
-        final List<String> labels = new ArrayList<>();
-        final List<String> keys = new ArrayList<>();
-        final List<Object> values = new ArrayList<>();
-        int optType = AgensHelper.optimizeHasContainers(hasContainers, ids, labels, keys, values);
+        String[] eids = null;
+        if( optimizedParams.containsKey("ids") ){
+            if( edgeIds == null || edgeIds.length == 0 ){
+                // ids 의 내용을 edgeIds 로 바꿔치기
+                eids = ((List<Object>)optimizedParams.get("ids")).stream().toArray(String[]::new);
+            }
+            else{
+                // ids 의 내용과 edgeIds 의 교집합으로 edgeIds 바꾸기
+                List<String> intersection = new ArrayList<>();
+                for( Object id : edgeIds ){
+                    if( id instanceof Edge ) id = ((Edge)id).id();
+                    else if( id instanceof String ){
+                        if( ((List<String>)optimizedParams.get("ids")).contains(id) )
+                            intersection.add( id.toString() );
+                    }
+                }
+                eids = intersection.stream().toArray(String[]::new);
+            }
+        }
 
         final Iterator<Edge> iter;
-        if ( edgeIds == null || edgeIds.length == 0) {
-            if( optType > 0 )
-                iter = IteratorUtils.stream(this.api.findEdges(graphName, ids, labels, keys, values))
-                        .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
+        if ( eids == null || eids.length == 0) {
+            if( optimizedParams.size() > 0 )
+                // optimizeHasContainers 내용 실행
+                iter = AgensHelper.edgesWithHasContainers(this, optimizedParams).iterator();
             else
                 iter = IteratorUtils.stream(this.api.edges(graphName))
                         .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         } else {
-            ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
-            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName, (String[]) edgeIds))
+            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName, eids))
                     .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         }
-        System.out.println("edges : optType="+optType+", iter.hasNext="+iter.hasNext());
         return iter;
     }
 
+/*
     private <T extends Element> Iterator<T> createElementIterator(
                 final Class<T> clazz, final Map<Object, T> elements,
                 final IdManager idManager, final Object... ids) {
@@ -434,7 +452,7 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                 throw Graph.Exceptions.idArgsMustBeEitherIdOrElement();
         }
     }
-
+*/
     ///////////////////////////////////////////////////////
 
     public class AgensGraphFeatures implements Features {

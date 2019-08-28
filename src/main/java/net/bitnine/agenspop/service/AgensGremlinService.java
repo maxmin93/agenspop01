@@ -3,6 +3,7 @@ package net.bitnine.agenspop.service;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
+import net.bitnine.agenspop.graph.structure.AgensHelper;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.dto.DetachedGraph;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -181,21 +182,17 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensVertex>> getVertices(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
+            , String label, List<String> labels
+            , String key, String keyNot, List<String> keys
+            , List<String> values, Map<String, String> kvPairs
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
-        // for DEBUG
-//        System.out.println("ids=["+String.join(",",ids)+"]");
-//        System.out.println("labels=["+String.join(",",labels)+"]");
-//        System.out.println("keys=["+String.join(",",keys)+"]");
-//        System.out.println("values=["+String.join(",",values.stream().map(Object::toString).collect(Collectors.toList()))+"]");
-
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Vertex> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
-                g.verticesWithFilters(ids, labels, keys, values)
-                : g.vertices();
+        Map<String, Object> params = AgensHelper.optimizedParams(label, labels, key, keyNot, keys, values, kvPairs);
+        Iterator<Vertex> t =  params.size() == 0 ? g.vertices()
+                : AgensHelper.verticesWithHasContainers(g, params).iterator();
 
         List<AgensVertex> vertices = new ArrayList<>();
         while( t.hasNext() ) vertices.add( (AgensVertex) t.next() );
@@ -205,15 +202,17 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensEdge>> getEdges(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
+            , String label, List<String> labels
+            , String key, String keyNot, List<String> keys
+            , List<String> values, Map<String, String> kvPairs
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Edge> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
-                g.edgesWithFilters(ids, labels, keys, values)
-                : g.edges();
+        Map<String, Object> params = AgensHelper.optimizedParams(label, labels, key, keyNot, keys, values, kvPairs);
+        Iterator<Edge> t = params.size() == 0 ? g.edges()
+                : AgensHelper.edgesWithHasContainers(g, params).iterator();
 
         List<AgensEdge> edges = new ArrayList<>();
         while( t.hasNext() ) edges.add( (AgensEdge) t.next() );

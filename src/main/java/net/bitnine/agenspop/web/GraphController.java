@@ -21,7 +21,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/graph")
@@ -73,14 +75,25 @@ public class GraphController {
     }
 
     @GetMapping(value="/{datasource}/v", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> listVertices(@PathVariable String datasource
-            , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
-            , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
-            , @RequestParam(value="key", required=false, defaultValue = "") List<String> keys
-            , @RequestParam(value="value", required=false, defaultValue = "") List<Object> values
+    public ResponseEntity<?> listVertices(@PathVariable String datasource,
+              @RequestParam(value = "label", required = false) String label,
+              @RequestParam(value = "labels", required = false) List<String> labelParams,
+              @RequestParam(value = "key", required = false) String key,
+              @RequestParam(value = "keyNot", required = false) String keyNot,
+              @RequestParam(value = "keys", required = false) List<String> keyParams,
+              @RequestParam(value = "values", required = false) List<String> valueParams,
+              @RequestParam(value = "kvPairs", required = false) List<String> kvParams
     ) throws Exception {
-        CompletableFuture<List<AgensVertex>> future =
-                gremlin.getVertices(datasource, ids, labels, keys, values);
+        Map<String,String> kvPairs = null;
+        if( kvParams != null && kvParams.size() > 0 ){
+            final String delimter = "@";
+            kvPairs = kvParams.stream()
+                    .map(r->r.split(delimter)).filter(r->r.length==2)
+                    .collect(Collectors.toMap(r->r[0], r->r[1]));
+        }
+
+        CompletableFuture<List<AgensVertex>> future = gremlin.getVertices(datasource
+                , label, labelParams, key, keyNot, keyParams, valueParams, kvPairs);
         CompletableFuture.allOf(future).join();
         List<AgensVertex> vertices = future.get();
 
@@ -90,14 +103,25 @@ public class GraphController {
     }
 
     @GetMapping(value="/{datasource}/e", produces="application/json; charset=UTF-8")
-    public ResponseEntity<?> listEdges(@PathVariable String datasource
-            , @RequestParam(value="id", required=false, defaultValue = "") List<String> ids
-            , @RequestParam(value="label", required=false, defaultValue = "") List<String> labels
-            , @RequestParam(value="key", required=false, defaultValue = "") List<String> keys
-            , @RequestParam(value="value", required=false, defaultValue = "") List<Object> values
+    public ResponseEntity<?> listEdges(@PathVariable String datasource,
+               @RequestParam(value = "label", required = false) String label,
+               @RequestParam(value = "labels", required = false) List<String> labelParams,
+               @RequestParam(value = "key", required = false) String key,
+               @RequestParam(value = "keyNot", required = false) String keyNot,
+               @RequestParam(value = "keys", required = false) List<String> keyParams,
+               @RequestParam(value = "values", required = false) List<String> valueParams,
+               @RequestParam(value = "kvPairs", required = false) List<String> kvParams
     ) throws Exception {
-        CompletableFuture<List<AgensEdge>> future =
-                gremlin.getEdges(datasource, ids, labels, keys, values);
+        Map<String,String> kvPairs = null;
+        if( kvParams != null && kvParams.size() > 0 ){
+            final String delimter = "@";
+            kvPairs = kvParams.stream()
+                    .map(r->r.split(delimter)).filter(r->r.length==2)
+                    .collect(Collectors.toMap(r->r[0], r->r[1]));
+        }
+        
+        CompletableFuture<List<AgensEdge>> future = gremlin.getEdges(datasource
+                , label, labelParams, key, keyNot, keyParams, valueParams, kvPairs);
         CompletableFuture.allOf(future).join();
         List<AgensEdge> edges = future.get();
 

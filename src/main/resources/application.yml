@@ -22,7 +22,7 @@ agens:
   api:
     base-path: /api
     query-timeout: 600000       # 1000 ms = 1 sec
-  elastic:
+  elasticgraph:
     host: 27.117.163.21
     port: 15619
     username:
