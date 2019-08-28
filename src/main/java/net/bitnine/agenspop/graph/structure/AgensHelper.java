@@ -108,85 +108,98 @@ public final class AgensHelper {
     // **NOTE: 최적화된 hasContainer 는 삭제!!
     //      ==> hasContainer.test(element) 에서 실패 방지
     public static Map<String, Object> optimizeHasContainers(List<HasContainer> hasContainers){
-        int optType = 0;
+        // for DEBUG
+        System.out.println("**optimizeHasContainers :");
+
+        Map<String, Object> optimizedParams = new HashMap<>();
         Iterator<HasContainer> iter = hasContainers.iterator();
         while( iter.hasNext() ){
             HasContainer c = iter.next();
+            // for DEBUG
+            System.out.println(String.format("hasContainers: %s.%s=%s (%s)", c.getKey(), c.getBiPredicate(), c.getValue(), c.getValue().getClass().getSimpleName()));
+
             // hasId(id...)
             if( c.getKey().equals("~id") ){
+                List<String> ids = new ArrayList<>();
                 if( c.getBiPredicate().toString().equals("eq") ){
                     ids.add( (String)c.getValue() );
-                    optType += 100000;
+                    optimizedParams.put("ids", ids);
                     iter.remove();      // remove hasContainer!!
                 }
                 else if( c.getBiPredicate().toString().equals("within") ){
                     List<Object> valueList = (List<Object>)c.getValue();
                     ids.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 100000*valueList.size();
+                    optimizedParams.put("ids", ids);
                     iter.remove();      // remove hasContainer!!
                 }
-                // return optType;      // skips other hasContainers
             }
             // hasLabel(label...)
             else if( c.getKey().equals("~label") ){
                 if( c.getBiPredicate().toString().equals("eq") ){
-                    labels.add( (String)c.getValue() );
-                    optType += 10000;
+                    optimizedParams.put("label", (String)c.getValue());
                     iter.remove();      // remove hasContainer!!
                 }
                 else if( c.getBiPredicate().toString().equals("within") ){
                     List<Object> valueList = (List<Object>)c.getValue();
+                    List<String> labels = new ArrayList<>();
                     labels.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 10000*valueList.size();
+                    optimizedParams.put("label", (String)c.getValue());
                     iter.remove();      // remove hasContainer!!
                 }
             }
             // hasKey(key...)
             else if( c.getKey().equals("~key") ){
                 if( c.getBiPredicate().toString().equals("eq") ){
-                    keys.add( c.getValue().toString() );
-                    optType += 1000;
+                    optimizedParams.put("key", (String)c.getValue());
+                    iter.remove();      // remove hasContainer!!
+                }
+                else if( c.getBiPredicate().toString().equals("neq") ){
+                    optimizedParams.put("keyNot", (String)c.getValue());
                     iter.remove();      // remove hasContainer!!
                 }
                 else if( c.getBiPredicate().toString().equals("within") ){
                     List<Object> valueList = (List<Object>)c.getValue();
+                    List<String> keys = new ArrayList<>();
                     keys.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 1000*valueList.size();
+                    optimizedParams.put("keys", keys);
                     iter.remove();      // remove hasContainer!!
                 }
             }
             // hasValue(value...)
             else if( c.getKey().equals("~value") ){
+                List<String> values = new ArrayList<>();
                 if( c.getBiPredicate().toString().equals("eq") ){
-                    values.add( c.getValue() );
-                    optType += 100;
+                    values.add( c.getValue().toString() );
+                    optimizedParams.put("values", values);
                     iter.remove();      // remove hasContainer!!
                 }
                 else if( c.getBiPredicate().toString().equals("within") ){
                     List<Object> valueList = (List<Object>)c.getValue();
                     values.addAll( valueList.stream().map(Object::toString).collect(Collectors.toList()) );
-                    optType += 100*valueList.size();
+                    optimizedParams.put("values", values);
                     iter.remove();      // remove hasContainer!!
                 }
             }
-            // has(property
+            // has(key, value)
             else {
-                if( c.getKey() != null ) keys.add(c.getKey());
-
-                if( c.getBiPredicate().toString().equals("eq") ){
-                    values.add( c.getValue() );
-                    optType += 1;
-                    iter.remove();      // remove hasContainer!!
-                }
-                else if( c.getBiPredicate().toString().equals("within") ){
-                    List<Object> valueList = (List<Object>)c.getValue();
-                    values.addAll( valueList );
-                    optType += valueList.size();
-                    iter.remove();      // remove hasContainer!!
+                if( c.getKey() != null ){
+                    Map<String, String> kvPairs = optimizedParams.containsKey("kvPairs") ?
+                            (Map<String, String>) optimizedParams.get("kvPairs")
+                            : new HashMap<>();
+                    if( c.getBiPredicate().toString().equals("eq") ){
+                        kvPairs.put(c.getKey(), c.getValue().toString());
+                        if( !optimizedParams.containsKey("kvPairs") ) optimizedParams.put("kvPairs", kvPairs);
+                        iter.remove();      // remove hasContainer!!
+                    }
                 }
             }
         }
-        return optType;
+
+        // for DEBUG
+        System.out.println("  ==> "+optimizedParams.keySet().stream()
+                .map(key -> key + "=" + optimizedParams.get(key))
+                .collect(Collectors.joining(", ", "{", "}")) );
+        return optimizedParams;
     }
 
     public static Collection<Vertex> verticesWithHasContainers(AgensGraph graph, Map<String, Object> optimizedParams) {
