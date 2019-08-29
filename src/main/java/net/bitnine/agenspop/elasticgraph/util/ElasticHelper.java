@@ -1,8 +1,13 @@
 package net.bitnine.agenspop.elasticgraph.util;
 
+import net.bitnine.agenspop.elasticgraph.model.ElasticElement;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
@@ -20,36 +25,36 @@ public final class ElasticHelper {
     min : Take the min of the original score and the rescore query score.
 
 */
-    public static final BoolQueryBuilder addQueryDs(BoolQueryBuilder queryBuilder
+    public static BoolQueryBuilder addQueryDs(BoolQueryBuilder queryBuilder
             , String datasource){
         return queryBuilder.filter(termQuery("datasource", datasource));
     }
 
-    public static final BoolQueryBuilder addQueryLabel(BoolQueryBuilder queryBuilder
+    public static BoolQueryBuilder addQueryLabel(BoolQueryBuilder queryBuilder
             , String label){
         return queryBuilder.filter(termQuery("label", label));
     }
 
-    public static final BoolQueryBuilder addQueryLabels(BoolQueryBuilder queryBuilder
+    public static BoolQueryBuilder addQueryLabels(BoolQueryBuilder queryBuilder
             , String[] labels){
         return queryBuilder.filter(termsQuery("label", labels));
     }
 
-    public static final BoolQueryBuilder addQueryKey(BoolQueryBuilder queryBuilder, String key){
+    public static BoolQueryBuilder addQueryKey(BoolQueryBuilder queryBuilder, String key){
         return queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
                             termQuery("properties.key", key)
                     ), ScoreMode.Total));
     }
 
-    public static final BoolQueryBuilder addQueryKeyNot(BoolQueryBuilder queryBuilder, String key){
+    public static BoolQueryBuilder addQueryKeyNot(BoolQueryBuilder queryBuilder, String key){
         return queryBuilder.mustNot(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
                             termQuery("properties.key", key)
                     ), ScoreMode.Total));
     }
 
-    public static final BoolQueryBuilder addQueryKeys(BoolQueryBuilder queryBuilder, String[] keys){
+    public static BoolQueryBuilder addQueryKeys(BoolQueryBuilder queryBuilder, String[] keys){
         for( String key : keys ){       // AND
             queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
@@ -59,14 +64,14 @@ public final class ElasticHelper {
         return queryBuilder;
     }
 
-    public static final BoolQueryBuilder addQueryValue(BoolQueryBuilder queryBuilder, String value){
+    public static BoolQueryBuilder addQueryValue(BoolQueryBuilder queryBuilder, String value){
         return queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
                             QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\"")
                     ), ScoreMode.Total));
     }
 
-    public static final BoolQueryBuilder addQueryValues(BoolQueryBuilder queryBuilder, String[] values){
+    public static BoolQueryBuilder addQueryValues(BoolQueryBuilder queryBuilder, String[] values){
         for( String value : values ){       // AND
             queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
@@ -76,7 +81,7 @@ public final class ElasticHelper {
         return queryBuilder;
     }
 
-    public static final BoolQueryBuilder addQueryKeyValue(BoolQueryBuilder queryBuilder, String key, String value){
+    public static BoolQueryBuilder addQueryKeyValue(BoolQueryBuilder queryBuilder, String key, String value){
         return queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery()
                         .must(termQuery("properties.key", key.toLowerCase()))
@@ -84,4 +89,21 @@ public final class ElasticHelper {
                     , ScoreMode.Total));
     }
 
+    public static <T> List<T> postFilterByValue(List<T> list, String filter){
+        List<T> temp = new ArrayList<>();
+        for( T item : list ){
+            List<String> pvalues = ((ElasticElement)item).getProperties().stream().map(p->p.getValue().toLowerCase()).collect(Collectors.toList());
+            if( pvalues.contains(filter) ) temp.add(item);
+        }
+        return temp;
+    }
+
+    public static <T> List<T> postFilterByValues(List<T> list, List<String> filters){
+        List<T> temp = new ArrayList<>();
+        for( T item : list ){
+            List<String> pvalues = ((ElasticElement)item).getProperties().stream().map(p->p.getValue().toLowerCase()).collect(Collectors.toList());
+            if( pvalues.containsAll(filters) ) temp.add(item);
+        }
+        return temp;
+    }
 }

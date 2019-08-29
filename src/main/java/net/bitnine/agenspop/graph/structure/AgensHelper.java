@@ -8,6 +8,8 @@ import net.bitnine.agenspop.basegraph.model.BaseEdge;
 import net.bitnine.agenspop.basegraph.model.BaseElement;
 import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
 import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
@@ -108,15 +110,12 @@ public final class AgensHelper {
     // **NOTE: 최적화된 hasContainer 는 삭제!!
     //      ==> hasContainer.test(element) 에서 실패 방지
     public static Map<String, Object> optimizeHasContainers(List<HasContainer> hasContainers){
-        // for DEBUG
-        System.out.println("**optimizeHasContainers :");
-
         Map<String, Object> optimizedParams = new HashMap<>();
         Iterator<HasContainer> iter = hasContainers.iterator();
         while( iter.hasNext() ){
             HasContainer c = iter.next();
             // for DEBUG
-            System.out.println(String.format("hasContainers: %s.%s=%s (%s)", c.getKey(), c.getBiPredicate(), c.getValue(), c.getValue().getClass().getSimpleName()));
+            System.out.println(String.format("**optimizeHasContainers: %s.%s=%s (%s)", c.getKey(), c.getBiPredicate(), c.getValue(), c.getValue().getClass().getSimpleName()));
 
             // hasId(id...)
             if( c.getKey().equals("~id") ){
@@ -203,6 +202,8 @@ public final class AgensHelper {
     }
 
     public static Collection<Vertex> verticesWithHasContainers(AgensGraph graph, Map<String, Object> optimizedParams) {
+        if( optimizedParams == null || optimizedParams.size() == 0 ) return Collections.EMPTY_LIST;
+
         String label = !optimizedParams.containsKey("label") ? null : optimizedParams.get("label").toString();
         List<String> labelParams = !optimizedParams.containsKey("labels") ? null : (List<String>) optimizedParams.get("labels");
         String key = !optimizedParams.containsKey("key") ? null : optimizedParams.get("key").toString();
@@ -217,18 +218,46 @@ public final class AgensHelper {
         String[] values = valueParams==null ? null : valueParams.stream().toArray(String[]::new);
 
         // for DEBUG
-        System.out.println("V.hasContainers :: datasource => "+graph.name());
-        System.out.println("  , label => "+label);
-        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
-        System.out.println("  , key => "+key);
-        System.out.println("  , keyNot => "+keyNot);
-        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
-        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
-        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
+//        System.out.println("V.hasContainers :: datasource => "+graph.name());
+//        System.out.println("  , label => "+label);
+//        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
+//        System.out.println("  , key => "+key);
+//        System.out.println("  , keyNot => "+keyNot);
+//        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
+//        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
+//        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
 
+        if( optimizedParams.size() == 1 ){
+            if( label != null )
+                return graph.api.findVertices(graph.name(), label).stream()
+                    .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( labels != null )
+                return graph.api.findVertices(graph.name(), labels).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( key != null )
+                return graph.api.findVertices(graph.name(), key, false).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( keyNot != null )
+                return graph.api.findVertices(graph.name(), key, true).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( keys != null )
+                return graph.api.findVerticesWithKeys(graph.name(), keys).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( values != null )
+                return graph.api.findVerticesWithValues(graph.name(), values).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+            else if( kvPairs != null && kvPairs.size() == 1 )
+                return graph.api.findVerticesWithKeyValues(graph.name(), null, kvPairs).stream()
+                        .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+        }
+        else if( optimizedParams.size() == 2 && label != null && kvPairs != null ){
+            return graph.api.findVerticesWithKeyValues(graph.name(), label, kvPairs).stream()
+                    .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
+        }
+        // else
         return graph.api.findVertices(graph.name()
                 , label, labels, key, keyNot, keys, values, kvPairs).stream()
-                .map(node -> (Vertex) new AgensVertex(graph, node)).collect(Collectors.toList());
+                .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
     }
 
     public static Collection<Edge> edgesWithHasContainers(AgensGraph graph, Map<String, Object> optimizedParams) {
@@ -246,15 +275,43 @@ public final class AgensHelper {
         String[] values = valueParams==null ? null : valueParams.stream().toArray(String[]::new);
 
         // for DEBUG
-        System.out.println("E.hasContainers :: datasource => "+graph.name());
-        System.out.println("  , label => "+label);
-        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
-        System.out.println("  , key => "+key);
-        System.out.println("  , keyNot => "+keyNot);
-        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
-        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
-        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
+//        System.out.println("E.hasContainers :: datasource => "+graph.name());
+//        System.out.println("  , label => "+label);
+//        System.out.println("  , labels => "+(labels==null ? "null" : String.join(",", labels)));
+//        System.out.println("  , key => "+key);
+//        System.out.println("  , keyNot => "+keyNot);
+//        System.out.println("  , keys => "+(keys==null ? "null" : String.join(",", keys)));
+//        System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
+//        System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
 
+        if( optimizedParams.size() == 1 ){
+            if( label != null )
+                return graph.api.findEdges(graph.name(), label).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( labels != null )
+                return graph.api.findEdges(graph.name(), labels).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( key != null )
+                return graph.api.findEdges(graph.name(), key, false).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( keyNot != null )
+                return graph.api.findEdges(graph.name(), key, true).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( keys != null )
+                return graph.api.findEdgesWithKeys(graph.name(), keys).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( values != null )
+                return graph.api.findEdgesWithValues(graph.name(), values).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+            else if( kvPairs != null && kvPairs.size() == 1 )
+                return graph.api.findEdgesWithKeyValues(graph.name(), null, kvPairs).stream()
+                        .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+        }
+        else if( optimizedParams.size() == 2 && label != null && kvPairs != null ){
+            return graph.api.findEdgesWithKeyValues(graph.name(), label, kvPairs).stream()
+                    .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
+        }
+        // else
         return graph.api.findEdges(graph.name()
                 , label, labels, key, keyNot, keys, values, kvPairs).stream()
                 .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());

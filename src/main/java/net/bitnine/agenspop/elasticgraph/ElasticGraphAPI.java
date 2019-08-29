@@ -368,6 +368,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         }
         catch(Exception e){ return Collections.EMPTY_LIST; }
     }
+    @Override
+    public Collection<BaseVertex> findVerticesWithKeyValues(String datasource, String label, final Map<String, String> kvPairs){
+        try{
+            return vertices.findByDatasourceAndLabelAndPropertyKeyValues(DEFAULT_SIZE, datasource, label, kvPairs)
+                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
 
     // V : hasContainers
     @Override
@@ -533,6 +541,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     public Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values){
         try{
             return edges.findByDatasourceAndPropertyValues(DEFAULT_SIZE, datasource, values)
+                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
+        }
+        catch(Exception e){ return Collections.EMPTY_LIST; }
+    }
+    @Override
+    public Collection<BaseEdge> findEdgesWithKeyValues(String datasource, String label, final Map<String,String> kvPairs){
+        try{
+            return edges.findByDatasourceAndLabelAndPropertyKeyValues(DEFAULT_SIZE, datasource, label, kvPairs)
                     .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
         }
         catch(Exception e){ return Collections.EMPTY_LIST; }

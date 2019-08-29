@@ -113,6 +113,9 @@ public class ElasticVertexService extends ElasticElementService {
     public List<ElasticVertex> findByDatasourceAndLabelAndPropertyKeyValue(int size, String datasource, String label, String key, String value) throws Exception{
         return super.findByDatasourceAndLabelAndPropertyKeyValue(INDEX, ElasticVertex.class, size, datasource, label, key, value);
     }
+    public List<ElasticVertex> findByDatasourceAndLabelAndPropertyKeyValues(int size, String datasource, String label, Map<String,String> kvPairs) throws Exception{
+        return super.findByDatasourceAndLabelAndPropertyKeyValues(INDEX, ElasticVertex.class, size, datasource, label, kvPairs);
+    }
 
     public List<ElasticVertex> findByHasContainers(int size, String datasource
             , String label, final String[] labels

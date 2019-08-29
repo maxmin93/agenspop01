@@ -427,9 +427,10 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             jsonGenerator.writeEndObject();
 
-            // cytoscape.js :: classes
-            String classesKey = "classes";
-            jsonGenerator.writeStringField(classesKey, edge.property("__"+classesKey).orElse("").toString());
+            // for cytoscape.js :: scratch
+            String extraKey = "scratch";
+            jsonGenerator.writeStringField(extraKey, "{ }");
+
             jsonGenerator.writeEndObject();
         }
 
@@ -440,7 +441,7 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             List<BaseProperty> properties = new ArrayList<>(edge.getBaseEdge().properties());
             Iterator<BaseProperty> iter = properties.iterator();
             while( iter.hasNext() ){
-                BaseProperty p = (BaseProperty)iter.next();
+                BaseProperty p = iter.next();
                 GraphSONUtil.writeWithType(p.key(), p.value(), jsonGenerator, serializerProvider, typeSerializer);
             }
             jsonGenerator.writeEndObject();
@@ -558,16 +559,13 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
 
             writeProperties(vertex, jsonGenerator, serializerProvider, typeSerializer);
 
-            jsonGenerator.writeEndObject();           // }
+            jsonGenerator.writeEndObject();
 
-            // cytoscape.js :: classes
-            String classesKey = "classes";
-            jsonGenerator.writeStringField(classesKey, vertex.property("__"+classesKey).orElse("").toString());
-            // cytoscape.js :: position
-            String positionKey = "position";
-            jsonGenerator.writeStringField(positionKey, vertex.property("__"+positionKey).orElse("{x:0,y:0}").toString());
+            // for cytoscape.js :: scratch
+            String extraKey = "scratch";
+            jsonGenerator.writeStringField(extraKey, "{ }");
 
-            jsonGenerator.writeEndObject();           // }
+            jsonGenerator.writeEndObject();
         }
 
         private void writeProperties(final AgensVertex vertex, final JsonGenerator jsonGenerator,

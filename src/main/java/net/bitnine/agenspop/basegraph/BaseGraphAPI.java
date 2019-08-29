@@ -81,6 +81,7 @@ public interface BaseGraphAPI {
     Collection<BaseVertex> findVerticesWithKeys(String datasource, final String[] keys);
     Collection<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseVertex> findVerticesWithValues(String datasource, final String[] values);
+    Collection<BaseVertex> findVerticesWithKeyValues(String datasource, String label, Map<String,String> kvPairs);
     Collection<BaseVertex> findVertices(String datasource
             , String label, String[] labels
             , String key, String keyNot, String[] keys
@@ -104,6 +105,7 @@ public interface BaseGraphAPI {
     Collection<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys);
     Collection<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial);
     Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values);
+    Collection<BaseEdge> findEdgesWithKeyValues(String datasource, String label, Map<String,String> kvPairs);
     Collection<BaseEdge> findEdges(String datasource
             , String label, String[] labels
             , String key, String keyNot, String[] keys

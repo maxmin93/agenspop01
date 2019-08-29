@@ -1,6 +1,7 @@
 package net.bitnine.agenspop.elasticgraph.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.bitnine.agenspop.basegraph.model.BaseElement;
 import net.bitnine.agenspop.elasticgraph.model.ElasticElement;
 import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
 import net.bitnine.agenspop.elasticgraph.util.ElasticHelper;
@@ -194,8 +195,8 @@ public class ElasticElementService {
         for( String key : keys ){
             queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
-                        termQuery("properties.key", key)
-                    ), ScoreMode.Max));
+                        termQuery("properties.key", key))
+                , ScoreMode.Max));
         }
         // search
         return doSearch(index, size, queryBuilder, client, mapper, tClass);
@@ -209,8 +210,8 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .must(QueryBuilders.nestedQuery("properties",
                         QueryBuilders.boolQuery().must(
-                            termQuery("properties.key", key)
-                        ), ScoreMode.Avg));
+                            termQuery("properties.key", key))
+                    , ScoreMode.Avg));
         // search
         return doSearch(index, size, queryBuilder, client, mapper, tClass);
     }
@@ -223,8 +224,8 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .mustNot(QueryBuilders.nestedQuery("properties",
                         QueryBuilders.boolQuery().must(
-                            termQuery("properties.key", key)
-                        ), ScoreMode.Avg));
+                            termQuery("properties.key", key))
+                    , ScoreMode.Avg));
         // search
         return doSearch(index, size, queryBuilder, client, mapper, tClass);
     }
@@ -239,19 +240,14 @@ public class ElasticElementService {
         for( String value : values ) {
             queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
                     QueryBuilders.boolQuery().must(
-                        QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\"")
-                    ), ScoreMode.Total));
+                        QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\""))
+                , ScoreMode.Total));
         }
         // search
         List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
         // compare two values by full match with lowercase
-        List<String> fvalues = Arrays.asList(values).stream().map(String::toLowerCase).collect(Collectors.toList());
-        List<T> filteredList = new ArrayList<>();
-        for( T item : list ){
-            List<String> pvalues = ((ElasticElement)item).getProperties().stream().map(p->p.getValue().toLowerCase()).collect(Collectors.toList());
-            if( pvalues.containsAll(fvalues) ) filteredList.add(item);
-        }
-        return filteredList;
+        List<String> filters = Arrays.asList(values).stream().map(String::toLowerCase).collect(Collectors.toList());
+        return ElasticHelper.postFilterByValues(list, filters);
     }
 
     // DS.hasValue(value)
@@ -262,17 +258,13 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .must(QueryBuilders.nestedQuery("properties",
                         QueryBuilders.boolQuery().must(
-                                QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\"")
-                        ), ScoreMode.Total));
+                            QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\""))
+                    , ScoreMode.Total));
         // search
         List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
-        return list.stream().filter(r-> {
-            for(ElasticProperty p : ((ElasticElement)r).getProperties()){
-                if( p.getValue().equalsIgnoreCase(value) ) return true;
-            }
-            return false;
-        }).collect(Collectors.toList());
+        return ElasticHelper.postFilterByValue(list, value.toLowerCase());
     }
+
     // DS.hasValuePartial(value)
     protected <T> List<T> findByDatasourceAndPropertyValuePartial(
             String index, Class<T> tClass, int size, String datasource, String value) throws Exception{
@@ -282,8 +274,8 @@ public class ElasticElementService {
                 .must(QueryBuilders.nestedQuery("properties",
                         QueryBuilders.boolQuery().must(
                             // QueryBuilders.wildcardQuery("properties.value", "*"+value.toLowerCase()+"*")
-                            QueryBuilders.queryStringQuery("properties.value:*"+value.toLowerCase()+"*")
-                        ), ScoreMode.Avg));
+                            QueryBuilders.queryStringQuery("properties.value:*"+value.toLowerCase()+"*"))
+                    , ScoreMode.Avg));
         // search
         return doSearch(index, size, queryBuilder, client, mapper, tClass);
     }
@@ -294,21 +286,39 @@ public class ElasticElementService {
         // define : nested query
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
                 .filter(termQuery("datasource", datasource))
-                .must(QueryBuilders.nestedQuery("properties", QueryBuilders.boolQuery()
-                            .must(termQuery("properties.key", key.toLowerCase()))
+                .must(QueryBuilders.nestedQuery("properties"
+                        , QueryBuilders.boolQuery()
+                            .must(termQuery("properties.key", key))
                             .must(QueryBuilders.queryStringQuery("properties.value:\""+value.toLowerCase()+"\""))
                     , ScoreMode.Total));
                 ;
         // search
         List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
-        return list.stream().filter(r-> {
-            for(ElasticProperty p : ((ElasticElement)r).getProperties()){
-                if( p.getKey().equals(key) ){
-                    if( p.getValue().equalsIgnoreCase(value) ) return true;
-                }
-            }
-            return false;
-        }).collect(Collectors.toList());
+        return ElasticHelper.postFilterByValue(list, value.toLowerCase());
+    }
+
+    // DS.has(key,value) or DS.has(label,key,value) or DS.has(label,key,value)&has(key,value)
+    protected <T> List<T> findByDatasourceAndLabelAndPropertyKeyValues(
+            String index, Class<T> tClass, int size, String datasource
+            , String label, Map<String, String> kvPairs) throws Exception{
+        // define : nested query
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource));
+        // match label
+        if( label != null )
+            queryBuilder = queryBuilder.filter(termQuery("label", label));
+        // match property.key and .value
+        for( Map.Entry<String,String> kv : kvPairs.entrySet() ) {
+            queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties", QueryBuilders.boolQuery()
+                            .must(termQuery("properties.key", kv.getKey()))
+                            .must(QueryBuilders.queryStringQuery("properties.value:\"" + kv.getValue().toLowerCase() + "\""))
+                    , ScoreMode.Total));
+        }
+
+        // search
+        List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
+        List<String> filters = kvPairs.values().stream().map(String::toLowerCase).collect(Collectors.toList());
+        return ElasticHelper.postFilterByValues(list, filters);
     }
 
     // DS.has(label,key,value)
@@ -324,14 +334,7 @@ public class ElasticElementService {
                     , ScoreMode.Total));
         // search
         List<T> list = doSearch(index, size, queryBuilder, client, mapper, tClass);
-        return list.stream().filter(r-> {
-            for(ElasticProperty p : ((ElasticElement)r).getProperties()){
-                if( p.getKey().equals(key) ){
-                    if( p.getValue().equalsIgnoreCase(value) ) return true;
-                }
-            }
-            return false;
-        }).collect(Collectors.toList());
+        return ElasticHelper.postFilterByValue(list, value.toLowerCase());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -363,27 +366,12 @@ public class ElasticElementService {
         // post filters
         if( values != null && values.length > 0 ){
             // compare two values by full match with lowercase
-            List<String> fvalues = Arrays.asList(values).stream().map(String::toLowerCase).collect(Collectors.toList());
-            List<T> temp = new ArrayList<>();
-            for( T item : list ){
-                List<String> pvalues = ((ElasticElement)item).getProperties().stream().map(p->p.getValue().toLowerCase()).collect(Collectors.toList());
-                if( pvalues.containsAll(fvalues) ) temp.add(item);
-            }
-            list = temp;
+            List<String> filters = Arrays.asList(values).stream().map(String::toLowerCase).collect(Collectors.toList());
+            list = ElasticHelper.postFilterByValues(list, filters);
         }
         if( kvPairs != null && kvPairs.size() > 0 ){
-            List<T> temp = list;
-            for(Map.Entry<String,String> kv : kvPairs.entrySet()){
-                temp = temp.stream().filter(r-> {
-                    for(ElasticProperty p : ((ElasticElement)r).getProperties()){
-                        if( p.getKey().equals(kv.getKey()) ){
-                            if( p.getValue().equalsIgnoreCase(kv.getValue()) ) return true;
-                        }
-                    }
-                    return false;
-                }).collect(Collectors.toList());
-            }
-            list = temp;
+            List<String> filters = kvPairs.values().stream().map(String::toLowerCase).collect(Collectors.toList());
+            list = ElasticHelper.postFilterByValues(list, filters);
         }
         return list;
     }

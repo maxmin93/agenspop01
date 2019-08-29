@@ -119,6 +119,9 @@ public final class ElasticEdgeService extends ElasticElementService {
     public List<ElasticEdge> findByDatasourceAndLabelAndPropertyKeyValue(int size, String datasource, String label, String key, String value) throws Exception{
         return super.findByDatasourceAndLabelAndPropertyKeyValue(INDEX, ElasticEdge.class, size, datasource, label, key, value);
     }
+    public List<ElasticEdge> findByDatasourceAndLabelAndPropertyKeyValues(int size, String datasource, String label, Map<String,String> kvPairs) throws Exception{
+        return super.findByDatasourceAndLabelAndPropertyKeyValues(INDEX, ElasticEdge.class, size, datasource, label, kvPairs);
+    }
 
     public List<ElasticEdge> findByHasContainers(int size, String datasource
             , String label, final String[] labels
