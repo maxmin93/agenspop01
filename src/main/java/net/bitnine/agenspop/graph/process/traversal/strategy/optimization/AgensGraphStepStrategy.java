@@ -98,8 +98,6 @@ public final class AgensGraphStepStrategy
                             if( step instanceof PropertiesStep && ((PropertiesStep)step).getPropertyKeys().length == 1 ){
                                 String keyNot = ((PropertiesStep)step).getPropertyKeys()[0];
                                 // Set<String> labels = ((PropertiesStep)step).getLabels();
-                                // for DEBUG
-                                System.out.println("  ....NotStep[PropertiesStep] => ~keyNot : "+keyNot);
                                 agensGraphStep.addHasContainer(new HasContainer("~key", P.neq(keyNot)));
                                 // **NOTE: 나중에 확인 필요!!
                                 TraversalHelper.copyLabels(currentStep, currentStep.getPreviousStep(), false);

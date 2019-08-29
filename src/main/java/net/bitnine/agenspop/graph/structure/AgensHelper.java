@@ -238,7 +238,7 @@ public final class AgensHelper {
                 return graph.api.findVertices(graph.name(), key, false).stream()
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( keyNot != null )
-                return graph.api.findVertices(graph.name(), key, true).stream()
+                return graph.api.findVertices(graph.name(), keyNot, true).stream()
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( keys != null )
                 return graph.api.findVerticesWithKeys(graph.name(), keys).stream()
@@ -295,7 +295,7 @@ public final class AgensHelper {
                 return graph.api.findEdges(graph.name(), key, false).stream()
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( keyNot != null )
-                return graph.api.findEdges(graph.name(), key, true).stream()
+                return graph.api.findEdges(graph.name(), keyNot, true).stream()
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( keys != null )
                 return graph.api.findEdgesWithKeys(graph.name(), keys).stream()
