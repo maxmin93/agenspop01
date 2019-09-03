@@ -13,17 +13,11 @@ public class SparkController {
 
     private final AgensSparkService sparkService;
     private final ProductProperties productProperties;
+
     @Autowired
     public SparkController(AgensSparkService sparkService, ProductProperties productProperties){
         this.sparkService = sparkService;
         this.productProperties = productProperties;
-    }
-
-    private final HttpHeaders productHeaders(){
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("agens.product.name", productProperties.getName());
-        headers.add("agens.product.version", productProperties.getVersion());
-        return headers;
     }
 
     ///////////////////////////////////////////

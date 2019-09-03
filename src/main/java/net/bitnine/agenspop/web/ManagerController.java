@@ -2,6 +2,7 @@ package net.bitnine.agenspop.web;
 
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.graph.AgensGraphManager;
+import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +32,6 @@ public class ManagerController {
         this.productProperties = productProperties;
     }
 
-    private final HttpHeaders productHeaders(){
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("agens.product.name", productProperties.getName());
-        headers.add("agens.product.version", productProperties.getVersion());
-        return headers;
-    }
-
     ///////////////////////////////////////////
 
     @GetMapping(value="/hello", produces="application/json; charset=UTF-8")
@@ -53,19 +47,22 @@ public class ManagerController {
         for( String name : names ){
             graphs.put(name, manager.getGraph(name).toString());
         }
-        return new ResponseEntity<Map<String, String>>(graphs, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<Map<String, String>>(graphs
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value="/labels/{datasource}", produces="application/json; charset=UTF-8")
     public ResponseEntity listLabels(@PathVariable String datasource) throws Exception {
         Map<String,Map<String,Long>> labels = manager.getGraphLabels(datasource);
-        return new ResponseEntity(labels, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity(labels
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value="/keys/{datasource}/{label}", produces="application/json; charset=UTF-8")
     public ResponseEntity listKeys(@PathVariable String datasource, @PathVariable String label) throws Exception {
         Map<String,Map<String,Long>> keys = manager.getGraphKeys(datasource, label);
-        return new ResponseEntity(keys, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity(keys
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     // remove graph
@@ -74,14 +71,16 @@ public class ManagerController {
         Graph g = manager.removeGraph(graph);
 
         String message = "{\"remove\" : \""+(g==null ? "null":g.toString())+"\"}";
-        return new ResponseEntity<String>(message, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<String>(message
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     // reload graphs
     @GetMapping(value="/update", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> updateGraphs() throws Exception {
         manager.updateGraphs();
-        return new ResponseEntity<Map<String,String>>( manager.getGraphStates(), productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<Map<String,String>>( manager.getGraphStates()
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     /*

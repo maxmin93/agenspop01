@@ -6,6 +6,7 @@ import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
 import net.bitnine.agenspop.service.AgensGremlinService;
 import net.bitnine.agenspop.dto.DetachedGraph;
+import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.apache.tinkerpop.gremlin.driver.ser.AbstractGraphSONMessageSerializerV1d0;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONVersion;
@@ -50,13 +51,6 @@ public class GraphController {
         this.productProperties = productProperties;
     }
 
-    private final HttpHeaders productHeaders(){
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("agens.product.name", productProperties.getName());
-        headers.add("agens.product.version", productProperties.getVersion());
-        return headers;
-    }
-
     ///////////////////////////////////////////
 
     @GetMapping(value="/hello", produces="application/json; charset=UTF-8")
@@ -71,7 +65,8 @@ public class GraphController {
         CompletableFuture.allOf(future).join();
         DetachedGraph graph = future.get();
 
-        return new ResponseEntity<DetachedGraph>(graph, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<DetachedGraph>(graph
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value="/{datasource}/v", produces="application/json; charset=UTF-8")
@@ -99,7 +94,8 @@ public class GraphController {
 
         String json = "{}";
         json = mapperV1.writeValueAsString(vertices);     // AgensIoRegistryV1
-        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<String>(json
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value="/{datasource}/e", produces="application/json; charset=UTF-8")
@@ -127,7 +123,8 @@ public class GraphController {
 
         String json = "{}";
         json = mapperV1.writeValueAsString(edges);     // AgensIoRegistryV1
-        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<String>(json
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     ///////////////////////////////////////////
@@ -152,11 +149,13 @@ public class GraphController {
             Object result = future.get();
 
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
-            return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+            return new ResponseEntity<String>(json
+                    , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
         }catch (Exception ex){
             System.out.println("** ERROR: runGremlin ==> " + ex.getMessage());
         }
-        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<String>(json
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value="/cypher", produces="application/json; charset=UTF-8")
@@ -180,11 +179,13 @@ public class GraphController {
             Object result = future.get();
 
             json = mapperV1.writeValueAsString(result);     // AgensIoRegistryV1
-            return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+            return new ResponseEntity<String>(json
+                    , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
         }catch (Exception ex){
             System.out.println("** ERROR: runCypher ==> " + ex.getMessage());
         }
-        return new ResponseEntity<String>(json, productHeaders(), HttpStatus.OK);
+        return new ResponseEntity<String>(json
+                    , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     ///////////////////////////////////////////

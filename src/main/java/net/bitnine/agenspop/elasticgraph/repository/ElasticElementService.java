@@ -12,20 +12,23 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +37,8 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 public class ElasticElementService {
+
+    private final static int REQUEST_MAX_SIZE = 10000;  // ES limit
 
     protected final RestHighLevelClient client;
     protected final ObjectMapper mapper;
@@ -118,11 +123,47 @@ public class ElasticElementService {
     protected <T> List<T> findAll(String index, Class<T> tClass) throws Exception {
         SearchRequest searchRequest = new SearchRequest(index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchAllQuery());   // All
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());       // All
+        searchSourceBuilder.size(REQUEST_MAX_SIZE);                     // LIMIT
         searchRequest.source(searchSourceBuilder);
-
         SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
         return getSearchResult(searchResponse, mapper, tClass);
+    }
+
+    // **NOTE: full document request over 10000 records
+    //
+    // https://github.com/spring-projects/spring-data-elasticsearch/blob/master/src/main/java/org/springframework/data/elasticsearch/core/ElasticsearchRestTemplate.java
+
+    protected final Tuple2<Object,Object> scrollStartWithDatasource(String index, String datasource) throws Exception {
+        SearchRequest searchRequest = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource)));   // All
+        searchSourceBuilder.size(REQUEST_MAX_SIZE);                     // LIMIT
+        searchRequest.source(searchSourceBuilder);
+        searchRequest.scroll(TimeValue.timeValueMinutes(1L));
+
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId();
+        SearchHits hits = searchResponse.getHits();
+        return new Tuple2<>(scrollId, hits);
+    }
+
+    protected final Tuple2<Object,Object> scrollKeepGoing(Tuple2<Object,Object> scroll) throws Exception {
+        SearchScrollRequest scrollRequest = new SearchScrollRequest((String)scroll._1());
+        scrollRequest.scroll(TimeValue.timeValueMinutes(1L));
+
+        SearchResponse searchResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId();
+        SearchHits searchHits = searchResponse.getHits();
+        return new Tuple2<>(scrollId, searchHits);
+    }
+
+    protected final boolean scrollEnd(Tuple2<Object,Object> scroll) throws Exception {
+        ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+        clearScrollRequest.addScrollId((String)scroll._1());
+        ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+        return clearScrollResponse.isSucceeded();
     }
 
     protected <T> T findById(String index, Class<T> tClass, String id) throws Exception {
@@ -376,7 +417,7 @@ public class ElasticElementService {
         return list;
     }
 
-    protected final <T> List<T> getSearchResult(SearchResponse response, ObjectMapper mapper, Class<T> tClass) {
+    public static final <T> List<T> getSearchResult(SearchResponse response, ObjectMapper mapper, Class<T> tClass) {
         SearchHit[] searchHit = response.getHits().getHits();
         List<T> documents = new ArrayList<>();
         for (SearchHit hit : searchHit){
