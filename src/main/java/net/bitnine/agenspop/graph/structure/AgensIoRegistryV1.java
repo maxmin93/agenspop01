@@ -428,8 +428,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             jsonGenerator.writeEndObject();
 
             // for cytoscape.js :: scratch
-            String extraKey = "scratch";
-            jsonGenerator.writeStringField(extraKey, "{ }");
+            jsonGenerator.writeObjectFieldStart("scratch");
+            jsonGenerator.writeEndObject();
 
             jsonGenerator.writeEndObject();
         }
@@ -562,8 +562,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             jsonGenerator.writeEndObject();
 
             // for cytoscape.js :: scratch
-            String extraKey = "scratch";
-            jsonGenerator.writeStringField(extraKey, "{ }");
+            jsonGenerator.writeObjectFieldStart("scratch");
+            jsonGenerator.writeEndObject();
 
             jsonGenerator.writeEndObject();
         }
