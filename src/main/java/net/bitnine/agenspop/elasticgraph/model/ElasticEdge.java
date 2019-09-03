@@ -1,9 +1,11 @@
 package net.bitnine.agenspop.elasticgraph.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
 
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class ElasticEdge extends ElasticElement implements BaseEdge {
 
     private String sid;     // id of out-vertex : source

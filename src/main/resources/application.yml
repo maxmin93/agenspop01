@@ -28,6 +28,10 @@ agens:
     username:
     password:
     page-size: 2500
+  spark:
+    app-name: es-bitnine
+    spark-home: ~/Servers/spark
+    master-uri: local
   product:
     name: agenspop-es
     version: 0.7.3-dev
