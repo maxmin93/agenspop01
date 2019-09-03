@@ -63,7 +63,7 @@ public class AgensGremlinService {
             if( result != null && result instanceof GraphTraversal ){
                 GraphTraversal t = (GraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+                System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
 
                 List<Object> resultList = new ArrayList<>();
                 while( t.hasNext() ) {          // if result exists,
@@ -121,7 +121,7 @@ expected> type = LinkedHashMap()
                 script = script.replaceAll("\\s+","");   // remove tailling spaces
             }
             // for DEBUG
-            System.out.println("** translate: "+cypher+"\n  ==> "+script);
+            System.out.println("**cypher-to-gremlin: "+cypher+"\n  ==> "+script);
 
             // use no timeout on the engine initialization - perhaps this can be a configuration later
             final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
@@ -135,7 +135,7 @@ expected> type = LinkedHashMap()
             if( result != null && result instanceof DefaultGraphTraversal ){
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+                System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
 
                 if( t.hasNext() ){          // if result exists,
                     Object r = t.next();
