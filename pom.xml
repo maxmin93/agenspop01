@@ -21,6 +21,11 @@
 		<elasticsearch.version>7.3.0</elasticsearch.version>
 		<tinkerpop.version>3.4.1</tinkerpop.version>
 		<jruby.version>9.2.7.0</jruby.version>
+<!--		<scala.version>2.11.12</scala.version>-->
+		<scala.version>2.12.9</scala.version>
+		<scala.binary.version>2.12</scala.binary.version>
+		<spark.version>2.4.3</spark.version>
+		<slf4j.version>1.7.28</slf4j.version>
 	</properties>
 
 	<dependencies>
@@ -37,6 +42,10 @@
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-starter-tomcat</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -85,6 +94,44 @@
 			<version>${elasticsearch.version}</version>
 		</dependency>
 
+		<!-- Scala Library -->
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>${scala.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+<!--		**NOTE: JavaEsSpark 를 사용하지 못함  -->
+<!--		<dependency>-->
+<!--			<groupId>org.elasticsearch</groupId>  -->
+<!--			<artifactId>elasticsearch-spark-20_${scala.binary.version}</artifactId>  -->
+<!--			<version>7.3.1</version>  -->
+<!--		</dependency>  -->
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-graphx_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+
 		<!-- utils : json, mapper -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -105,6 +152,23 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>42.2.5</version>
+		</dependency>
+
+		<!-- utils : slf4j -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 
 		<!-- Test -->
