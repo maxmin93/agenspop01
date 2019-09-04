@@ -21,7 +21,6 @@
 		<elasticsearch.version>7.3.0</elasticsearch.version>
 		<tinkerpop.version>3.4.1</tinkerpop.version>
 		<jruby.version>9.2.7.0</jruby.version>
-<!--		<scala.version>2.11.12</scala.version>-->
 		<scala.version>2.12.9</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<spark.version>2.4.3</spark.version>
@@ -95,6 +94,7 @@
 		</dependency>
 
 		<!-- Scala Library -->
+<!--
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
@@ -120,17 +120,18 @@
 			<artifactId>spark-sql_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-graphx_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+-->
 <!--		**NOTE: JavaEsSpark 를 사용하지 못함  -->
 <!--		<dependency>-->
 <!--			<groupId>org.elasticsearch</groupId>  -->
 <!--			<artifactId>elasticsearch-spark-20_${scala.binary.version}</artifactId>  -->
 <!--			<version>7.3.1</version>  -->
 <!--		</dependency>  -->
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-graphx_${scala.binary.version}</artifactId>
-			<version>${spark.version}</version>
-		</dependency>
 
 		<!-- utils : json, mapper -->
 		<dependency>
@@ -205,6 +206,7 @@
 			<!-- Scala Maven Configuration -->
 			<!-- **NOTE -->
 			<!-- https://github.com/mkarneim/pojobuilder/issues/136#issuecomment-311290472 -->
+<!--
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
@@ -227,12 +229,13 @@
 					</execution>
 				</executions>
 			</plugin>
-
+-->
 			<!-- normal Maven Compiler -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
 		</plugins>
 	</build>
 
