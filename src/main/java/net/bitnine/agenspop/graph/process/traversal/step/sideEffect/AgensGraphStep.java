@@ -82,8 +82,9 @@ public final class AgensGraphStep<S, E extends Element> extends GraphStep<S, E> 
     private boolean containersTestAll(final Element element, final List<HasContainer> hasContainers) {
         for (final HasContainer hasContainer : hasContainers) {
             // for DEBUG
-            System.out.println("  **hasTest("+element.getClass().getSimpleName()+") : "
-                    +hasContainer.toString()+" -> "+hasContainer.test(element));
+            // System.out.println("  **hasTest("+element.getClass().getSimpleName()+") : "
+            //         +hasContainer.toString()+" -> "+hasContainer.test(element));
+
             // **NOTE
             // AgensGraphStep 에서 넘기는 element 는 Vertex 또는 Edge 임
             // 그 외의 테스트에 대해서는 검토 필요!!

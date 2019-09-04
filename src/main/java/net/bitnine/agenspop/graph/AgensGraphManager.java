@@ -62,38 +62,18 @@ public class AgensGraphManager implements GraphManager {
     public static AgensGraphManager getInstance() {
         return instance;
     }
-
 /*
-    @PostConstruct
-    private synchronized void ready(){
-        // check exist datasources
-        Map<String, Long> dsVlist = baseAPI.listVertexDatasources();
-        Map<String, Long> dsElist = baseAPI.listEdgeDatasources();
-
+    private synchronized void setDefaultGraph(){
         // if not exists, insert sample of modern graph
-        if( dsVlist.size() == 0 || !dsVlist.keySet().contains("modern") || dsVlist.get("modern") < 6L ){
+        if( graphStates.size() == 0 || !graphStates.keySet().contains("modern") ){
             String gName = "modern";
             AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
             AgensFactory.generateModern(g);
             putGraph(gName, g);
             updateTraversalSource(gName, g);
         }
-
-        // graphs loading
-        StringBuilder sb = new StringBuilder();
-        for(Map.Entry<String, Long> ds : dsVlist.entrySet() ){
-            AgensGraph g = AgensFactory.createEmpty(baseAPI, ds.getKey());
-            putGraph(ds.getKey(), g);
-            updateTraversalSource(ds.getKey(), g);
-            sb.append(" ").append(ds.getKey()).append("[V=").append(ds.getValue()).append(",E=")
-                    .append(dsElist.getOrDefault(ds.getKey(), 0L))
-                    .append("],");
-        }
-        if( sb.length() > 1 ) sb.setLength(sb.length() - 1);
-        System.out.println("AgensGraphManager ready ==>"+sb.toString()+"\n");
     }
 */
-
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
         this.gremlinExecutor = gremlinExecutor;
         final ScheduledExecutorService bindExecutor = Executors.newScheduledThreadPool(1);
@@ -295,7 +275,16 @@ public class AgensGraphManager implements GraphManager {
         }
 
         if( isFirst ){
-            System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+            // if not exists, insert sample of modern graph
+            if( graphStates.size() == 0 || !graphStates.keySet().contains("modern") ){
+                String gName = "modern";
+                AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
+                AgensFactory.generateModern(g);
+                putGraph(gName, g);
+                updateTraversalSource(gName, g);
+            }
+
+            System.out.println("\nAgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
         }
     }
 

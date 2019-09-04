@@ -98,7 +98,7 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
         peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
 
         try{
-            Thread.sleep(1000);
+            Thread.sleep(100);
             // Then do something meaningful...
         }catch(InterruptedException e){
             e.printStackTrace();
