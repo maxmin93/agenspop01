@@ -3,6 +3,7 @@ package net.bitnine.agenspop.elasticgraph.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
+import net.bitnine.agenspop.elasticgraph.util.ElasticScrollIterator;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import java.util.List;
@@ -49,6 +50,10 @@ public class ElasticVertexService extends ElasticElementService {
     }
 
     ///////////////////////////////////////////////////////////////
+
+    public ElasticScrollIterator<ElasticVertex> scrollIterator(String datasource) {
+        return new ElasticScrollIterator<>(client, INDEX, datasource, ElasticVertex.class, mapper);
+    }
 
     public List<ElasticVertex> findAll() throws Exception {
         return super.findAll(INDEX, ElasticVertex.class);

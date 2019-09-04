@@ -2,8 +2,8 @@ package net.bitnine.agenspop.elasticgraph.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
+import net.bitnine.agenspop.elasticgraph.util.ElasticScrollIterator;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -55,6 +55,10 @@ public final class ElasticEdgeService extends ElasticElementService {
     }
 
     ///////////////////////////////////////////////////////////////
+
+    public ElasticScrollIterator<ElasticEdge> scrollIterator(String datasource) {
+        return new ElasticScrollIterator<>(client, INDEX, datasource, ElasticEdge.class, mapper);
+    }
 
     public List<ElasticEdge> findAll() throws Exception {
         return super.findAll(INDEX, ElasticEdge.class);

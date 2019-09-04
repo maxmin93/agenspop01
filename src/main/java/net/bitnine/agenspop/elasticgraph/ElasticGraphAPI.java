@@ -292,6 +292,10 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     ///////////////////////////////////////////////////////////////
     // find vertices for baseAPI
 
+    public Iterator<List<ElasticVertex>> IteratorVertices(String datasource){
+        return vertices.scrollIterator(datasource);
+    }
+
     @Override
     public Collection<BaseVertex> findVertices(final String[] ids){
         try{
@@ -468,6 +472,10 @@ public class ElasticGraphAPI implements BaseGraphAPI {
 
     ///////////////////////////////////////////////////////////////
     // find edges for baseAPI
+
+    public Iterator<List<ElasticEdge>> IteratorEdges(String datasource){
+        return edges.scrollIterator(datasource);
+    }
 
     @Override
     public Collection<BaseEdge> findEdges(final String[] ids){
