@@ -2,6 +2,7 @@ package net.bitnine.agenspop.elasticgraph.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import net.bitnine.agenspop.config.properties.ElasticProperties;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -35,18 +36,21 @@ public class ElasticGraphService {
     static final String MAPPINGS_VERTEX = "classpath:mappings/vertex-document.json";
     static final String MAPPINGS_EDGE = "classpath:mappings/edge-document.json";
 
-    public static final String INDEX_VERTEX = "elasticvertex";
-    public static final String INDEX_EDGE = "elasticedge";
+    public final String INDEX_VERTEX;
+    public final String INDEX_EDGE;
 
     private RestHighLevelClient client;
     private ObjectMapper objectMapper;
 
     public ElasticGraphService(
             RestHighLevelClient client,     // elasticsearch config
-            ObjectMapper objectMapper       // spring boot web starter
+            ObjectMapper objectMapper,      // spring boot web starter
+            String vertexIndex, String edgeIndex
     ) {
         this.client = client;
         this.objectMapper = objectMapper;
+        this.INDEX_VERTEX = vertexIndex;
+        this.INDEX_EDGE = edgeIndex;
     }
 
     ///////////////////////////////////////////////////////////////

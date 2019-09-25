@@ -1,6 +1,9 @@
 package net.bitnine.agenspop.elasticgraph.model;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import net.bitnine.agenspop.basegraph.model.BaseElement;
 import net.bitnine.agenspop.basegraph.model.BaseProperty;
 
@@ -10,6 +13,8 @@ import java.util.stream.Collectors;
 @Data
 public class ElasticElement implements BaseElement {
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private boolean removed;
 
     protected String id;
@@ -26,9 +31,12 @@ public class ElasticElement implements BaseElement {
     }
 
     @Override
-    public boolean removed(){ return this.removed; }
+    public boolean notexists(){ return this.removed; }
     @Override
-    public void remove(){ this.removed = true; }
+    public void remove(){
+        this.removed = true;
+        this.properties = null;
+    }
 
     @Override
     public Collection<String> keys(){
@@ -36,7 +44,7 @@ public class ElasticElement implements BaseElement {
 
         List<String> keys = new ArrayList<>();
         for(ElasticProperty p : properties ){
-            if( p.isPresent() ) keys.add(p.getKey());   // pre-check exception
+            if( p.canRead() ) keys.add(p.getKey());   // pre-check exception
         }
         return keys;
     }
@@ -47,7 +55,7 @@ public class ElasticElement implements BaseElement {
 
         List<Object> values = new ArrayList<>();
         for(ElasticProperty p : properties ){
-            if( p.isPresent() ) values.add(p.value());  // pre-check exception
+            if( p.canRead() ) values.add(p.value());  // pre-check exception
         }
         return values;
     }

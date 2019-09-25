@@ -9,7 +9,7 @@ public interface BaseElement {
     String getLabel();
     String getDatasource();
 
-    boolean removed();
+    boolean notexists();
     void remove();
 
     Collection<String> keys();

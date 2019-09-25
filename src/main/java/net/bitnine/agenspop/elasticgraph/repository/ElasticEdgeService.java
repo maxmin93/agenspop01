@@ -21,10 +21,11 @@ public final class ElasticEdgeService extends ElasticElementService {
 
     public ElasticEdgeService(
             RestHighLevelClient client,     // elasticsearch config
-            ObjectMapper mapper             // spring boot web starter
+            ObjectMapper mapper,            // spring boot web starter
+            String index
     ) {
         super(client, mapper);
-        this.INDEX = ElasticGraphService.INDEX_EDGE;
+        this.INDEX = index;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -144,12 +145,12 @@ public final class ElasticEdgeService extends ElasticElementService {
                 .filter(termQuery("datasource", datasource));
         // with direction
         if( direction.equals(Direction.IN))
-            queryBuilder = queryBuilder.must(termQuery("tid", vid));
+            queryBuilder = queryBuilder.must(termQuery("dst", vid));
         else if( direction.equals(Direction.OUT))
-            queryBuilder = queryBuilder.must(termQuery("sid", vid));
+            queryBuilder = queryBuilder.must(termQuery("src", vid));
         else{
-            queryBuilder = queryBuilder.should(termQuery("tid", vid));
-            queryBuilder = queryBuilder.should(termQuery("sid", vid));
+            queryBuilder = queryBuilder.should(termQuery("dst", vid));
+            queryBuilder = queryBuilder.should(termQuery("src", vid));
         }
         // search
         return doSearch(INDEX, size, queryBuilder, client, mapper, ElasticEdge.class);

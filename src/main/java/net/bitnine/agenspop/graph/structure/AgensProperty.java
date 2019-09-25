@@ -49,7 +49,7 @@ public final class AgensProperty<V> implements Property<V>, WrappedProperty<Base
 
     @Override
     public boolean isPresent() {
-        return ((AgensElement)element).baseElement.removed() ? false : this.baseProperty.isPresent();
+        return ((AgensElement)element).baseElement.notexists() ? false : this.baseProperty.canRead();
     }
 
     @Override

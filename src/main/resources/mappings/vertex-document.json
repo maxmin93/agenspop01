@@ -1,8 +1,8 @@
 {
   "properties":{
+    "datasource" : { "type" : "keyword" },
     "id"         : { "type" : "keyword" },
     "label"      : { "type" : "keyword" },
-    "datasource" : { "type" : "keyword" },
     "properties" : {
       "type" : "nested",
       "properties": {

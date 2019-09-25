@@ -10,6 +10,7 @@ import net.bitnine.agenspop.basegraph.BaseTx;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
 import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
+import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
 import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
@@ -35,21 +36,25 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     private final RestHighLevelClient client;
     private final ObjectMapper mapper;
 
+    private final ElasticProperties config;
     private final ElasticVertexService vertices;
     private final ElasticEdgeService edges;
     private final ElasticGraphService graph;
 
     @Autowired
     public ElasticGraphAPI(
+            ElasticProperties elasticProperties,
             RestHighLevelClient client,     // elasticsearch config
             ObjectMapper mapper             // spring boot web starter
     ) {
         this.client = client;
         this.mapper = mapper;
 
-        this.vertices = new ElasticVertexService(client, mapper);
-        this.edges = new ElasticEdgeService(client, mapper);
-        this.graph = new ElasticGraphService(client, mapper);
+        this.config = elasticProperties;
+        this.vertices = new ElasticVertexService(client, mapper, elasticProperties.getVertexIndex());
+        this.edges = new ElasticEdgeService(client, mapper, elasticProperties.getEdgeIndex());
+        this.graph = new ElasticGraphService(client, mapper
+                , elasticProperties.getVertexIndex(), elasticProperties.getEdgeIndex());
     }
 
     @Override
@@ -114,14 +119,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @Override
     public Map<String, Long> listVertexDatasources() {
         try {
-            return graph.listDatasources(ElasticGraphService.INDEX_VERTEX);
+            return graph.listDatasources(config.getVertexIndex());
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
     @Override
     public Map<String, Long> listEdgeDatasources(){
         try {
-            return graph.listDatasources(ElasticGraphService.INDEX_EDGE);
+            return graph.listDatasources(config.getEdgeIndex());
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
@@ -129,14 +134,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @Override
     public Map<String, Long> listVertexLabels(String datasource) {
         try {
-            return graph.listLabels(ElasticGraphService.INDEX_VERTEX, datasource);
+            return graph.listLabels(config.getVertexIndex(), datasource);
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
     @Override
     public Map<String, Long> listEdgeLabels(String datasource){
         try {
-            return graph.listLabels(ElasticGraphService.INDEX_EDGE, datasource);
+            return graph.listLabels(config.getEdgeIndex(), datasource);
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
@@ -144,14 +149,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @Override
     public Map<String, Long> listVertexLabelKeys(String datasource, String label) {
         try {
-            return graph.listLabelKeys(ElasticGraphService.INDEX_VERTEX, datasource, label);
+            return graph.listLabelKeys(config.getVertexIndex(), datasource, label);
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
     @Override
     public Map<String, Long> listEdgeLabelKeys(String datasource, String label){
         try {
-            return graph.listLabelKeys(ElasticGraphService.INDEX_EDGE, datasource, label);
+            return graph.listLabelKeys(config.getEdgeIndex(), datasource, label);
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
@@ -225,8 +230,8 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         return new ElasticVertex(datasource, id, label);
     }
     @Override
-    public BaseEdge createEdge(String datasource, String id, String label, String sid, String tid){
-        return new ElasticEdge(datasource, id, label, sid, tid);
+    public BaseEdge createEdge(String datasource, String id, String label, String src, String dst){
+        return new ElasticEdge(datasource, id, label, src, dst);
     }
     @Override
     public BaseProperty createProperty(String key, Object value){
@@ -399,7 +404,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         try{
             ElasticEdge edge = edges.findById(eid);
             if( edge == null ) return null;
-            String otherVid = vid.equals(edge.getSid()) ? edge.getTid() : edge.getSid();
+            String otherVid = vid.equals(edge.getSrc()) ? edge.getDst() : edge.getSrc();
             return vertices.findById(otherVid);
         }
         catch(Exception e){ return null; }
@@ -410,7 +415,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         try{
             Collection<ElasticEdge> links = edges.findByDatasourceAndDirection(DEFAULT_SIZE, datasource, vid, direction);
             Set<String> neighborIds = links.stream()
-                    .map(r->r.getSid().equals(vid) ? r.getTid() : r.getSid()).collect(Collectors.toSet());
+                    .map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc()).collect(Collectors.toSet());
 
             String[] arrayIds = new String[neighborIds.size()];
             if( labels.length > 0 ){

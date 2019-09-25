@@ -6,11 +6,8 @@ import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertexProperty;
-import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -77,7 +74,7 @@ public class AgensVertexProperty<V> implements VertexProperty<V>, WrappedVertexP
 
     @Override
     public boolean isPresent() {
-        return vertex.baseElement.removed() ? false : this.baseProperty.isPresent();
+        return vertex.baseElement.notexists() ? false : this.baseProperty.canRead();
     }
 
     // **NOTE: Cardinality.single 에서는 사용하지 않는 메서드

@@ -26,7 +26,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public Vertex outVertex() {     // source v of edge
-        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getSid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getSrc());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(this.graph, v.get());
         }
@@ -35,7 +35,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public Vertex inVertex() {      // target v of edge
-        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getTid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getDst());
         if( v.isPresent() ){
             return (Vertex) new AgensVertex(this.graph, v.get());
         }
@@ -88,7 +88,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public void remove() {
-        if( this.baseElement.removed() ) return;
+        if( this.baseElement.notexists() ) return;
 
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
@@ -103,12 +103,12 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<B
 
     @Override
     public String toString() {
-        return "e[" + getBaseEdge().getId() + "]" + "[" + getBaseEdge().getSid() + "->" + getBaseEdge().getTid() + "]";
+        return "e[" + getBaseEdge().getId() + "]" + "[" + getBaseEdge().getSrc() + "->" + getBaseEdge().getDst() + "]";
     }
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction) {
-        if ( this.baseElement.removed() ) return Collections.emptyIterator();
+        if ( this.baseElement.notexists() ) return Collections.emptyIterator();
         switch (direction) {
             case OUT:
                 return IteratorUtils.of(this.outVertex());  // source

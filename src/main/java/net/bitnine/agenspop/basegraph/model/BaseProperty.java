@@ -8,7 +8,7 @@ public interface BaseProperty {
     String type();
     Object value() throws NoSuchElementException;
 
-    default boolean isPresent() {
+    default boolean canRead() {
         try{
             Object value = this.value();
             return value != null;

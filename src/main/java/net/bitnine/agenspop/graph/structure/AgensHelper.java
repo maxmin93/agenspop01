@@ -8,10 +8,6 @@ import net.bitnine.agenspop.basegraph.model.BaseEdge;
 import net.bitnine.agenspop.basegraph.model.BaseElement;
 import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tinkerpop.gremlin.process.computer.GraphFilter;
-import org.apache.tinkerpop.gremlin.process.computer.VertexComputeKey;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.HasContainer;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -94,7 +90,7 @@ public final class AgensHelper {
 
     public static boolean isDeleted(final BaseVertex vertex) {
         try {
-            return vertex.removed();
+            return vertex.notexists();
         } catch (final RuntimeException e) {
             if (isNotFound(e))
                 return true;

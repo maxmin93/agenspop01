@@ -8,12 +8,12 @@ import net.bitnine.agenspop.basegraph.model.BaseEdge;
 @EqualsAndHashCode(callSuper=false)
 public class ElasticEdge extends ElasticElement implements BaseEdge {
 
-    private String sid;     // id of out-vertex : source
-    private String tid;     // id of in-vertex : target
+    private String src;     // id of out-vertex : source
+    private String dst;     // id of in-vertex : target
 
-    public ElasticEdge(String datasource, String id, String label, String sid, String tid){
+    public ElasticEdge(String datasource, String id, String label, String src, String dst){
         super(datasource, id, label);
-        this.sid = sid;
-        this.tid = tid;
+        this.src = src;
+        this.dst = dst;
     }
 }

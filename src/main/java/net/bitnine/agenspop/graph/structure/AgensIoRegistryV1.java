@@ -10,11 +10,8 @@ import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedEdge;
 import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertex;
 import org.apache.tinkerpop.gremlin.structure.util.Comparators;
 import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedVertexProperty;
-import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerVertex;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
-import org.apache.commons.configuration.BaseConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.structure.io.AbstractIoRegistry;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONIo;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONTokens;
@@ -421,8 +418,8 @@ public final class AgensIoRegistryV1 extends AbstractIoRegistry {
             GraphSONUtil.writeWithType(GraphSONTokens.ID, edge.id(), jsonGenerator, serializerProvider, typeSerializer);
             jsonGenerator.writeStringField(GraphSONTokens.LABEL, edge.label());
             jsonGenerator.writeStringField("datasource", ((AgensGraph)edge.graph()).name());
-            jsonGenerator.writeStringField("source", edge.getBaseEdge().getSid());
-            jsonGenerator.writeStringField("target", edge.getBaseEdge().getTid());
+            jsonGenerator.writeStringField("source", edge.getBaseEdge().getSrc());
+            jsonGenerator.writeStringField("target", edge.getBaseEdge().getDst());
             writeProperties(edge, jsonGenerator, serializerProvider, typeSerializer);
 
             jsonGenerator.writeEndObject();

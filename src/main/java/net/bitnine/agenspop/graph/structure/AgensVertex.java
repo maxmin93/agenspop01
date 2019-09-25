@@ -1,7 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
-import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -37,7 +36,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     @Override
     public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
         if (inVertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        if (this.baseElement.removed()) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if (this.baseElement.notexists()) throw elementAlreadyRemoved(Vertex.class, this.id());
         return AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
     }
 
@@ -59,7 +58,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality
             , final String key, final V value, final Object... keyValues) {
 
-        if( this.baseElement.removed() ) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if( this.baseElement.notexists() ) throw elementAlreadyRemoved(Vertex.class, this.id());
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateProperty(key, value);
 

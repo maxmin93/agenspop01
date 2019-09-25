@@ -22,12 +22,14 @@ agens:
   api:
     base-path: /api
     query-timeout: 600000       # 1000 ms = 1 sec
-  elasticgraph:
+  elasticsearch:
     host: 27.117.163.21
     port: 15619
     username:
     password:
     page-size: 2500
+    vertex-index: elasticvertex
+    edge-index: elasticedge
   spark:
     app-name: es-bitnine
     spark-home: ~/Servers/spark

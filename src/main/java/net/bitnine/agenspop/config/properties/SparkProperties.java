@@ -10,7 +10,6 @@ import javax.validation.constraints.NotBlank;
 
 @Getter
 @Setter
-@Configuration
 @ConfigurationProperties(prefix = "agens.spark")
 public class SparkProperties {
 

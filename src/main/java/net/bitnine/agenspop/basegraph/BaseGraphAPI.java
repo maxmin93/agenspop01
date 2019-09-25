@@ -30,7 +30,7 @@ public interface BaseGraphAPI {
     Optional<BaseEdge> getEdgeById(String id);
 
     BaseVertex createVertex(String datasource, String id, String label);
-    BaseEdge createEdge(String datasource, String id, String label, String sid, String tid);
+    BaseEdge createEdge(String datasource, String id, String label, String src, String dst);
     BaseProperty createProperty(String key, Object value);
 
     boolean saveVertex(BaseVertex vertex);

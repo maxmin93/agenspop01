@@ -276,15 +276,16 @@ public class AgensGraphManager implements GraphManager {
 
         if( isFirst ){
             // if not exists, insert sample of modern graph
+            String gName = "modern";
             if( graphStates.size() == 0 || !graphStates.keySet().contains("modern") ){
-                String gName = "modern";
-                AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
+                AgensGraph g = (AgensGraph) openGraph(gName);
                 AgensFactory.generateModern(g);
-                putGraph(gName, g);
-                updateTraversalSource(gName, g);
             }
+            AgensGraph g = (AgensGraph) openGraph(gName);
+            AgensFactory.traversalTestModern(g);
 
-            System.out.println("\nAgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+            System.out.println("\n-------------------------------------------");
+            System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
         }
     }
 

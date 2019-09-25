@@ -9,6 +9,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.*;
+import org.springframework.context.index.CandidateComponentsIndexLoader;
 
 import java.io.InputStream;
 import java.util.List;
@@ -84,26 +85,28 @@ e5 = v4.addEdge("created", v3, T.id, 11, "weight", 0.4f);
 e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
  */
     public static void generateModern(final AgensGraph g) {
-        final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29, "country", "USA");
-        final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27, "country", "USA");
-        final Vertex lop = g.addVertex(T.id, 3, T.label, "software", "name", "lop", "lang", "java");
-        final Vertex josh = g.addVertex(T.id, 4, T.label, "person", "name", "josh", "age", 32, "country", "USA");
-        final Vertex ripple = g.addVertex(T.id, 5, T.label, "software", "name", "ripple", "lang", "java");
-        final Vertex peter = g.addVertex(T.id, 6, T.label, "person", "name", "peter", "age", 35, "country", "USA");
-        marko.addEdge("knows", vadas, T.id, 7, "weight", 0.5d);
-        marko.addEdge("knows", josh, T.id, 8, "weight", 1.0d);
-        marko.addEdge("created", lop, T.id, 9, "weight", 0.4d);
-        josh.addEdge("created", ripple, T.id, 10, "weight", 1.0d);
-        josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
-        peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
+        final Vertex marko = g.addVertex(T.id, "modern_1", T.label, "person", "name", "marko", "age", 29, "country", "USA");
+        final Vertex vadas = g.addVertex(T.id, "modern_2", T.label, "person", "name", "vadas", "age", 27, "country", "USA");
+        final Vertex lop = g.addVertex(T.id, "modern_3", T.label, "software", "name", "lop", "lang", "java");
+        final Vertex josh = g.addVertex(T.id, "modern_4", T.label, "person", "name", "josh", "age", 32, "country", "USA");
+        final Vertex ripple = g.addVertex(T.id, "modern_5", T.label, "software", "name", "ripple", "lang", "java");
+        final Vertex peter = g.addVertex(T.id, "modern_6", T.label, "person", "name", "peter", "age", 35, "country", "USA");
+        marko.addEdge("knows", vadas, T.id, "modern_7", "weight", 0.5d);
+        marko.addEdge("knows", josh, T.id, "modern_8", "weight", 1.0d);
+        marko.addEdge("created", lop, T.id, "modern_9", "weight", 0.4d);
+        josh.addEdge("created", ripple, T.id, "modern_10", "weight", 1.0d);
+        josh.addEdge("created", lop, T.id, "modern_11", "weight", 0.4d);
+        peter.addEdge("created", lop, T.id, "modern_12", "weight", 0.2d);
 
-        try{
+        try {
             Thread.sleep(100);
             // Then do something meaningful...
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
 
+    public static void traversalTestModern(final AgensGraph g){
         ///////////////////////////////////////////////////
         // gremlin test
 
@@ -130,9 +133,9 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
         vertexList = t.V().has("name","josh").next(100);
         System.out.println("  - vertex has ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
-        vertexList = t.V().hasLabel("person").out("knows").next(100);
-        System.out.println("  - vertex hasLabel ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
-        vertexList = t.V().hasLabel("person").out("knows").where(__.values("age").is(P.lt(30))).next(100);
+        edgeList = t.V().hasLabel("person").outE("knows").next(100);
+        System.out.println("  - hasLabel.outE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        vertexList = t.V().hasLabel("person").out().where(__.values("age").is(P.lt(30))).next(100);
         System.out.println("  - vertex where ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
     }
 }

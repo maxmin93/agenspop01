@@ -4,7 +4,7 @@ public interface BaseEdge extends BaseElement {
 
     public static final String DEFAULT_LABEL = "edge";
 
-    String getSid();
-    String getTid();
+    String getSrc();
+    String getDst();
 
 }

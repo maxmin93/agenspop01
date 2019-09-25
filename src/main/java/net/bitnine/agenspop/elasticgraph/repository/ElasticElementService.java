@@ -57,6 +57,12 @@ public class ElasticElementService {
             document.setId(uuid.toString());
         }
 
+//        Map<String, ?> source = mapper.convertValue((T)document, Map.class);
+//        String mapAsString = source.keySet().stream()
+//                .map(key -> key + "=" + source.get(key))
+//                .collect(Collectors.joining(", ", "{", "}"));
+//        System.out.println("createDocument => "+mapAsString);
+
         IndexRequest indexRequest = new IndexRequest(index)
                 .id(document.getId())
                 .source( mapper.convertValue((T)document, Map.class) );

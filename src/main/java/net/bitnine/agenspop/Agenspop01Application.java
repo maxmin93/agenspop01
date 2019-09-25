@@ -2,12 +2,23 @@ package net.bitnine.agenspop;
 
 import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.config.properties.ProductProperties;
+import net.bitnine.agenspop.graph.AgensGraphManager;
+import net.bitnine.agenspop.graph.structure.AgensGraph;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
+import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
+import org.apache.tinkerpop.gremlin.structure.Edge;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.ApplicationPidFileWriter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ ElasticProperties.class, ProductProperties.class })
@@ -31,6 +42,7 @@ public class Agenspop01Application {
 			System.out.println(" " + hello_msg);
 			System.out.println(sb.toString()+"\n");
 		}
+
 	}
 
 }
