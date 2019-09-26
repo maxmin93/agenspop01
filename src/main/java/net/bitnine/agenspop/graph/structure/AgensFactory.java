@@ -116,26 +116,26 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
 
         GraphTraversalSource t = g.traversal();
         List<Vertex> vertexList = t.V().next(100);
-        System.out.println("  - list vertices ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.all ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         List<Edge> edgeList = t.E().next(100);
-        System.out.println("  - list edges ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        System.out.println("  - E.all ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
         vertexList = t.V("modern_5", "modern_4", "modern_3").next(100);
-        System.out.println("  - vertex ids ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V(id..) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         edgeList = t.V("modern_1").bothE().next(100);
-        System.out.println("  - edge bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V(id).bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
 
         Vertex v1 = t.V("modern_1").next();
         vertexList = t.V(v1).out().next(100);
-        System.out.println("  - vertex(1) out neighbors ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V(id).out ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
         List<Object> valueList = t.V().values("name").next(100);
-        System.out.println("  - vertices.value('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
+        System.out.println("  - V.values('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
         vertexList = t.V().has("name","josh").next(100);
-        System.out.println("  - vertex has ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.has(key,value) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
         edgeList = t.V().hasLabel("person").outE("knows").next(100);
-        System.out.println("  - hasLabel.outE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.hasLabel.outE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
         vertexList = t.V().hasLabel("person").out().where(__.values("age").is(P.lt(30))).next(100);
-        System.out.println("  - vertex where ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.where(age<30) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
     }
 }

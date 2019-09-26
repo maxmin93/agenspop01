@@ -1,5 +1,6 @@
 package net.bitnine.agenspop.web;
 
+import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensIoRegistryV1;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/graph")
 public class GraphController {

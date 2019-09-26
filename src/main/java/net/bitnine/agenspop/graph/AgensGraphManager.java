@@ -281,10 +281,12 @@ public class AgensGraphManager implements GraphManager {
                 AgensGraph g = (AgensGraph) openGraph(gName);
                 AgensFactory.generateModern(g);
             }
+            // for TEST (when startup)
+            System.out.println("\n-------------------------------------------\n");
             AgensGraph g = (AgensGraph) openGraph(gName);
             AgensFactory.traversalTestModern(g);
 
-            System.out.println("\n-------------------------------------------");
+            System.out.println("\n-------------------------------------------\n");
             System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
         }
     }

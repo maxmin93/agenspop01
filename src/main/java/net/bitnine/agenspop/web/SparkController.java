@@ -1,4 +1,5 @@
 package net.bitnine.agenspop.web;
+import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.dto.DataSetResult;
 //import net.bitnine.agenspop.service.AgensGraphxService;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/spark")
 public class SparkController {

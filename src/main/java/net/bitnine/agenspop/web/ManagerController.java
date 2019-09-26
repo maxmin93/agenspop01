@@ -1,6 +1,9 @@
 package net.bitnine.agenspop.web;
 
+import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.config.properties.ProductProperties;
+import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
+import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
@@ -16,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/admin")
 public class ManagerController {
@@ -83,7 +87,7 @@ public class ManagerController {
                 , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
-    /*
+/*
 
     // list labels of graph
     @GetMapping(value="/labels/{graph}", produces="application/json; charset=UTF-8")
@@ -91,5 +95,55 @@ public class ManagerController {
 
         return new ResponseEntity<String>(graphs, productHeaders(), HttpStatus.OK);
     }
+
+    @PutMapping("/reset")
+    public ResponseEntity resetIndex() throws Exception {
+        return new ResponseEntity(base.reset(), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{datasource}")
+    public ResponseEntity remove(@PathVariable String datasource) throws Exception {
+        return new ResponseEntity(base.remove(datasource), HttpStatus.OK);
+    }
+
+
+    ///////////////////////////////////////////////////////////////
+
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"v01", "label":"person", "datasource": "sample", "properties": [ {"key":"technology", "type": "java.lang.String", "value":"java"}, {"key":"years_of_experience", "type": "java.lang.Integer", "value":"5"}] }' localhost:8080/elastic/v
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"v02", "label":"person", "datasource": "sample", "properties": [ {"key":"technology", "type": "java.lang.String", "value":"typescript"}, {"key":"years_of_experience", "type": "java.lang.Integer", "value":"3"}] }' localhost:8080/elastic/v
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"v03", "label":"person", "datasource": "sample", "properties": [ {"key":"technology", "type": "java.lang.String", "value":"html5/css"}, {"key":"years_of_experience", "type": "java.lang.Integer", "value":"4"}] }' localhost:8080/elastic/v
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"v04", "label":"person", "datasource": "sample", "properties": [ {"key":"technology", "type": "java.lang.String", "value":"python"}, {"key":"years_of_experience", "type": "java.lang.Integer", "value":"6"}] }' localhost:8080/elastic/v
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"e01", "label":"knows", "datasource": "sample", "src":"v01", "dst":"v02", "properties": [ {"key":"year", "type": "java.lang.String", "value":"2001"}, {"key":"relation", "type": "java.lang.String", "value":"friend"}] }' localhost:8080/elastic/e
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"e02", "label":"knows", "datasource": "sample", "src":"v02", "dst":"v03", "properties": [ {"key":"year", "type": "java.lang.String", "value":"2003"}, {"key":"relation", "type": "java.lang.String", "value":"crew"}] }' localhost:8080/elastic/e
+    //curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"e03", "label":"knows", "datasource": "sample", "src":"v02", "dst":"v03", "properties": [ {"key":"year", "type": "java.lang.String", "value":"1982"}, {"key":"relation", "type": "java.lang.String", "value":"family"}] }' localhost:8080/elastic/e
+    //
+    //curl -X PUT -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"v02", "label":"person", "datasource": "sample", "properties": [ {"key":"technology", "type": "java.lang.String", "value":"typescript"}, {"key":"years_of_experience", "type": "java.lang.Integer", "value":"2"}, {"key":"gpa", "type": "java.lang.Float", "value":"3.7"}] }' localhost:8080/elastic/v
+    //curl -X PUT -H "Content-Type: application/json; charset=utf-8" -d '{ "id":"e02", "label":"knows", "datasource": "sample", "src":"v02", "dst":"v03", "properties": [ {"key":"year", "type": "java.lang.String", "value":"2003"}] }' localhost:8080/elastic/e
+
+    @PostMapping("/v")
+    @PutMapping("/v")
+    public ResponseEntity saveVertex(@RequestBody ElasticVertex document) throws Exception {
+        return new ResponseEntity(base.saveVertex(document), HttpStatus.CREATED);
+    }
+    @PostMapping("/e")
+    @PutMapping("/e")
+    public ResponseEntity saveEdge(@RequestBody ElasticEdge document) throws Exception {
+        return new ResponseEntity(base.saveEdge(document), HttpStatus.CREATED);
+    }
+
+    //curl -X DELETE "localhost:8080/elastic/v/v04"
+    //==> 자동으로 연결된 간선들[e03]도 제거 되어야 함 (cascade)
+
+    @DeleteMapping("/v/{id}")
+    public ResponseEntity dropVertex(@PathVariable String id) throws Exception {
+        base.dropVertex(id);
+        return new ResponseEntity(true, HttpStatus.OK);
+    }
+    @DeleteMapping("/e/{id}")
+    public ResponseEntity dropEdge(@PathVariable String id) throws Exception {
+        base.dropEdge(id);
+        return new ResponseEntity(true, HttpStatus.OK);
+    }
+
  */
 }
