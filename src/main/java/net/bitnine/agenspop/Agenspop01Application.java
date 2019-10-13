@@ -43,6 +43,10 @@ public class Agenspop01Application {
 			System.out.println(sb.toString()+"\n");
 		}
 
+		AgensGraphManager graphManager = ctx.getBean(AgensGraphManager.class);
+		if( graphManager != null ){
+			graphManager.setDefaultGraph();
+		}
 	}
 
 }

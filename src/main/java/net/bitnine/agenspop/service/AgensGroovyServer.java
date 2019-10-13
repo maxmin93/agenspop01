@@ -35,13 +35,13 @@ public class AgensGroovyServer {
 
     private static final Logger logger = LoggerFactory.getLogger(AgensGroovyServer.class);
 
-    private AgensGraphManager graphManager;
-    private Settings settings;
-    private List<LifeCycleHook> hooks;
+    private final AgensGraphManager graphManager;
+    private final Settings settings;
+    private final List<LifeCycleHook> hooks;
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private ExecutorService gremlinExecutorService;
-    private GremlinExecutor gremlinExecutor;
+    private final ScheduledExecutorService scheduledExecutorService;
+    private final ExecutorService gremlinExecutorService;
+    private final GremlinExecutor gremlinExecutor;
 
     private final Map<String,Object> hostOptions = new ConcurrentHashMap<>();
 
@@ -118,6 +118,14 @@ public class AgensGroovyServer {
 
         // graphManager.configureGremlinExecutor for ScheduledTask
         this.graphManager.configureGremlinExecutor(gremlinExecutor);
+
+        // update graphs by scheduler
+        this.scheduledExecutorService.scheduleWithFixedDelay( new Runnable() {
+            public void run() {
+                graphManager.updateGraphs();
+            }
+            }, 1000, this.settings.scriptEvaluationTimeout, TimeUnit.MILLISECONDS
+        );
     }
 
     /////////////////////////////////////////////////////

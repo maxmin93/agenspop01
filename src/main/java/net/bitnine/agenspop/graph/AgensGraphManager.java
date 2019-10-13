@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,6 +32,8 @@ import javax.script.Bindings;
 
 @Service
 public class AgensGraphManager implements GraphManager {
+
+    private static final AtomicLong updateCounter = new AtomicLong(0L);
 
     private static final Logger log =
             LoggerFactory.getLogger(AgensGraphManager.class);
@@ -62,18 +65,28 @@ public class AgensGraphManager implements GraphManager {
     public static AgensGraphManager getInstance() {
         return instance;
     }
-/*
-    private synchronized void setDefaultGraph(){
+
+    public synchronized void setDefaultGraph(){
+        String gName = "modern";
+        // if modern graph is under wrong status, remove it
+        if( graphStates.containsKey(gName) && !graphStates.get(gName).equals(gName+"[V=6,E=6]") ){
+            try { removeGraph(gName); } catch( Exception e ){ }
+            try {
+                Thread.sleep(100);
+                // Then do something meaningful...
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         // if not exists, insert sample of modern graph
-        if( graphStates.size() == 0 || !graphStates.keySet().contains("modern") ){
-            String gName = "modern";
+        if( graphStates.size() == 0 || !graphStates.keySet().contains(gName) ){
             AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
             AgensFactory.generateModern(g);
             putGraph(gName, g);
             updateTraversalSource(gName, g);
         }
     }
-*/
+
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
         this.gremlinExecutor = gremlinExecutor;
         final ScheduledExecutorService bindExecutor = Executors.newScheduledThreadPool(1);
@@ -255,7 +268,7 @@ public class AgensGraphManager implements GraphManager {
     }
 
     public synchronized void updateGraphs(){
-        boolean isFirst = graphs.size() == 0 ? true : false;
+        boolean isFirst = updateCounter.getAndIncrement() == 1L ? true : false;
         graphStates = new HashMap<>();
 
         // check exist datasources
@@ -275,12 +288,7 @@ public class AgensGraphManager implements GraphManager {
         }
 
         if( isFirst ){
-            // if not exists, insert sample of modern graph
             String gName = "modern";
-            if( graphStates.size() == 0 || !graphStates.keySet().contains("modern") ){
-                AgensGraph g = (AgensGraph) openGraph(gName);
-                AgensFactory.generateModern(g);
-            }
             // for TEST (when startup)
             System.out.println("\n-------------------------------------------\n");
             AgensGraph g = (AgensGraph) openGraph(gName);

@@ -97,13 +97,6 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
         josh.addEdge("created", ripple, T.id, "modern_10", "weight", 1.0d);
         josh.addEdge("created", lop, T.id, "modern_11", "weight", 0.4d);
         peter.addEdge("created", lop, T.id, "modern_12", "weight", 0.2d);
-
-        try {
-            Thread.sleep(100);
-            // Then do something meaningful...
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     public static void traversalTestModern(final AgensGraph g){
