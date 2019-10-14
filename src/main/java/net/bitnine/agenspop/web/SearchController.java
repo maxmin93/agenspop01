@@ -36,7 +36,7 @@ public class SearchController {
     ){
         this.base = base;
         this.mapper = objectMapper;
-        // this.mapper.registerModule(new AgensJacksonModule());
+        this.mapper.registerModule(new AgensJacksonModule());
         this.productProperties = productProperties;
     }
 
@@ -76,18 +76,16 @@ curl -X GET "localhost:8080/elastic/v/v01"
 curl -X GET "localhost:8080/elastic/e/e01"
     */
     @GetMapping("/v/{id}")
-    public Optional<BaseVertex> findV(@PathVariable String id) throws Exception {
-        Optional<BaseVertex> d = base.getVertexById(id);
-        if( d.isPresent() ) {
-            for (BaseProperty p : d.get().properties()) {
-                System.out.println(p.key() + " = " + p.value().toString());
-            }
-        }
-        return d;
+    public ResponseEntity findV(@PathVariable String id) throws Exception {
+        Optional<BaseVertex> v = base.getVertexById(id);
+        String json = !v.isPresent() ? "{}" : mapper.writeValueAsString(v);
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
     @GetMapping("/e/{id}")
-    public Optional<BaseEdge> findE(@PathVariable String id) throws Exception {
-        return base.getEdgeById(id);
+    public ResponseEntity findE(@PathVariable String id) throws Exception {
+        Optional<BaseEdge> e = base.getEdgeById(id);
+        String json = !e.isPresent() ? "{}" : mapper.writeValueAsString(e);
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     /*
@@ -95,18 +93,14 @@ curl -X GET "localhost:8080/elastic/sample/v"
 curl -X GET "localhost:8080/elastic/sample/e"
     */
     @GetMapping("/{datasource}/v")
-    public ResponseEntity<?> findV_All(@PathVariable String datasource) throws Exception {
-        String json = "{}";
-        json = mapper.writeValueAsString(base.vertices(datasource));
-        return new ResponseEntity<>(json
-                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+    public ResponseEntity findV_All(@PathVariable String datasource) throws Exception {
+        String json = mapper.writeValueAsString(base.vertices(datasource));
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
     @GetMapping("/{datasource}/e")
-    public ResponseEntity<?> findE_All(@PathVariable String datasource) throws Exception {
-        String json = "{}";
-        json = mapper.writeValueAsString(base.edges(datasource));
-        return new ResponseEntity<>(json
-                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+    public ResponseEntity findE_All(@PathVariable String datasource) throws Exception {
+        String json = mapper.writeValueAsString(base.edges(datasource));
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -116,20 +110,24 @@ curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
 curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     */
     @GetMapping(value = "/{datasource}/v/labels")
-    public Collection<BaseVertex> findV_Label(
+    public ResponseEntity findV_Label(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
         String[] array = new String[labels.size()];
-        return base.findVertices(datasource, labels.toArray(array));
+        String json = labels.size() == 0 ? "[]" :
+                mapper.writeValueAsString(base.findVertices(datasource, labels.toArray(array)));
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
     @GetMapping(value = "/{datasource}/e/labels")
-    public Collection<BaseEdge> findE_Label(
+    public ResponseEntity findE_Label(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
         String[] array = new String[labels.size()];
-        return base.findEdges(datasource, labels.toArray(array));
+        String json = labels.size() == 0 ? "[]" :
+                mapper.writeValueAsString(base.findEdges(datasource, labels.toArray(array)));
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 

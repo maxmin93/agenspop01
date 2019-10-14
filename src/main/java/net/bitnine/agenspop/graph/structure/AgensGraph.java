@@ -145,13 +145,13 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
             this.graphVariables = new AgensGraphVariables(this);
         return this.graphVariables;
     }
-
+/*
     @Override
     public <I extends Io> I io(final Io.Builder<I> builder) {
         return (I) builder.graph(this).onMapper(mapper ->
                 mapper.addRegistry(AgensIoRegistryV1.instance())).create();
     }
-
+*/
     @Override
     public String toString() {
         long vSize = api.countV(graphName);
