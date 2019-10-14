@@ -5,11 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
 import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
+import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.elasticgraph.ElasticGraphAPI;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.bitnine.agenspop.util.AgensJacksonModule;
+import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +28,16 @@ import java.util.stream.Collectors;
 public class SearchController {
     private final ElasticGraphAPI base;
     private final ObjectMapper mapper;
+    private final ProductProperties productProperties;
 
     @Autowired
-    public SearchController(ElasticGraphAPI base, ObjectMapper mapper){
+    public SearchController(
+            ElasticGraphAPI base, ObjectMapper mapper, ProductProperties productProperties
+    ){
         this.base = base;
         this.mapper = mapper;
+        this.mapper.registerModule(new AgensJacksonModule());
+        this.productProperties = productProperties;
     }
 
     @GetMapping("/test")
@@ -89,12 +95,18 @@ curl -X GET "localhost:8080/elastic/sample/v"
 curl -X GET "localhost:8080/elastic/sample/e"
     */
     @GetMapping("/{datasource}/v")
-    public Collection<BaseVertex> findV_All(@PathVariable String datasource) throws Exception {
-        return base.vertices(datasource);
+    public ResponseEntity<?> findV_All(@PathVariable String datasource) throws Exception {
+        String json = "{}";
+        json = mapper.writeValueAsString(base.vertices(datasource));
+        return new ResponseEntity<>(json
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
     @GetMapping("/{datasource}/e")
-    public Collection<BaseEdge> findE_All(@PathVariable String datasource) throws Exception {
-        return base.edges(datasource);
+    public ResponseEntity<?> findE_All(@PathVariable String datasource) throws Exception {
+        String json = "{}";
+        json = mapper.writeValueAsString(base.edges(datasource));
+        return new ResponseEntity<>(json
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     ///////////////////////////////////////////////////////////////
