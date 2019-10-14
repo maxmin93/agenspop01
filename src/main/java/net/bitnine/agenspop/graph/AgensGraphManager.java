@@ -66,24 +66,27 @@ public class AgensGraphManager implements GraphManager {
         return instance;
     }
 
-    public synchronized void setDefaultGraph(){
+    public void resetSampleGraph(){
         String gName = "modern";
         // if modern graph is under wrong status, remove it
-        if( graphStates.containsKey(gName) && !graphStates.get(gName).equals(gName+"[V=6,E=6]") ){
-            try { removeGraph(gName); } catch( Exception e ){ }
-            try {
-                Thread.sleep(100);
-                // Then do something meaningful...
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        try { removeGraph(gName); } catch( Exception e ){ }
+        try {
+            Thread.sleep(1000);
+            // Then do something meaningful...
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         // if not exists, insert sample of modern graph
-        if( graphStates.size() == 0 || !graphStates.keySet().contains(gName) ){
-            AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
-            AgensFactory.generateModern(g);
-            putGraph(gName, g);
-            updateTraversalSource(gName, g);
+        // if( graphStates.size() == 0 || !graphStates.keySet().contains(gName) ){
+        AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
+        AgensFactory.generateModern(g);
+        putGraph(gName, g);
+        updateTraversalSource(gName, g);
+        // }
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -289,11 +292,12 @@ public class AgensGraphManager implements GraphManager {
 
         if( isFirst ){
             String gName = "modern";
-            // for TEST (when startup)
-            System.out.println("\n-------------------------------------------\n");
-            AgensGraph g = (AgensGraph) openGraph(gName);
-            AgensFactory.traversalTestModern(g);
-
+            if( graphStates.keySet().contains(gName) ) {
+                // for TEST (when startup)
+                System.out.println("\n-------------------------------------------\n");
+                AgensGraph g = (AgensGraph) openGraph(gName);
+                AgensFactory.traversalTestModern(g);
+            }
             System.out.println("\n-------------------------------------------\n");
             System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
         }

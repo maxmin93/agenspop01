@@ -5,6 +5,8 @@ import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.graph.AgensGraphManager;
+import net.bitnine.agenspop.graph.structure.AgensFactory;
+import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
 import org.apache.tinkerpop.gremlin.structure.Graph;
@@ -69,6 +71,18 @@ public class ManagerController {
                 , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
+    // reset modern graph
+    @GetMapping(value="/reset/sample", produces="application/json; charset=UTF-8")
+    public ResponseEntity<?> resetGraph() throws Exception {
+        manager.resetSampleGraph();
+        String gName = "modern";
+        AgensGraph g = (AgensGraph) manager.openGraph(gName);
+        // AgensFactory.traversalTestModern(g);
+        String message = "{\"reset\" : \""+g.toString()+"\"}";
+        return new ResponseEntity<String>(message
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+    }
+
     // remove graph
     @GetMapping(value="/remove/{graph}", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> removeGraph(@PathVariable String graph) throws Exception {
@@ -88,6 +102,9 @@ public class ManagerController {
     }
 
 /*
+curl -X DELETE "27.117.163.21:15619/elasticvertex?pretty"
+curl -X DELETE "27.117.163.21:15619/elasticedge?pretty"
+
 
     // list labels of graph
     @GetMapping(value="/labels/{graph}", produces="application/json; charset=UTF-8")

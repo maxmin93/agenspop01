@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "${agens.api.base-path}/graph")
 public class GraphController {
 
+    // private final com.fasterxml.jackson.databind.ObjectMapper mapper;
     private static final ObjectMapper mapper = GraphSONMapper.build()
             .version(GraphSONVersion.V1_0).typeInfo(TypeInfo.NO_TYPES)
             .create().createMapper();

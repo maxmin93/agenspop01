@@ -32,11 +32,11 @@ public class SearchController {
 
     @Autowired
     public SearchController(
-            ElasticGraphAPI base, ObjectMapper mapper, ProductProperties productProperties
+            ElasticGraphAPI base, ObjectMapper objectMapper, ProductProperties productProperties
     ){
         this.base = base;
-        this.mapper = mapper;
-        this.mapper.registerModule(new AgensJacksonModule());
+        this.mapper = objectMapper;
+        // this.mapper.registerModule(new AgensJacksonModule());
         this.productProperties = productProperties;
     }
 

@@ -1,4 +1,5 @@
 {
+  "dynamic": false,
   "properties":{
     "datasource" : { "type" : "keyword" },
     "id"         : { "type" : "keyword" },

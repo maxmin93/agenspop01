@@ -79,6 +79,8 @@ public class ElasticGraphService {
         );
         // mappings
         request.mapping(readMappings(index), XContentType.JSON);
+        // **NOTE: mapping.dynamic = false
+        // https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic.html#dynamic
 
         AcknowledgedResponse indexResponse = client.indices().create(request, RequestOptions.DEFAULT);
         return indexResponse.isAcknowledged();
