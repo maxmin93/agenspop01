@@ -124,7 +124,7 @@ public class AgensGroovyServer {
             public void run() {
                 graphManager.updateGraphs();
             }
-            }, 1000, this.settings.scriptEvaluationTimeout, TimeUnit.MILLISECONDS
+            }, 2000, this.settings.scriptEvaluationTimeout, TimeUnit.MILLISECONDS
         );
     }
 

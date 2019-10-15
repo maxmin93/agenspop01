@@ -13,14 +13,16 @@ import net.bitnine.agenspop.util.AgensJacksonModule;
 import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static net.bitnine.agenspop.util.AgensUtilHelper.wrapException;
 
 @Slf4j
 @RestController
@@ -81,6 +83,7 @@ curl -X GET "localhost:8080/elastic/e/e01"
         String json = !v.isPresent() ? "{}" : mapper.writeValueAsString(v);
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping("/e/{id}")
     public ResponseEntity findE(@PathVariable String id) throws Exception {
         Optional<BaseEdge> e = base.getEdgeById(id);
@@ -92,15 +95,32 @@ curl -X GET "localhost:8080/elastic/e/e01"
 curl -X GET "localhost:8080/elastic/sample/v"
 curl -X GET "localhost:8080/elastic/sample/e"
     */
-    @GetMapping("/{datasource}/v")
+    @GetMapping(value="/{datasource}/v", produces=MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity findV_All(@PathVariable String datasource) throws Exception {
-        String json = mapper.writeValueAsString(base.vertices(datasource));
+        String json = mapper.writeValueAsString( base.vertices(datasource) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
-    @GetMapping("/{datasource}/e")
+
+    @GetMapping(value="/{datasource}/e", produces=MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity findE_All(@PathVariable String datasource) throws Exception {
-        String json = mapper.writeValueAsString(base.edges(datasource));
+        String json = mapper.writeValueAsString( base.edges(datasource) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+    }
+
+    // stream of JSON lines
+    @GetMapping(value="/{datasource}/v/all", produces=MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<String> verticesStream(@PathVariable String datasource) throws Exception {
+        Stream<String> vstream = base.vertexStream(datasource).map(r ->
+                wrapException(()-> mapper.writeValueAsString(r)+",")
+            );
+        return Flux.fromStream( Stream.concat(Stream.concat(Stream.of("["), vstream), Stream.of("]")) );
+    }
+    @GetMapping(value="/{datasource}/e/all", produces=MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<String> edgesStream(@PathVariable String datasource) throws Exception {
+        Stream<String> estream = base.edgeStream(datasource).map(r ->
+                wrapException(()-> mapper.writeValueAsString(r)+",")
+            );
+        return Flux.fromStream( Stream.concat(Stream.concat(Stream.of("["), estream), Stream.of("]")) );
     }
 
     ///////////////////////////////////////////////////////////////
@@ -115,134 +135,159 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
         String[] array = new String[labels.size()];
-        String json = labels.size() == 0 ? "[]" :
-                mapper.writeValueAsString(base.findVertices(datasource, labels.toArray(array)));
+        String json = labels.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findVertices(datasource, labels.toArray(array)) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping(value = "/{datasource}/e/labels")
     public ResponseEntity findE_Label(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
         String[] array = new String[labels.size()];
-        String json = labels.size() == 0 ? "[]" :
-                mapper.writeValueAsString(base.findEdges(datasource, labels.toArray(array)));
+        String json = labels.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findEdges(datasource, labels.toArray(array)) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 
     @GetMapping(value = "/{datasource}/v/keys")
-    public Collection<BaseVertex> findV_PropertyKey(
+    public ResponseEntity findV_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> keys
     ) throws Exception {
         String[] array = new String[keys.size()];
-        return base.findVerticesWithKeys(datasource, keys.toArray(array));
+        String json = keys.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findVerticesWithKeys(datasource, keys.toArray(array)) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping(value = "/{datasource}/e/keys")
-    public Collection<BaseEdge> findE_PropertyKey(
+    public ResponseEntity findE_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> keys
     ) throws Exception {
         String[] array = new String[keys.size()];
-        return base.findEdgesWithKeys(datasource, keys.toArray(array));
+        String json = keys.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findEdgesWithKeys(datasource, keys.toArray(array)) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 
     @GetMapping(value = "/{datasource}/v/key")
-    public Collection<BaseVertex> findV_PropertyKey(
+    public ResponseEntity findV_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") String key,
-            @RequestParam(value = "hasNot", required=false, defaultValue="true") boolean hasNot
+            @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
     ) throws Exception {
-        return base.findVertices(datasource, key, hasNot);
+        String json = mapper.writeValueAsString( base.findVertices(datasource, key, hasNot) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping(value = "/{datasource}/e/key")
-    public Collection<BaseEdge> findE_PropertyKey(
+    public ResponseEntity findE_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") String key,
-            @RequestParam(value = "hasNot", required=false, defaultValue="true") boolean hasNot
+            @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
     ) throws Exception {
-        return base.findEdges(datasource, key, hasNot);
+        String json = mapper.writeValueAsString( base.findEdges(datasource, key, hasNot) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 
     @GetMapping(value = "/{datasource}/v/values")
-    public Collection<BaseVertex> findV_PropertyValues(
+    public ResponseEntity findV_PropertyValues(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> values
     ) throws Exception {
         String[] array = new String[values.size()];
-        return base.findVerticesWithValues(datasource, values.toArray(array));
+        String json = values.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findVerticesWithValues(datasource, values.toArray(array)) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping(value = "/{datasource}/e/values")
-    public Collection<BaseEdge> findE_PropertyValues(
+    public ResponseEntity findE_PropertyValues(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> values
     ) throws Exception {
         String[] array = new String[values.size()];
-        return base.findEdgesWithValues(datasource, values.toArray(array));
+        String json = values.size() == 0 ? "[]" : mapper.writeValueAsString(
+                base.findEdgesWithValues(datasource, values.toArray(array)) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 
+    // http://localhost:8080/api/search/modern/v/value?q=ja
     @GetMapping(value = "/{datasource}/v/value")
-    public List<ElasticVertex> findV_PropertyValuePartial(
+    public ResponseEntity findV_PropertyValuePartial(
             @PathVariable String datasource,
             @RequestParam(value = "q") String value
     ) throws Exception {
-        return base.findV_DatasourceAndPropertyValuePartial(datasource, value);
+        String json = mapper.writeValueAsString( base.findV_DatasourceAndPropertyValuePartial(datasource, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+    // http://localhost:8080/api/search/modern/e/value?q=0.
     @GetMapping(value = "/{datasource}/e/value")
-    public List<ElasticEdge> findE_PropertyValuePartial(
+    public ResponseEntity findE_PropertyValuePartial(
             @PathVariable String datasource,
             @RequestParam(value = "q") String value
     ) throws Exception {
-        return base.findE_DatasourceAndPropertyValuePartial(datasource, value);
+        String json = mapper.writeValueAsString( base.findE_DatasourceAndPropertyValuePartial(datasource, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     ////////////////////////////////////////////////
 
-
+    // http://localhost:8080/api/search/modern/v/keyvalue?key=name&value=java
     @GetMapping(value = "/{datasource}/v/keyvalue")
-    public Collection<BaseVertex> findV_PropertyKeyValue(
+    public ResponseEntity findV_PropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
     ) throws Exception {
-        return base.findVertices(datasource, key, value);
+        String json = mapper.writeValueAsString( base.findVertices(datasource, key, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+    // http://localhost:8080/api/search/modern/e/keyvalue?key=weight&value=0.5
     @GetMapping(value = "/{datasource}/e/keyvalue")
-    public Collection<BaseEdge> findE_PropertyKeyValue(
+    public ResponseEntity findE_PropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
     ) throws Exception {
-        return base.findEdges(datasource, key, value);
+        String json = mapper.writeValueAsString( base.findEdges(datasource, key, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 
     @GetMapping(value = "/{datasource}/v/labelkeyvalue")
-    public Collection<BaseVertex> findV_LabelAndPropertyKeyValue(
+    public ResponseEntity findV_LabelAndPropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "label") String label,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
     ) throws Exception {
-        return base.findVertices(datasource, label, key, value);
+        String json = mapper.writeValueAsString( base.findVertices(datasource, label, key, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
     @GetMapping(value = "/{datasource}/e/labelkeyvalue")
-    public Collection<BaseEdge> findE_LabelAndPropertyKeyValue(
+    public ResponseEntity findE_LabelAndPropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "label") String label,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
     ) throws Exception {
-        return base.findEdges(datasource, label, key, value);
+        String json = mapper.writeValueAsString( base.findEdges(datasource, label, key, value) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
-
+    // http://localhost:8080/api/search/modern/v/hasContainers?label=person&keyNot=gender&key=country&values=USA
+    // http://localhost:8080/api/search/modern/v/hasContainers?label=person&kvPairs=country@USA,name@marko
     @GetMapping(value = "/{datasource}/v/hasContainers")
-    public Collection<BaseVertex> findV_hasContainers(
+    public ResponseEntity findV_hasContainers(
             @PathVariable String datasource,
             @RequestParam(value = "label", required = false) String label,
             @RequestParam(value = "labels", required = false) List<String> labelParams,
@@ -275,12 +320,13 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
         System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
         System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
 
-        return ((ElasticGraphAPI)base).findVertices(datasource
-                    , label, labels, key, keyNot, keys, values, kvPairs);
+        String json = mapper.writeValueAsString( ((ElasticGraphAPI)base).findVertices(
+                datasource, label, labels, key, keyNot, keys, values, kvPairs) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
     @GetMapping(value = "/{datasource}/e/hasContainers")
-    public Collection<BaseEdge> findE_hasContainers(
+    public ResponseEntity findE_hasContainers(
             @PathVariable String datasource,
             @RequestParam(value = "label", required = false) String label,
             @RequestParam(value = "labels", required = false) List<String> labelParams,
@@ -313,8 +359,9 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
         System.out.println("  , values => "+(values==null ? "null" : String.join(",", values)));
         System.out.println("  , kvPairs => "+(kvPairs==null ? "null" : kvPairs.entrySet().stream().map(r->r.getKey()+"="+r.getValue()).collect(Collectors.joining(","))));
 
-        return ((ElasticGraphAPI)base).findEdges(datasource
-                , label, labels, key, keyNot, keys, values, kvPairs);
+        String json = mapper.writeValueAsString( ((ElasticGraphAPI)base).findEdges(
+                datasource, label, labels, key, keyNot, keys, values, kvPairs) );
+        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
 }

@@ -188,7 +188,7 @@ public final class AgensJacksonModule extends SimpleModule {
             , final SerializerProvider serializerProvider
     ) throws IOException {
         jsonGenerator.writeStartObject();           // {
-        jsonGenerator.writeStringField("group", "nodes");
+        jsonGenerator.writeStringField("group", "edges");
 
         jsonGenerator.writeFieldName("data");
         jsonGenerator.writeStartObject();           // data : {

@@ -12,4 +12,18 @@ public final class AgensUtilHelper {
         return headers;
     }
 
+    // **NOTE: Java Exception Handle in Stream Operations
+    // https://kihoonkim.github.io/2017/09/09/java/noexception-in-stream-operations/
+
+    public interface ExceptionSupplier<T> {
+        T get() throws Exception;
+    }
+
+    public static <T> T wrapException(ExceptionSupplier<T> z) {
+        try {
+            return z.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

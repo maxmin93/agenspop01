@@ -74,9 +74,17 @@ public class ManagerController {
     // reset modern graph
     @GetMapping(value="/reset/sample", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> resetGraph() throws Exception {
-        manager.resetSampleGraph();
         String gName = "modern";
-        AgensGraph g = (AgensGraph) manager.openGraph(gName);
+        // if modern graph is under wrong status, remove it
+        try { manager.removeGraph(gName); } catch( Exception e ){ }
+        try {
+            System.out.println("remove sample graph.. ["+gName+"]");
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        AgensGraph g = manager.resetSampleGraph();
         // AgensFactory.traversalTestModern(g);
         String message = "{\"reset\" : \""+g.toString()+"\"}";
         return new ResponseEntity<String>(message
@@ -104,7 +112,6 @@ public class ManagerController {
 /*
 curl -X DELETE "27.117.163.21:15619/elasticvertex?pretty"
 curl -X DELETE "27.117.163.21:15619/elasticedge?pretty"
-
 
     // list labels of graph
     @GetMapping(value="/labels/{graph}", produces="application/json; charset=UTF-8")

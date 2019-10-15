@@ -11,10 +11,9 @@ import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
@@ -51,24 +50,31 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
     @Override
     public boolean hasNext() {
         if( searchHits != null && searchHits.length > 0 ) return true;
-        // clear scroll
-        endScroll();
+        endScroll();    // clear scroll
         return false;
     }
 
     @Override
     public List<T> next() {
-        if( doScroll() ) {
-            List<T> documents = new ArrayList<>();
-            for (SearchHit hit : searchHits) {
-                documents.add(mapper.convertValue(hit.getSourceAsMap(), tClass));
-            }
-            return documents;
+        List<T> documents = new ArrayList<>();
+        for (SearchHit hit : searchHits) {
+            documents.add(mapper.convertValue(hit.getSourceAsMap(), tClass));
         }
-        return Collections.EMPTY_LIST;
+        doScroll();     // next scroll
+        return documents;
     }
 
     ///////////////////////////////////////////////////////
+
+    // Function to get the Stream
+    public static <T> Stream<T> flatMapStream(Iterator<List<T>> iterator)
+    {
+        // Convert the iterator to Spliterator
+        Spliterator<List<T>> spliterator = Spliterators
+                .spliteratorUnknownSize(iterator, 0);
+        // Get a Sequential Stream from spliterator
+        return StreamSupport.stream(spliterator, false).flatMap(r -> r.stream());
+    }
 
     private void startScroll() {
         try {
@@ -108,6 +114,7 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
             ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            scrollId = null;
             return clearScrollResponse.isSucceeded();
         }catch (Exception ex){
             searchHits = null;

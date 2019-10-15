@@ -17,6 +17,7 @@ import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticEdgeService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticGraphService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticVertexService;
+import net.bitnine.agenspop.elasticgraph.util.ElasticScrollIterator;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -185,6 +187,15 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     //
     // common access services about ElasticElement
     //
+
+    public Stream<BaseVertex> vertexStream(String datasource){
+        ElasticScrollIterator<ElasticVertex> iter = vertices.scrollIterator(datasource);
+        return ElasticScrollIterator.flatMapStream(iter).map(r->(BaseVertex)r);
+    }
+    public Stream<BaseEdge> edgeStream(String datasource){
+        ElasticScrollIterator<ElasticEdge> iter = edges.scrollIterator(datasource);
+        return ElasticScrollIterator.flatMapStream(iter).map(r->(BaseEdge)r);
+    }
 
     @Override
     public Collection<BaseVertex> vertices(String datasource){

@@ -66,16 +66,8 @@ public class AgensGraphManager implements GraphManager {
         return instance;
     }
 
-    public void resetSampleGraph(){
+    public AgensGraph resetSampleGraph(){
         String gName = "modern";
-        // if modern graph is under wrong status, remove it
-        try { removeGraph(gName); } catch( Exception e ){ }
-        try {
-            Thread.sleep(1000);
-            // Then do something meaningful...
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         // if not exists, insert sample of modern graph
         // if( graphStates.size() == 0 || !graphStates.keySet().contains(gName) ){
         AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
@@ -84,10 +76,15 @@ public class AgensGraphManager implements GraphManager {
         updateTraversalSource(gName, g);
         // }
         try {
-            Thread.sleep(1500);
+            System.out.println("reloading sample graph.. ["+gName+"]");
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        // for TEST (when startup)
+        System.out.println("\n[Sample Graph Test]\n-------------------------------------------\n");
+        AgensFactory.traversalTestModern(g);
+        return g;
     }
 
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
@@ -291,15 +288,21 @@ public class AgensGraphManager implements GraphManager {
         }
 
         if( isFirst ){
+            System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+
             String gName = "modern";
             if( graphStates.keySet().contains(gName) ) {
                 // for TEST (when startup)
-                System.out.println("\n-------------------------------------------\n");
+                System.out.println("\n== Sample Graph Test ==");
+                System.out.println(  "-------------------------------------------\n");
                 AgensGraph g = (AgensGraph) openGraph(gName);
                 AgensFactory.traversalTestModern(g);
+                System.out.println("\n-------------------------------------------\n");
             }
-            System.out.println("\n-------------------------------------------\n");
-            System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+            else{
+                resetSampleGraph();
+                updateCounter.decrementAndGet();    // again
+            }
         }
     }
 

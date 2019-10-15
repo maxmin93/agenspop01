@@ -87,6 +87,8 @@ public class ElasticElementService {
         return response.getResult().name();
     }
 
+    // **NOTE: DeleteByQueryRequest API
+    // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.3/java-rest-high-document-delete-by-query.html
     protected long deleteDocuments(String index, String datasource) throws Exception {
         DeleteByQueryRequest request = new DeleteByQueryRequest(index);
         request.setQuery(new TermQueryBuilder("datasource", datasource));
