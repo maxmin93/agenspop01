@@ -11,6 +11,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
@@ -56,10 +57,6 @@ public final class ElasticEdgeService extends ElasticElementService {
     }
 
     ///////////////////////////////////////////////////////////////
-
-    public ElasticScrollIterator<ElasticEdge> scrollIterator(String datasource) {
-        return new ElasticScrollIterator<>(client, INDEX, datasource, ElasticEdge.class, mapper);
-    }
 
     public List<ElasticEdge> findAll() throws Exception {
         return super.findAll(INDEX, ElasticEdge.class);
@@ -155,4 +152,38 @@ public final class ElasticEdgeService extends ElasticElementService {
         // search
         return doSearch(INDEX, size, queryBuilder, client, mapper, ElasticEdge.class);
     }
+
+    ///////////////////////////////////////////////////////////////
+    //
+    // Stream APIs
+    //
+    ///////////////////////////////////////////////////////////////
+
+    public Stream<ElasticEdge> streamByIds(String[] ids) throws Exception {
+        return super.streamByIds(INDEX, ElasticEdge.class, ids);
+    }
+
+    public Stream<ElasticEdge> streamByDatasource(String datasource) throws Exception {
+        return super.streamByDatasource(INDEX, ElasticEdge.class, datasource);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndLabel(String datasource, String label) throws Exception {
+        return super.streamByDatasourceAndLabel(INDEX, ElasticEdge.class, datasource, label);
+    }
+    public Stream<ElasticEdge> streamByDatasourceAndLabels(String datasource, final String[] labels) throws Exception {
+        return super.streamByDatasourceAndLabels(INDEX, ElasticEdge.class, datasource, labels);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyKeys(String datasource, final String[] keys) throws Exception{
+        return super.streamByDatasourceAndPropertyKeys(INDEX, ElasticEdge.class, datasource, keys);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyKey(String datasource, String key) throws Exception{
+        return super.streamByDatasourceAndPropertyKey(INDEX, ElasticEdge.class, datasource, key);
+    }
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyKeyNot(String datasource, String keyNot) throws Exception{
+        return super.streamByDatasourceAndPropertyKeyNot(INDEX, ElasticEdge.class, datasource, keyNot);
+    }
+
+
 }

@@ -14,6 +14,21 @@ import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 public final class ElasticHelper {
 
+    // **NOTE: Java Exception Handle in Stream Operations
+    // https://kihoonkim.github.io/2017/09/09/java/noexception-in-stream-operations/
+
+    public interface ExceptionSupplier<T> {
+        T get() throws Exception;
+    }
+
+    public static <T> T wrapException(ExceptionSupplier<T> z) {
+        try {
+            return z.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/master/java-rest-high-search.html
 /*
 

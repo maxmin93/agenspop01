@@ -8,6 +8,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Slf4j
 public class ElasticVertexService extends ElasticElementService {
@@ -51,10 +52,6 @@ public class ElasticVertexService extends ElasticElementService {
     }
 
     ///////////////////////////////////////////////////////////////
-
-    public ElasticScrollIterator<ElasticVertex> scrollIterator(String datasource) {
-        return new ElasticScrollIterator<>(client, INDEX, datasource, ElasticVertex.class, mapper);
-    }
 
     public List<ElasticVertex> findAll() throws Exception {
         return super.findAll(INDEX, ElasticVertex.class);
@@ -130,5 +127,38 @@ public class ElasticVertexService extends ElasticElementService {
         return super.findByHasContainers(INDEX, ElasticVertex.class, size, datasource
                 , label, labels, key, keyNot, keys, values, kvPairs);
     }
+
+    ///////////////////////////////////////////////////////////////
+    //
+    // Stream APIs
+    //
+    ///////////////////////////////////////////////////////////////
+
+    public Stream<ElasticVertex> streamByIds(String[] ids) throws Exception {
+        return super.streamByIds(INDEX, ElasticVertex.class, ids);
+    }
+
+    public Stream<ElasticVertex> streamByDatasource(String datasource) throws Exception {
+        return super.streamByDatasource(INDEX, ElasticVertex.class, datasource);
+    }
+
+    public Stream<ElasticVertex> streamByDatasourceAndLabel(String datasource, String label) throws Exception {
+        return super.streamByDatasourceAndLabel(INDEX, ElasticVertex.class, datasource, label);
+    }
+    public Stream<ElasticVertex> streamByDatasourceAndLabels(String datasource, final String[] labels) throws Exception {
+        return super.streamByDatasourceAndLabels(INDEX, ElasticVertex.class, datasource, labels);
+    }
+
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyKeys(String datasource, final String[] keys) throws Exception{
+        return super.streamByDatasourceAndPropertyKeys(INDEX, ElasticVertex.class, datasource, keys);
+    }
+
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyKey(String datasource, String key) throws Exception{
+        return super.streamByDatasourceAndPropertyKey(INDEX, ElasticVertex.class, datasource, key);
+    }
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyKeyNot(String datasource, String keyNot) throws Exception{
+        return super.streamByDatasourceAndPropertyKeyNot(INDEX, ElasticVertex.class, datasource, keyNot);
+    }
+
 
 }

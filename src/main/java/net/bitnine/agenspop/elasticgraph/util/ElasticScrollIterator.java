@@ -6,6 +6,7 @@ import org.elasticsearch.action.search.*;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
@@ -25,26 +26,34 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 public class ElasticScrollIterator<T extends ElasticElement> implements Iterator<List<T>> {
 
-    public static int REQUEST_MAX_SIZE = 10000;
+    public static int REQUEST_MAX_SIZE = 5000;      // MAX=10000
     public static Scroll SCROLL_TIME = new Scroll(TimeValue.timeValueMinutes(1L));
 
     private final RestHighLevelClient client;
     private final String index;
-    private final String datasource;
     private final Class<T> tClass;
     private final ObjectMapper mapper;
+    // private final QueryBuilder queryBuilder;
 
     private String scrollId;
     private SearchHit[] searchHits;
 
-    public ElasticScrollIterator(RestHighLevelClient client, String index, String datasource, Class<T> tClass, ObjectMapper mapper){
+    public ElasticScrollIterator(String index, QueryBuilder queryBuilder
+                , RestHighLevelClient client, ObjectMapper mapper, Class<T> tClass) {
         this.client = client;
         this.index = index;
-        this.datasource = datasource;
         this.tClass = tClass;
         this.mapper = mapper;
+        startScroll(queryBuilder);
+    }
 
-        startScroll();
+    public ElasticScrollIterator(String index, String datasource
+            , RestHighLevelClient client, ObjectMapper mapper, Class<T> tClass){
+        this.client = client;
+        this.index = index;
+        this.tClass = tClass;
+        this.mapper = mapper;
+        startScroll(QueryBuilders.boolQuery().filter(termQuery("datasource", datasource)));
     }
 
     @Override
@@ -76,12 +85,11 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         return StreamSupport.stream(spliterator, false).flatMap(r -> r.stream());
     }
 
-    private void startScroll() {
+    private void startScroll(QueryBuilder queryBuilder) {
         try {
             SearchRequest searchRequest = new SearchRequest(index);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(QueryBuilders.boolQuery()
-                    .filter(termQuery("datasource", datasource)));   // All
+            searchSourceBuilder.query(queryBuilder);   // All
             searchSourceBuilder.size(REQUEST_MAX_SIZE);                     // LIMIT
             searchRequest.source(searchSourceBuilder);
             searchRequest.scroll(SCROLL_TIME);

@@ -42,31 +42,31 @@ public class SearchController {
         this.productProperties = productProperties;
     }
 
-    @GetMapping("/test")
+    @GetMapping(value="/test", produces="application/json; charset=UTF-8")
     public String test(){
-        return "Success";
+        return "{ \"test\": \"Success\" }";
     }
 
     ///////////////////////////////////////////////////////////////
 
-    @GetMapping("/count")
+    @GetMapping(value="/count", produces="application/json; charset=UTF-8")
     public ResponseEntity count() throws Exception {
         return new ResponseEntity(base.count(), HttpStatus.OK);
     }
-    @GetMapping("/{datasource}/count")
+    @GetMapping(value="/{datasource}/count", produces="application/json; charset=UTF-8")
     public ResponseEntity count(@PathVariable String datasource) throws Exception {
         return new ResponseEntity(base.count(datasource), HttpStatus.OK);
     }
-    @GetMapping("/{datasource}/labels")
+    @GetMapping(value="/{datasource}/labels", produces="application/json; charset=UTF-8")
     public ResponseEntity labels(@PathVariable String datasource) throws Exception {
         return new ResponseEntity(base.labels(datasource), HttpStatus.OK);
     }
 
-    @GetMapping("/{datasource}/v/{label}/keys")
+    @GetMapping(value="/{datasource}/v/{label}/keys", produces="application/json; charset=UTF-8")
     public ResponseEntity vertexLabelKeys(@PathVariable String datasource, @PathVariable String label) throws Exception {
         return new ResponseEntity(base.listVertexLabelKeys(datasource, label), HttpStatus.OK);
     }
-    @GetMapping("/{datasource}/e/{label}/keys")
+    @GetMapping(value="/{datasource}/e/{label}/keys", produces="application/json; charset=UTF-8")
     public ResponseEntity edgeLabelKeys(@PathVariable String datasource, @PathVariable String label) throws Exception {
         return new ResponseEntity(base.listEdgeLabelKeys(datasource, label), HttpStatus.OK);
     }
@@ -77,14 +77,14 @@ public class SearchController {
 curl -X GET "localhost:8080/elastic/v/v01"
 curl -X GET "localhost:8080/elastic/e/e01"
     */
-    @GetMapping("/v/{id}")
+    @GetMapping(value="/v/{id}", produces="application/json; charset=UTF-8")
     public ResponseEntity findV(@PathVariable String id) throws Exception {
         Optional<BaseVertex> v = base.getVertexById(id);
         String json = !v.isPresent() ? "{}" : mapper.writeValueAsString(v);
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 
-    @GetMapping("/e/{id}")
+    @GetMapping(value="/e/{id}", produces="application/json; charset=UTF-8")
     public ResponseEntity findE(@PathVariable String id) throws Exception {
         Optional<BaseEdge> e = base.getEdgeById(id);
         String json = !e.isPresent() ? "{}" : mapper.writeValueAsString(e);
@@ -95,28 +95,28 @@ curl -X GET "localhost:8080/elastic/e/e01"
 curl -X GET "localhost:8080/elastic/sample/v"
 curl -X GET "localhost:8080/elastic/sample/e"
     */
-    @GetMapping(value="/{datasource}/v", produces=MediaType.APPLICATION_JSON_VALUE)
+/*
+    @GetMapping(value="/{datasource}/v", produces="application/json; charset=UTF-8")
     public ResponseEntity findV_All(@PathVariable String datasource) throws Exception {
         String json = mapper.writeValueAsString( base.vertices(datasource) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
-
-    @GetMapping(value="/{datasource}/e", produces=MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value="/{datasource}/e", produces="application/json; charset=UTF-8")
     public ResponseEntity findE_All(@PathVariable String datasource) throws Exception {
         String json = mapper.writeValueAsString( base.edges(datasource) );
         return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
-
+*/
     // stream of JSON lines
-    @GetMapping(value="/{datasource}/v/all", produces=MediaType.APPLICATION_STREAM_JSON_VALUE)
-    public Flux<String> verticesStream(@PathVariable String datasource) throws Exception {
+    @GetMapping(value="/{datasource}/v", produces="application/stream+json; charset=UTF-8")
+    public Flux<String> findV_All(@PathVariable String datasource) throws Exception {
         Stream<String> vstream = base.vertexStream(datasource).map(r ->
                 wrapException(()-> mapper.writeValueAsString(r)+",")
             );
         return Flux.fromStream( Stream.concat(Stream.concat(Stream.of("["), vstream), Stream.of("]")) );
     }
-    @GetMapping(value="/{datasource}/e/all", produces=MediaType.APPLICATION_STREAM_JSON_VALUE)
-    public Flux<String> edgesStream(@PathVariable String datasource) throws Exception {
+    @GetMapping(value="/{datasource}/e", produces="application/stream+json; charset=UTF-8")
+    public Flux<String> findE_All(@PathVariable String datasource) throws Exception {
         Stream<String> estream = base.edgeStream(datasource).map(r ->
                 wrapException(()-> mapper.writeValueAsString(r)+",")
             );

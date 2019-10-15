@@ -2,9 +2,12 @@ package net.bitnine.agenspop.elasticgraph.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bitnine.agenspop.basegraph.model.BaseElement;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.elasticgraph.model.ElasticElement;
 import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
+import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.util.ElasticHelper;
+import net.bitnine.agenspop.elasticgraph.util.ElasticScrollIterator;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -32,6 +35,7 @@ import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
@@ -405,6 +409,136 @@ public class ElasticElementService {
         searchRequest.source(searchSourceBuilder);
         SearchResponse response = client.search(searchRequest, RequestOptions.DEFAULT);
         return getSearchResult(response, mapper, tClass);
+    }
+
+    ///////////////////////////////////////////////////////////////
+    //
+    //  Stream APIs
+    //
+    ///////////////////////////////////////////////////////////////
+
+    // DS.hadId(id..)
+    protected <T extends ElasticElement> Stream<T> streamByIds(
+            String index, Class<T> tClass, String[] ids) throws Exception {
+        // match to datasource
+        IdsQueryBuilder queryBuilder = QueryBuilders.idsQuery().addIds(ids);
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.V(), DS.E()
+    protected <T extends ElasticElement> Stream<T> streamByDatasource(
+            String index, Class<T> tClass, String datasource) throws Exception {
+        // match to datasource
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.hasLabel(label..)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndLabel(
+            String index, Class<T> tClass, String datasource, String label) throws Exception {
+        // match to datasource
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .filter(termQuery("label", label));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.hasLabel(label..)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndLabels(
+            String index, Class<T> tClass, String datasource, String[] labels) throws Exception {
+        // match to datasource
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .filter(termsQuery("label", labels));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.hasKey(key..)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndPropertyKeys(
+            String index, Class<T> tClass, String datasource, String[] keys) throws Exception{
+        // define : nested query
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource));
+        // AND
+        for( String key : keys ){
+            queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
+                    QueryBuilders.boolQuery().must(
+                            termQuery("properties.key", key))
+                    , ScoreMode.Max));
+        }
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.has(key)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndPropertyKey(
+            String index, Class<T> tClass, String datasource, String key) throws Exception{
+        // define : nested query
+        QueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .must(QueryBuilders.nestedQuery("properties",
+                        QueryBuilders.boolQuery().must(
+                                termQuery("properties.key", key))
+                        , ScoreMode.Avg));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.hasNot(key)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndPropertyKeyNot(
+            String index, Class<T> tClass, String datasource, String key) throws Exception{
+        // define : nested query
+        QueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .mustNot(QueryBuilders.nestedQuery("properties",
+                        QueryBuilders.boolQuery().must(
+                                termQuery("properties.key", key))
+                        , ScoreMode.Avg));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+        return stream;
+    }
+
+    // DS.hasValue(value..)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndPropertyValues(
+            String index, Class<T> tClass, String datasource, String[] values) throws Exception{
+        // define : nested query
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource));
+        // AND
+        for( String value : values ) {
+            queryBuilder = queryBuilder.must(QueryBuilders.nestedQuery("properties",
+                    QueryBuilders.boolQuery().must(
+                            QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\""))
+                    , ScoreMode.Total));
+        }
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
+
+//        // compare two values by full match with lowercase
+//        List<String> filters = Arrays.asList(values).stream().map(String::toLowerCase).collect(Collectors.toList());
+//        return ElasticHelper.postFilterByValues(list, filters);
+
+        return stream;
     }
 
 }
