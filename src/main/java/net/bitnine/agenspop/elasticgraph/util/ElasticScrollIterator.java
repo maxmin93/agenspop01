@@ -26,7 +26,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 public class ElasticScrollIterator<T extends ElasticElement> implements Iterator<List<T>> {
 
-    public static int REQUEST_MAX_SIZE = 5000;      // MAX=10000
+    public static int REQUEST_MAX_SIZE = 2500;      // MAX=10000
     public static Scroll SCROLL_TIME = new Scroll(TimeValue.timeValueMinutes(1L));
 
     private final RestHighLevelClient client;

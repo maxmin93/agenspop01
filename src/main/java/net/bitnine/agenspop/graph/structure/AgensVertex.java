@@ -7,6 +7,7 @@ import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<BaseVertex> {
 
@@ -44,10 +45,8 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     public void remove() {
         this.graph.tx().readWrite();
         // 1) remove connected AgensEdges
-        final Iterable<BaseEdge> edges = graph.api.findEdgesOfVertex(graph.name(), id().toString(), Direction.BOTH);
-        for( BaseEdge edge : edges ) {
-            graph.api.dropEdge(edge);
-        }
+        Stream<BaseEdge> edges = graph.api.findEdgesOfVertex(graph.name(), id().toString(), Direction.BOTH);
+        edges.forEach(r->graph.api.dropEdge(r));
         // 2) remove AgensVertex
         this.graph.api.dropVertex((BaseVertex)baseElement);
     }
@@ -94,22 +93,20 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     @Override
     public Iterator<Vertex> vertices(final Direction direction, final String... edgeLabels) {
         this.graph.tx().readWrite();
-        Iterable<BaseVertex> bases = graph.api
-                .findNeighborVertices(graph.name(), id().toString(), direction, edgeLabels);
-        final List<Vertex> vertices = new ArrayList<>();
-        for( BaseVertex base : bases ) vertices.add( new AgensVertex(graph, base));
-        return vertices.iterator();
+        Stream<Vertex> stream = graph.api
+                .findNeighborVertices(graph.name(), id().toString(), direction, edgeLabels)
+                .map(r->(Vertex)new AgensVertex(graph, r));
+        return stream.iterator();
     }
 
     // 정점의 연결 간선들 (방향, 연결간선의 라벨셋)
     @Override
     public Iterator<Edge> edges(final Direction direction, final String... edgeLabels) {
         this.graph.tx().readWrite();
-        Iterable<BaseEdge> bases = graph.api
-                .findEdgesOfVertex(graph.name(), id().toString(), direction, edgeLabels);
-        final List<Edge> edges = new ArrayList<>();
-        for( BaseEdge base : bases ) edges.add( new AgensEdge(graph, base));
-        return edges.iterator();
+        Stream<Edge> stream = graph.api
+                .findEdgesOfVertex(graph.name(), id().toString(), direction, edgeLabels)
+                .map(r->(Edge)new AgensEdge(graph, r));
+        return stream.iterator();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -117,11 +114,10 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public Iterator<Edge> edges(final Direction direction, final String label, final String key, final Object value) {
         this.graph.tx().readWrite();
-        Iterable<BaseEdge> bases = graph.api
-                .findEdgesOfVertex(graph.name(), id().toString(), direction, label, key, value);
-        final List<Edge> edges = new ArrayList<>();
-        for( BaseEdge base : bases ) edges.add( new AgensEdge(graph, base));
-        return edges.iterator();
+        Stream<Edge> stream = graph.api
+                .findEdgesOfVertex(graph.name(), id().toString(), direction, label, key, value)
+                .map(r->(Edge)new AgensEdge(graph, r));
+        return stream.iterator();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////

@@ -53,9 +53,9 @@ public class ElasticVertexService extends ElasticElementService {
 
     ///////////////////////////////////////////////////////////////
 
-    public List<ElasticVertex> findAll() throws Exception {
-        return super.findAll(INDEX, ElasticVertex.class);
-    }
+//    public List<ElasticVertex> findAll() throws Exception {
+//        return super.findAll(INDEX, ElasticVertex.class);
+//    }
 
     public ElasticVertex findById(String id) throws Exception {
         return super.findById(INDEX, ElasticVertex.class, id);
@@ -135,30 +135,71 @@ public class ElasticVertexService extends ElasticElementService {
     ///////////////////////////////////////////////////////////////
 
     public Stream<ElasticVertex> streamByIds(String[] ids) throws Exception {
-        return super.streamByIds(INDEX, ElasticVertex.class, ids);
+        return super.streamByIds(INDEX, ElasticVertex.class
+                , ids);
     }
 
     public Stream<ElasticVertex> streamByDatasource(String datasource) throws Exception {
-        return super.streamByDatasource(INDEX, ElasticVertex.class, datasource);
+        return super.streamByDatasource(INDEX, ElasticVertex.class
+                , datasource);
     }
 
     public Stream<ElasticVertex> streamByDatasourceAndLabel(String datasource, String label) throws Exception {
-        return super.streamByDatasourceAndLabel(INDEX, ElasticVertex.class, datasource, label);
+        return super.streamByDatasourceAndLabel(INDEX, ElasticVertex.class
+                , datasource, label);
     }
     public Stream<ElasticVertex> streamByDatasourceAndLabels(String datasource, final String[] labels) throws Exception {
-        return super.streamByDatasourceAndLabels(INDEX, ElasticVertex.class, datasource, labels);
+        return super.streamByDatasourceAndLabels(INDEX, ElasticVertex.class
+                , datasource, labels);
     }
 
     public Stream<ElasticVertex> streamByDatasourceAndPropertyKeys(String datasource, final String[] keys) throws Exception{
-        return super.streamByDatasourceAndPropertyKeys(INDEX, ElasticVertex.class, datasource, keys);
+        return super.streamByDatasourceAndPropertyKeys(INDEX, ElasticVertex.class
+                , datasource, keys);
     }
 
     public Stream<ElasticVertex> streamByDatasourceAndPropertyKey(String datasource, String key) throws Exception{
-        return super.streamByDatasourceAndPropertyKey(INDEX, ElasticVertex.class, datasource, key);
+        return super.streamByDatasourceAndPropertyKey(INDEX, ElasticVertex.class
+                , datasource, key);
     }
     public Stream<ElasticVertex> streamByDatasourceAndPropertyKeyNot(String datasource, String keyNot) throws Exception{
-        return super.streamByDatasourceAndPropertyKeyNot(INDEX, ElasticVertex.class, datasource, keyNot);
+        return super.streamByDatasourceAndPropertyKeyNot(INDEX, ElasticVertex.class
+                , datasource, keyNot);
     }
 
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyValues(String datasource, final String[] values) throws Exception{
+        return super.streamByDatasourceAndPropertyValues(INDEX, ElasticVertex.class
+                , datasource, values);
+    }
 
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyValue(String datasource, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyValue(INDEX, ElasticVertex.class
+                , datasource, value);
+    }
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyValuePartial(String datasource, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyValuePartial(INDEX, ElasticVertex.class
+                , datasource, value);
+    }
+
+    public Stream<ElasticVertex> streamByDatasourceAndPropertyKeyValue(String datasource, String key, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyKeyValue(INDEX, ElasticVertex.class
+                , datasource, key, value);
+    }
+
+    public Stream<ElasticVertex> streamByDatasourceAndLabelAndPropertyKeyValue(String datasource, String label, String key, String value) throws Exception{
+        return super.streamByDatasourceAndLabelAndPropertyKeyValue(INDEX, ElasticVertex.class
+                , datasource, label, key, value);
+    }
+    public Stream<ElasticVertex> streamByDatasourceAndLabelAndPropertyKeyValues(String datasource, String label, Map<String,String> kvPairs) throws Exception{
+        return super.streamByDatasourceAndLabelAndPropertyKeyValues(INDEX, ElasticVertex.class
+                , datasource, label, kvPairs);
+    }
+
+    public Stream<ElasticVertex> streamByHasContainers(String datasource
+            , String label, final String[] labels
+            , String key, String keyNot, final String[] keys
+            , final String[] values, final Map<String,String> kvPairs) throws Exception {
+        return super.streamByHasContainers(INDEX, ElasticVertex.class
+                , datasource, label, labels, key, keyNot, keys, values, kvPairs);
+    }
 }

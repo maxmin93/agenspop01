@@ -276,29 +276,31 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         this.tx().readWrite();
         final Iterator<Vertex> iter;
         if (0 == vertexIds.length) {
-            iter = IteratorUtils.stream(this.api.vertices(graphName))
+//            iter = IteratorUtils.stream(this.api.vertices(graphName))
+            iter = this.api.vertices(graphName)
                     .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = Stream.of(vertexIds)
-                    .map(id -> {
-                        if (id instanceof String)
-                            return id.toString();
-                        else if (id instanceof Vertex) {
-                            return (String) ((Vertex) id).id();
-                        } else
-                            throw new IllegalArgumentException("Unknown vertex id type: " + id);
-                    })
-                    .flatMap(id -> {
-                        try {
-                            Optional<? extends BaseVertex> base = this.api.getVertexById(id);
-                            if( base.isPresent() ) return Stream.of((BaseVertex)base.get());
-                            return Stream.empty();
-                        } catch (final RuntimeException e) {
-                            if (AgensHelper.isNotFound(e)) return Stream.empty();
-                            throw e;
-                        }
-                    })
+//            iter = Stream.of(vertexIds)
+//                    .map(id -> {
+//                        if (id instanceof String)
+//                            return id.toString();
+//                        else if (id instanceof Vertex) {
+//                            return (String) ((Vertex) id).id();
+//                        } else
+//                            throw new IllegalArgumentException("Unknown vertex id type: " + id);
+//                    })
+//                    .flatMap(id -> {
+//                        try {
+//                            Optional<? extends BaseVertex> base = this.api.getVertexById(id);
+//                            if( base.isPresent() ) return Stream.of((BaseVertex)base.get());
+//                            return Stream.empty();
+//                        } catch (final RuntimeException e) {
+//                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+//                            throw e;
+//                        }
+//                    })
+            iter = this.api.verticesByIds(Stream.of(vertexIds).map(Object::toString).toArray(String[]::new))
                     .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         }
         return iter;
@@ -334,10 +336,10 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                 // optimizeHasContainers 내용 실행
                 iter = AgensHelper.verticesWithHasContainers(this, optimizedParams).iterator();
             else
-                iter = IteratorUtils.stream(this.api.vertices(graphName))
+                iter = this.api.vertices(graphName)
                         .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         } else {
-            iter = IteratorUtils.stream(this.api.findVertices(graphName, vids))
+            iter = this.api.findVertices(graphName, vids)
                     .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         }
 
@@ -351,30 +353,32 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
         this.tx().readWrite();
         final Iterator<Edge> iter;
         if (0 == edgeIds.length) {
-            iter = IteratorUtils.stream(this.api.edges(graphName))
+//            iter = IteratorUtils.stream(this.api.edges(graphName))
+            iter = this.api.edges(graphName)
                     .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
-            iter = Stream.of(edgeIds)
-                    .map(id -> {
-                        if (id instanceof String)
-                            return (String) id.toString();
-                        else if (id instanceof Edge) {
-                            return (String) ((Edge) id).id();
-                        } else
-                            throw new IllegalArgumentException("Unknown edge id type: " + id);
-                    })
-                    .flatMap(id -> {
-                        try {
-                            Optional<? extends BaseEdge> base = this.api.getEdgeById(id.toString());
-                            if( base.isPresent() ) return Stream.of((BaseEdge)base.get());
-                            else return Stream.empty();
-                        } catch (final RuntimeException e) {
-                            if (AgensHelper.isNotFound(e)) return Stream.empty();
-                            throw e;
-                        }
-                    })
-                    .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
+//            iter = Stream.of(edgeIds)
+//                    .map(id -> {
+//                        if (id instanceof String)
+//                            return (String) id.toString();
+//                        else if (id instanceof Edge) {
+//                            return (String) ((Edge) id).id();
+//                        } else
+//                            throw new IllegalArgumentException("Unknown edge id type: " + id);
+//                    })
+//                    .flatMap(id -> {
+//                        try {
+//                            Optional<? extends BaseEdge> base = this.api.getEdgeById(id.toString());
+//                            if( base.isPresent() ) return Stream.of((BaseEdge)base.get());
+//                            else return Stream.empty();
+//                        } catch (final RuntimeException e) {
+//                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+//                            throw e;
+//                        }
+//                    })
+            iter = this.api.edgesByIds(Stream.of(edgeIds).map(Object::toString).toArray(String[]::new))
+                    .map(e -> (Edge) new AgensEdge(this, e)).iterator();
         }
         return iter;
     }
@@ -409,10 +413,10 @@ public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
                 // optimizeHasContainers 내용 실행
                 iter = AgensHelper.edgesWithHasContainers(this, optimizedParams).iterator();
             else
-                iter = IteratorUtils.stream(this.api.edges(graphName))
+                iter = this.api.edges(graphName)
                         .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         } else {
-            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName, eids))
+            iter = this.getBaseGraph().findEdges(graphName, eids)
                     .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         }
         return iter;

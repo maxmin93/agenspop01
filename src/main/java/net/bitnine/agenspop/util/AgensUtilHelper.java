@@ -1,7 +1,14 @@
 package net.bitnine.agenspop.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import reactor.core.publisher.Flux;
+
+import java.util.StringJoiner;
+import java.util.stream.Stream;
 
 public final class AgensUtilHelper {
 
@@ -10,6 +17,20 @@ public final class AgensUtilHelper {
         headers.add("agens.product.name", productProperties.getName());
         headers.add("agens.product.version", productProperties.getVersion());
         return headers;
+    }
+
+    public static <T> ResponseEntity<Flux<String>> responseStream(
+            ObjectMapper mapper, HttpHeaders headers, Stream<T> stream
+    ) {
+        // **NOTE: cannot use StringJoiner beacause it's Streaming and Map function
+        // https://stackoverflow.com/a/50988970/6811653
+        // StringJoiner sj = new StringJoiner(",");
+        Stream<String> vstream = stream.map(r ->
+                wrapException(() -> mapper.writeValueAsString(r) + ",")
+        );
+        return new ResponseEntity(
+                Flux.fromStream(Stream.concat(Stream.concat(Stream.of("["), vstream), Stream.of("]")))
+                , headers, HttpStatus.OK);
     }
 
     // **NOTE: Java Exception Handle in Stream Operations

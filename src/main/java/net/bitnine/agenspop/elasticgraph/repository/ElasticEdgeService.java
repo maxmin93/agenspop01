@@ -58,9 +58,9 @@ public final class ElasticEdgeService extends ElasticElementService {
 
     ///////////////////////////////////////////////////////////////
 
-    public List<ElasticEdge> findAll() throws Exception {
-        return super.findAll(INDEX, ElasticEdge.class);
-    }
+//    public List<ElasticEdge> findAll() throws Exception {
+//        return super.findAll(INDEX, ElasticEdge.class);
+//    }
 
     public ElasticEdge findById(String id) throws Exception {
         return super.findById(INDEX, ElasticEdge.class, id);
@@ -133,8 +133,6 @@ public final class ElasticEdgeService extends ElasticElementService {
                 , label, labels, key, keyNot, keys, values, kvPairs);
     }
 
-    ///////////////////////////////////////////////////////////////
-
     public List<ElasticEdge> findByDatasourceAndDirection(
             int size, String datasource, String vid, Direction direction) throws Exception{
         // define : nested query
@@ -185,5 +183,52 @@ public final class ElasticEdgeService extends ElasticElementService {
         return super.streamByDatasourceAndPropertyKeyNot(INDEX, ElasticEdge.class, datasource, keyNot);
     }
 
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyValues(String datasource, final String[] values) throws Exception{
+        return super.streamByDatasourceAndPropertyValues(INDEX, ElasticEdge.class, datasource, values);
+    }
 
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyValue(String datasource, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyValue(INDEX, ElasticEdge.class, datasource, value);
+    }
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyValuePartial(String datasource, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyValuePartial(INDEX, ElasticEdge.class, datasource, value);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndPropertyKeyValue(String datasource, String key, String value) throws Exception{
+        return super.streamByDatasourceAndPropertyKeyValue(INDEX, ElasticEdge.class, datasource, key, value);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndLabelAndPropertyKeyValue(String datasource, String label, String key, String value) throws Exception{
+        return super.streamByDatasourceAndLabelAndPropertyKeyValue(INDEX, ElasticEdge.class, datasource, label, key, value);
+    }
+    public Stream<ElasticEdge> streamByDatasourceAndLabelAndPropertyKeyValues(String datasource, String label, Map<String,String> kvPairs) throws Exception{
+        return super.streamByDatasourceAndLabelAndPropertyKeyValues(INDEX, ElasticEdge.class, datasource, label, kvPairs);
+    }
+
+    public Stream<ElasticEdge> streamByHasContainers(String datasource
+            , String label, final String[] labels
+            , String key, String keyNot, final String[] keys
+            , final String[] values, final Map<String,String> kvPairs) throws Exception {
+        return super.streamByHasContainers(INDEX, ElasticEdge.class, datasource
+                , label, labels, key, keyNot, keys, values, kvPairs);
+    }
+
+    public Stream<ElasticEdge> streamByDatasourceAndDirection(
+            String datasource, String vid, Direction direction) throws Exception{
+        // define : nested query
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource));
+        // with direction
+        if( direction.equals(Direction.IN))
+            queryBuilder = queryBuilder.must(termQuery("dst", vid));
+        else if( direction.equals(Direction.OUT))
+            queryBuilder = queryBuilder.must(termQuery("src", vid));
+        else{
+            queryBuilder = queryBuilder.should(termQuery("dst", vid));
+            queryBuilder = queryBuilder.should(termQuery("src", vid));
+        }
+
+        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, queryBuilder, client, mapper, ElasticEdge.class);
+        return ElasticScrollIterator.flatMapStream(iter);
+    }
 }

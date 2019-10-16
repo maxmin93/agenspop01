@@ -14,32 +14,16 @@ import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 public final class ElasticHelper {
 
-    // **NOTE: Java Exception Handle in Stream Operations
-    // https://kihoonkim.github.io/2017/09/09/java/noexception-in-stream-operations/
-
-    public interface ExceptionSupplier<T> {
-        T get() throws Exception;
-    }
-
-    public static <T> T wrapException(ExceptionSupplier<T> z) {
-        try {
-            return z.get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/master/java-rest-high-search.html
 /*
-
+    // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/master/java-rest-high-search.html
     ** ScoreMode
     total : Add the original score and the rescore query score. The default.
     multiply : Multiply the original score by the rescore query score. Useful for function query rescores.
     avg : Average the original score and the rescore query score.
     max : Take the max of original score and the rescore query score.
     min : Take the min of the original score and the rescore query score.
-
 */
+
     public static BoolQueryBuilder addQueryDs(BoolQueryBuilder queryBuilder
             , String datasource){
         return queryBuilder.filter(termQuery("datasource", datasource));

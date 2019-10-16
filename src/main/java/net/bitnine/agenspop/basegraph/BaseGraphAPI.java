@@ -8,6 +8,7 @@ import org.apache.tinkerpop.gremlin.structure.Direction;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface BaseGraphAPI {
 
@@ -20,8 +21,11 @@ public interface BaseGraphAPI {
     // common access services about ElasticElement
     //
 
-    Collection<BaseVertex> vertices(String datasource);
-    Collection<BaseEdge> edges(String datasource);
+    Stream<BaseVertex> vertices(String datasource);
+    Stream<BaseEdge> edges(String datasource);
+
+    Stream<BaseVertex> verticesByIds(String[] ids);
+    Stream<BaseEdge> edgesByIds(String[] ids);
 
     boolean existsVertex(String id);
     boolean existsEdge(String id);
@@ -66,7 +70,7 @@ public interface BaseGraphAPI {
     //    hasNot(key)              : findVerticesWithNotKey(ds, key)
     //    hasKey(keys…​)            : findVerticesWithKeys(ds, ...keys)
     //    hasValue(values…​)        : findVerticesWithValues(ds, ...values)
-
+/*
     //////////////////////////////////////////////////
     //
     // access services of Vertex
@@ -114,5 +118,59 @@ public interface BaseGraphAPI {
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels);
     Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value);
+*/
+    //////////////////////////////////////////////////
+    //
+    // Stream APIs
+    //
+    //////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////
+    //
+    // access services of Vertex
+    //
+
+    Stream<BaseVertex> findVertices(final String[] ids);
+    Stream<BaseVertex> findVertices(String datasource, String label);
+    Stream<BaseVertex> findVertices(String datasource, final String[] labels);
+    Stream<BaseVertex> findVertices(String datasource, String key, String value);
+    Stream<BaseVertex> findVertices(String datasource, String label, String key, String value);
+    Stream<BaseVertex> findVertices(String datasource, String key, boolean hasNot);
+    Stream<BaseVertex> findVerticesWithKeys(String datasource, final String[] keys);
+    Stream<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial);
+    Stream<BaseVertex> findVerticesWithValues(String datasource, final String[] values);
+    Stream<BaseVertex> findVerticesWithKeyValues(String datasource, String label, Map<String,String> kvPairs);
+    Stream<BaseVertex> findVertices(String datasource
+            , String label, String[] labels
+            , String key, String keyNot, String[] keys
+            , String[] values, Map<String,String> kvPairs);
+
+    BaseVertex findOtherVertexOfEdge(String eid, String vid);
+    Stream<BaseVertex> findNeighborVertices(String datasource, String vid, Direction direction, final String[] labels);
+
+
+    //////////////////////////////////////////////////
+    //
+    // access services of Edge
+    //
+
+    Stream<BaseEdge> findEdges(final String[] ids);
+    Stream<BaseEdge> findEdges(String datasource, String label);
+    Stream<BaseEdge> findEdges(String datasource, final String[] labels);
+    Stream<BaseEdge> findEdges(String datasource, String key, String value);
+    Stream<BaseEdge> findEdges(String datasource, String label, String key, String value);
+    Stream<BaseEdge> findEdges(String datasource, String key, boolean hasNot);
+    Stream<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys);
+    Stream<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial);
+    Stream<BaseEdge> findEdgesWithValues(String datasource, final String[] values);
+    Stream<BaseEdge> findEdgesWithKeyValues(String datasource, String label, Map<String,String> kvPairs);
+    Stream<BaseEdge> findEdges(String datasource
+            , String label, String[] labels
+            , String key, String keyNot, String[] keys
+            , String[] values, Map<String,String> kvPairs);
+
+    Stream<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction);
+    Stream<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels);
+    Stream<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value);
 
 }

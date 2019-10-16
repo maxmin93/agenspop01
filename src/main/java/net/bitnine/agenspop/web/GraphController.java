@@ -59,7 +59,7 @@ public class GraphController {
     }
 
     @GetMapping(value="/{datasource}", produces="application/json; charset=UTF-8")
-    public ResponseEntity<DetachedGraph> graphData(@PathVariable String datasource) throws Exception {
+    public ResponseEntity<DetachedGraph> getGraph(@PathVariable String datasource) throws Exception {
         CompletableFuture<DetachedGraph> future = gremlin.getGraph(datasource);
         CompletableFuture.allOf(future).join();
         DetachedGraph graph = future.get();

@@ -225,34 +225,34 @@ public final class AgensHelper {
 
         if( optimizedParams.size() == 1 ){
             if( label != null )
-                return graph.api.findVertices(graph.name(), label).stream()
+                return graph.api.findVertices(graph.name(), label)
                     .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( labels != null )
-                return graph.api.findVertices(graph.name(), labels).stream()
+                return graph.api.findVertices(graph.name(), labels)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( key != null )
-                return graph.api.findVertices(graph.name(), key, false).stream()
+                return graph.api.findVertices(graph.name(), key, false)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( keyNot != null )
-                return graph.api.findVertices(graph.name(), keyNot, true).stream()
+                return graph.api.findVertices(graph.name(), keyNot, true)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( keys != null )
-                return graph.api.findVerticesWithKeys(graph.name(), keys).stream()
+                return graph.api.findVerticesWithKeys(graph.name(), keys)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( values != null )
-                return graph.api.findVerticesWithValues(graph.name(), values).stream()
+                return graph.api.findVerticesWithValues(graph.name(), values)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
             else if( kvPairs != null && kvPairs.size() == 1 )
-                return graph.api.findVerticesWithKeyValues(graph.name(), null, kvPairs).stream()
+                return graph.api.findVerticesWithKeyValues(graph.name(), null, kvPairs)
                         .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
         }
         else if( optimizedParams.size() == 2 && label != null && kvPairs != null ){
-            return graph.api.findVerticesWithKeyValues(graph.name(), label, kvPairs).stream()
+            return graph.api.findVerticesWithKeyValues(graph.name(), label, kvPairs)
                     .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
         }
         // else
         return graph.api.findVertices(graph.name()
-                , label, labels, key, keyNot, keys, values, kvPairs).stream()
+                , label, labels, key, keyNot, keys, values, kvPairs)
                 .map(r -> (Vertex) new AgensVertex(graph, r)).collect(Collectors.toList());
     }
 
@@ -282,34 +282,34 @@ public final class AgensHelper {
 
         if( optimizedParams.size() == 1 ){
             if( label != null )
-                return graph.api.findEdges(graph.name(), label).stream()
+                return graph.api.findEdges(graph.name(), label)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( labels != null )
-                return graph.api.findEdges(graph.name(), labels).stream()
+                return graph.api.findEdges(graph.name(), labels)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( key != null )
-                return graph.api.findEdges(graph.name(), key, false).stream()
+                return graph.api.findEdges(graph.name(), key, false)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( keyNot != null )
-                return graph.api.findEdges(graph.name(), keyNot, true).stream()
+                return graph.api.findEdges(graph.name(), keyNot, true)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( keys != null )
-                return graph.api.findEdgesWithKeys(graph.name(), keys).stream()
+                return graph.api.findEdgesWithKeys(graph.name(), keys)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( values != null )
-                return graph.api.findEdgesWithValues(graph.name(), values).stream()
+                return graph.api.findEdgesWithValues(graph.name(), values)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
             else if( kvPairs != null && kvPairs.size() == 1 )
-                return graph.api.findEdgesWithKeyValues(graph.name(), null, kvPairs).stream()
+                return graph.api.findEdgesWithKeyValues(graph.name(), null, kvPairs)
                         .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
         }
         else if( optimizedParams.size() == 2 && label != null && kvPairs != null ){
-            return graph.api.findEdgesWithKeyValues(graph.name(), label, kvPairs).stream()
+            return graph.api.findEdgesWithKeyValues(graph.name(), label, kvPairs)
                     .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
         }
         // else
         return graph.api.findEdges(graph.name()
-                , label, labels, key, keyNot, keys, values, kvPairs).stream()
+                , label, labels, key, keyNot, keys, values, kvPairs)
                 .map(r -> (Edge) new AgensEdge(graph, r)).collect(Collectors.toList());
     }
 
