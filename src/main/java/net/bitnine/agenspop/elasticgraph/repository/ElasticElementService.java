@@ -433,11 +433,24 @@ public class ElasticElementService {
         return getSearchResult(response, mapper, tClass);
     }
 
+
     ///////////////////////////////////////////////////////////////
     //
     //  Stream APIs
     //
     ///////////////////////////////////////////////////////////////
+
+    // DS.V().ids, DS.E().ids
+    protected <T extends ElasticElement> List<String> idsByDatasource(
+            String index, Class<T> tClass, String datasource
+    ){
+        List<String> ids = new ArrayList<>();
+        try {
+            ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, datasource, client, mapper, tClass);
+            while (iter.hasNext()) ids.addAll(iter.nextIds());
+        } catch(Exception e){ }
+        return ids;
+    }
 
     // DS.hadId(id..)
     protected <T extends ElasticElement> Stream<T> streamByIds(

@@ -25,4 +25,5 @@ public class ElasticProperties {
     @NotBlank
     private String edgeIndex;
 
+    private boolean edgeValidation;     // ElasticHelper::filterValidEdges
 }

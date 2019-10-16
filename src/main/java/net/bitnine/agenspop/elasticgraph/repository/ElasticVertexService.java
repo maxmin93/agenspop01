@@ -6,8 +6,10 @@ import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.util.ElasticScrollIterator;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -63,6 +65,10 @@ public class ElasticVertexService extends ElasticElementService {
 
     public boolean existsId(String id) throws Exception {
         return super.existsId(INDEX, id);
+    }
+
+    public HashSet<String> idsByDatasource(String datasource){
+        return new HashSet<String>( super.idsByDatasource(INDEX, ElasticVertex.class, datasource) );
     }
 
     ///////////////////////////////////////////////////////////////

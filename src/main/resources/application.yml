@@ -30,6 +30,7 @@ agens:
     page-size: 2500
     vertex-index: elasticvertex
     edge-index: elasticedge
+    edge-validation: false      # if true, check valid edge on each request (make slow)
   spark:
     app-name: es-bitnine
     spark-home: ~/Servers/spark

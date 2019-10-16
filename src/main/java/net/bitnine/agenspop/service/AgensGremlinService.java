@@ -23,6 +23,7 @@ import javax.script.SimpleBindings;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;
 
@@ -64,16 +65,15 @@ public class AgensGremlinService {
                 GraphTraversal t = (GraphTraversal) evalFuture.get();
                 // for DEBUG
                 System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+//                List<Object> resultList = new ArrayList<>();
+//                while( t.hasNext() ) { resultList.add(t.next()); }
 
-                List<Object> resultList = new ArrayList<>();
-                while( t.hasNext() ) {          // if result exists,
-                    resultList.add(t.next());
-                }
-                return CompletableFuture.completedFuture(resultList);
+                return CompletableFuture.completedFuture(
+                        AgensHelper.getStreamFromIterator((Iterator<Object>)t) );
             }
             // for DEBUG
             System.out.println("  ==> "+result.toString()+"|"+result.getClass().getSimpleName()+"\n");
-            return CompletableFuture.completedFuture(result);
+            return CompletableFuture.completedFuture( Stream.of(result) );
 
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method
@@ -132,25 +132,18 @@ expected> type = LinkedHashMap()
             CompletableFuture.allOf(evalFuture).join();
 
             Object result = evalFuture.get();
-            if( result != null && result instanceof DefaultGraphTraversal ){
+            if( result != null && result instanceof DefaultGraphTraversal ){    // DefaultGraphTraversal
+                // DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
                 System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+//                List<Object> resultList = new ArrayList<>();
+//                while( t.hasNext() ) { resultList.add(t.next()); }
 
-                if( t.hasNext() ){          // if result exists,
-                    Object r = t.next();
-                    if( t.hasNext() ){      // if result is iterable,
-                        List<Object> resultList = new ArrayList<>();
-                        resultList.add(r);
-                        while( t.hasNext() ) resultList.add(t.next());
-
-                        return CompletableFuture.completedFuture(resultList);
-                    }
-                    return CompletableFuture.completedFuture(r);
-                }
-                return CompletableFuture.completedFuture(null);
+                return CompletableFuture.completedFuture(
+                        AgensHelper.getStreamFromIterator((Iterator<Object>)t) );
             }
-            return CompletableFuture.completedFuture(result);
+            return CompletableFuture.completedFuture(Stream.of(result));
 
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method

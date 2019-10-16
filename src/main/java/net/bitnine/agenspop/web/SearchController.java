@@ -176,7 +176,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findVertices(datasource, key, hasNot) );
+                , key.isEmpty() ? Stream.empty() :
+                        base.findVertices(datasource, key, hasNot) );
     }
     @GetMapping(value="/{datasource}/e/key", produces="application/stream+json; charset=UTF-8")
     public ResponseEntity<Flux<String>> findE_PropertyKey(
@@ -185,7 +186,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findEdges(datasource, key, hasNot) );
+                , key.isEmpty() ? Stream.empty() :
+                        base.findEdges(datasource, key, hasNot) );
     }
 
 
@@ -218,7 +220,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "q") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findVerticesWithValue(datasource, value, true) );
+                , value.isEmpty() ? Stream.empty() :
+                        base.findVerticesWithValue(datasource, value, true) );
     }
     // http://localhost:8080/api/search/modern/e/value?q=0.
     @GetMapping(value = "/{datasource}/e/value", produces="application/stream+json; charset=UTF-8")
@@ -227,7 +230,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "q") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findEdgesWithValue(datasource, value, true) );
+                , value.isEmpty() ? Stream.empty() :
+                        base.findEdgesWithValue(datasource, value, true) );
     }
 
     ////////////////////////////////////////////////
@@ -240,7 +244,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "value") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findVertices(datasource, key, value) );
+                , key.isEmpty() || value.isEmpty() ? Stream.empty() :
+                        base.findVertices(datasource, key, value) );
     }
     // http://localhost:8080/api/search/modern/e/keyvalue?key=weight&value=0.5
     @GetMapping(value="/{datasource}/e/keyvalue", produces="application/stream+json; charset=UTF-8")
@@ -250,7 +255,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "value") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findEdges(datasource, key, value) );
+                , key.isEmpty() || value.isEmpty() ? Stream.empty() :
+                        base.findEdges(datasource, key, value) );
     }
 
 
@@ -262,7 +268,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "value") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findVertices(datasource, label, key, value) );
+                , label.isEmpty() || key.isEmpty() || value.isEmpty() ? Stream.empty() :
+                        base.findVertices(datasource, label, key, value) );
     }
     @GetMapping(value="/{datasource}/e/labelkeyvalue", produces="application/stream+json; charset=UTF-8")
     public ResponseEntity<Flux<String>> findE_LabelAndPropertyKeyValue(
@@ -272,7 +279,8 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
             @RequestParam(value = "value") String value
     ) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
-                , base.findEdges(datasource, label, key, value) );
+                , label.isEmpty() || key.isEmpty() || value.isEmpty() ? Stream.empty() :
+                        base.findEdges(datasource, label, key, value) );
     }
 
 

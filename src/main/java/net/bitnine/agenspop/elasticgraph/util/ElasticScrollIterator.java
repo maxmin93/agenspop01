@@ -44,7 +44,7 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         this.index = index;
         this.tClass = tClass;
         this.mapper = mapper;
-        startScroll(queryBuilder);
+        startScroll(queryBuilder, true);
     }
 
     public ElasticScrollIterator(String index, String datasource
@@ -53,7 +53,7 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         this.index = index;
         this.tClass = tClass;
         this.mapper = mapper;
-        startScroll(QueryBuilders.boolQuery().filter(termQuery("datasource", datasource)));
+        startScroll(QueryBuilders.boolQuery().filter(termQuery("datasource", datasource)), false);
     }
 
     @Override
@@ -73,6 +73,15 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         return documents;
     }
 
+    public List<String> nextIds() {
+        List<String> ids = new ArrayList<>();
+        for (SearchHit hit : searchHits) {
+            ids.add(hit.getId());
+        }
+        doScroll();     // next scroll
+        return ids;
+    }
+
     ///////////////////////////////////////////////////////
 
     // Function to get the Stream
@@ -85,12 +94,13 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         return StreamSupport.stream(spliterator, false).flatMap(r -> r.stream());
     }
 
-    private void startScroll(QueryBuilder queryBuilder) {
+    private void startScroll(QueryBuilder queryBuilder, boolean withSource) {
         try {
             SearchRequest searchRequest = new SearchRequest(index);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.query(queryBuilder);   // All
-            searchSourceBuilder.size(REQUEST_MAX_SIZE);                     // LIMIT
+            searchSourceBuilder.query(queryBuilder);        // All
+            searchSourceBuilder.size(REQUEST_MAX_SIZE);     // LIMIT
+            searchSourceBuilder.fetchSource(withSource);   // fetch source
             searchRequest.source(searchSourceBuilder);
             searchRequest.scroll(SCROLL_TIME);
 

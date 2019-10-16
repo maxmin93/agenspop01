@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @RestController
@@ -71,8 +73,10 @@ public class GraphController {
     ///////////////////////////////////////////
 
     // http://localhost:8080/api/graph/gremlin?q=modern_g.V()
-    @GetMapping(value="/gremlin", produces="application/json; charset=UTF-8")
-    public ResponseEntity runGremlin(@RequestParam("q") String script) throws Exception {
+    @GetMapping(value="/gremlin", produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> runGremlin(
+            @RequestParam("q") String script
+    ) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
 
@@ -84,24 +88,24 @@ public class GraphController {
             throw new IllegalArgumentException("UnsupportedEncodingException => "+ue.getCause());
         }
 
-        String json = "[]";
+        Stream<Object> stream = Stream.empty();
         try {
             CompletableFuture<?> future = gremlin.runGremlin(script);
             CompletableFuture.allOf(future).join();
-            Object result = future.get();
-
-            json = mapper.writeValueAsString(result);     // AgensIoRegistryV1
-            return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+            stream = (Stream<Object>) future.get();
         }catch (Exception ex){
             System.out.println("** ERROR: runGremlin ==> " + ex.getMessage());
         }
-        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , stream );
     }
 
     // http://localhost:8080/api/graph/cypher?ds=modern&q=match%20(a:person)%20return%20a%20limit%202
-    @GetMapping(value="/cypher", produces="application/json; charset=UTF-8")
-    public ResponseEntity runCypher(@RequestParam("q") String script
-            , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource) throws Exception {
+    @GetMapping(value="/cypher", produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> runCypher(
+            @RequestParam("q") String script
+            , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource
+    ) throws Exception {
         if( script == null || script.length() == 0 )
             throw new IllegalAccessException("script is empty");
 
@@ -113,18 +117,16 @@ public class GraphController {
             throw new IllegalArgumentException("UnsupportedEncodingException => "+ue.getCause());
         }
 
-        String json = "[]";
+        Stream<Object> stream = Stream.empty();
         try {
             CompletableFuture<?> future = gremlin.runCypher(script, datasource);
             CompletableFuture.allOf(future).join();
-            Object result = future.get();
-
-            json = mapper.writeValueAsString(result);     // AgensIoRegistryV1
-            return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+            stream = (Stream<Object>)future.get();
         }catch (Exception ex){
             System.out.println("** ERROR: runCypher ==> " + ex.getMessage());
         }
-        return new ResponseEntity(json, AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , stream );
     }
 
     ///////////////////////////////////////////

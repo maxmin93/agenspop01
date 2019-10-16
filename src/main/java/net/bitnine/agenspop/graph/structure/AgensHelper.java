@@ -2,6 +2,8 @@ package net.bitnine.agenspop.graph.structure;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
@@ -17,6 +19,14 @@ public final class AgensHelper {
     private static final String NOT_FOUND_EXCEPTION = "NotFoundException";
 
     private AgensHelper() { }
+
+    // Function to get the Stream
+    public static <T> Stream<T> getStreamFromIterator(Iterator<T> iterator) {
+        // Convert the iterator to Spliterator
+        Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, 0);
+        // Get a Sequential Stream from spliterator
+        return StreamSupport.stream(spliterator, false);
+    }
 
     public static void attachProperties(final BaseGraphAPI api, final BaseElement element, final Object... propertyKeyValues) {
         if (api == null) throw Graph.Exceptions.argumentCanNotBeNull("baseGraphAPI");

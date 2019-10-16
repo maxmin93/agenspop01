@@ -17,6 +17,8 @@ import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticEdgeService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticGraphService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticVertexService;
+import net.bitnine.agenspop.elasticgraph.util.ElasticHelper;
+import net.bitnine.agenspop.graph.structure.AgensHelper;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,6 +103,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         object.addProperty("E", edges.count(datasource));
         return gson.toJson(object);
     }
+
     public String labels(String datasource) throws Exception {
         Gson gson = new Gson();
         JsonElement jsonV = gson.fromJson( gson.toJson(listVertexLabels(datasource)), JsonElement.class);
@@ -132,6 +135,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
 
+
     @Override
     public Map<String, Long> listVertexLabels(String datasource) {
         try {
@@ -146,6 +150,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         }
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
+
 
     @Override
     public Map<String, Long> listVertexLabelKeys(String datasource, String label) {
@@ -162,6 +167,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch (Exception e) { return Collections.EMPTY_MAP; }
     }
 
+
     @Override
     public long countV(String datasource){
         try{ return vertices.count(datasource); }
@@ -173,6 +179,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch(Exception e){ return -1L; }
     }
 
+
     public long countV() {
         try{ return vertices.count(); }
         catch(Exception e){ return -1L; }
@@ -181,6 +188,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         try{ return edges.count(); }
         catch(Exception e){ return -1L; }
     }
+
 
     //////////////////////////////////////////////////
     //
@@ -204,21 +212,18 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @Override
     public Stream<BaseVertex> vertices(String datasource){
         try{
-//            return vertices.findByDatasource(MAX_READ_SIZE, datasource)
-//                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-//        } catch(Exception e){ return Collections.EMPTY_LIST; }
             return vertices.streamByDatasource(datasource).map(r->(BaseVertex)r);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> edges(String datasource){
         try {
-//            return edges.findByDatasource(MAX_READ_SIZE, datasource)
-//                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-//        } catch (Exception e){ return Collections.EMPTY_LIST; }
-            return edges.streamByDatasource(datasource).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasource(datasource).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
+
 
     @Override
     public boolean existsVertex(String id){
@@ -231,6 +236,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         catch(Exception e){ return false; }
     }
 
+
     @Override
     public Optional<BaseVertex> getVertexById(String id){
         try{ return Optional.of(vertices.findById(id)); }
@@ -238,9 +244,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     }
     @Override
     public Optional<BaseEdge> getEdgeById(String id){
-        try{ return Optional.of(edges.findById(id)); }
+        try{
+            ElasticEdge e = edges.findById(id);
+            return ( e != null && vertices.existsId(e.getSrc()) && vertices.existsId(e.getDst()) ) ?
+                Optional.of(e) : Optional.empty();
+        }
         catch(Exception e){ return Optional.empty(); }
     }
+
 
     @Override
     public BaseVertex createVertex(String datasource, String id, String label){
@@ -254,6 +265,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     public BaseProperty createProperty(String key, Object value){
         return new ElasticProperty(key, value);
     }
+
 
     @Override
     public boolean saveVertex(BaseVertex vertex){
@@ -275,6 +287,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         }
         catch(Exception e){ return false; }
     }
+
 
     @Override
     public void dropVertex(BaseVertex vertex){
@@ -299,6 +312,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
 
     ///////////////////////////////////////////////////////////////
 
+
     ///////////////////////////////////////////////////////////////
     //  **NOTE: optimized find functions
     //      ==> http://tinkerpop.apache.org/docs/current/reference/#has-step
@@ -311,139 +325,6 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     //    has(key)                EQ  : findVerticesWithKey(ds, key)
     //    hasNot(key)             NEQ : findVerticesWithNotKey(ds, key)
 
-    ///////////////////////////////////////////////////////////////
-    // find vertices for baseAPI
-/*
-    @Override
-    public Collection<BaseVertex> findVertices(final String[] ids){
-        try{
-            return vertices.findByIds(ids)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource, String label){
-        try{
-            return vertices.findByDatasourceAndLabel(MAX_READ_SIZE, datasource, label)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource, final String[] labels){
-        try{
-            return vertices.findByDatasourceAndLabels(MAX_READ_SIZE, datasource, labels)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource, String key, String value){
-        try{
-            return vertices.findByDatasourceAndPropertyKeyValue(MAX_READ_SIZE, datasource, key, value)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource, String label, String key, String value){
-        try{
-            return vertices.findByDatasourceAndLabelAndPropertyKeyValue(MAX_READ_SIZE, datasource, label, key, value)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource, String key, boolean hasNot){
-        try{
-            Collection<ElasticVertex> list = !hasNot
-                    ? vertices.findByDatasourceAndPropertyKey(MAX_READ_SIZE, datasource, key)
-                    : vertices.findByDatasourceAndPropertyKeyNot(MAX_READ_SIZE, datasource, key);
-            return list.stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVerticesWithKeys(String datasource, final String[] keys){
-        try{
-            return vertices.findByDatasourceAndPropertyKeys(MAX_READ_SIZE, datasource, keys)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVerticesWithValue(String datasource, String value, boolean isPartial){
-        try{
-            Collection<ElasticVertex> list = !isPartial
-                    ? vertices.findByDatasourceAndPropertyValue(MAX_READ_SIZE, datasource, value)
-                    : vertices.findByDatasourceAndPropertyValuePartial(MAX_READ_SIZE, datasource, value);
-            return list.stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVerticesWithValues(String datasource, final String[] values){
-        try{
-            return vertices.findByDatasourceAndPropertyValues(MAX_READ_SIZE, datasource, values)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseVertex> findVerticesWithKeyValues(String datasource, String label, final Map<String, String> kvPairs){
-        try{
-            return vertices.findByDatasourceAndLabelAndPropertyKeyValues(MAX_READ_SIZE, datasource, label, kvPairs)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-
-    // V : hasContainers
-    @Override
-    public Collection<BaseVertex> findVertices(String datasource
-            , String label, String[] labels
-            , String key, String keyNot, String[] keys
-            , String[] values, Map<String,String> kvPairs){
-        try{
-            return vertices.findByHasContainers(MAX_READ_SIZE, datasource, label, labels, key, keyNot, keys, values, kvPairs)
-                    .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-
-    @Override
-    public BaseVertex findOtherVertexOfEdge(String eid, String vid){
-        try{
-            ElasticEdge edge = edges.findById(eid);
-            if( edge == null ) return null;
-            String otherVid = vid.equals(edge.getSrc()) ? edge.getDst() : edge.getSrc();
-            return vertices.findById(otherVid);
-        }
-        catch(Exception e){ return null; }
-    }
-
-    @Override
-    public Collection<BaseVertex> findNeighborVertices(String datasource, String vid, Direction direction, String[] labels){
-        try{
-            Collection<ElasticEdge> links = edges.findByDatasourceAndDirection(MAX_READ_SIZE, datasource, vid, direction);
-            Set<String> neighborIds = links.stream()
-                    .map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc()).collect(Collectors.toSet());
-
-            String[] arrayIds = new String[neighborIds.size()];
-            if( labels.length > 0 ){
-                List<String> filterLabels = Arrays.asList(labels);
-                return vertices.findByIds(neighborIds.toArray(arrayIds)).stream()
-                        .filter(r->filterLabels.contains(r.getLabel()))
-                        .map(r->(BaseVertex)r).collect(Collectors.toList());
-            }
-            else
-                return vertices.findByIds(neighborIds.toArray(arrayIds))
-                        .stream().map(r->(BaseVertex)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-*/
     ///////////////////////////////////////////////////////////////
     //
     // find vertices for baseAPI
@@ -557,187 +438,13 @@ public class ElasticGraphAPI implements BaseGraphAPI {
                         .map(r->(BaseVertex)r);
         } catch(Exception e){ return Stream.empty(); }
     }
-/*
-    ///////////////////////////////////////////////////////////////
-    // find vertices for native
 
-    // V.hasId : ids
-    public List<ElasticVertex> findV_Ids(String[] ids) throws Exception {
-        return vertices.findByIds(ids);
-    }
-    // V : datasource
-    public List<ElasticVertex> findV_Datasource(int size, String datasource) throws Exception {
-        return vertices.findByDatasource(size, datasource);
-    }
-    // V : datasource + labels
-    public List<ElasticVertex> findV_DatasourceAndLabels(int size, String datasource, String[] labels) throws Exception {
-        return vertices.findByDatasourceAndLabels(size, datasource, labels);
-    }
-    // V : datasource + (property.key)
-    public List<ElasticVertex> findV_DatasourceAndPropertyKey(int size, String datasource, String key) throws Exception {
-        return vertices.findByDatasourceAndPropertyKey(size, datasource, key);
-    }
-    // V : datasource + (NOT property.key)
-    public List<ElasticVertex> findV_DatasourceAndPropertyKeyNot(int size, String datasource, String key) throws Exception {
-        return vertices.findByDatasourceAndPropertyKeyNot(size, datasource, key);
-    }
-    // V : datasource + property.keys
-    public List<ElasticVertex> findV_DatasourceAndPropertyKeys(int size, String datasource, String[] keys) throws Exception {
-        return vertices.findByDatasourceAndPropertyKeys(size, datasource, keys);
-    }
-    // V : datasource + property.values
-    public List<ElasticVertex> findV_DatasourceAndPropertyValues(int size, String datasource, String[] values) throws Exception {
-        return vertices.findByDatasourceAndPropertyValues(size, datasource, values);
-    }
-    // V : datasource + property.values (partial)
-    public List<ElasticVertex> findV_DatasourceAndPropertyValuePartial(String datasource, String value) throws Exception {
-        return vertices.findByDatasourceAndPropertyValuePartial(MAX_READ_SIZE, datasource, value);
-    }
-    // V : datasource + (property.key & .value)
-    public List<ElasticVertex> findV_DatasourceAndPropertyKeyValue(int size, String datasource, String key, String value) throws Exception {
-        return vertices.findByDatasourceAndPropertyKeyValue(size, datasource, key, value);
-    }
-    // V.has(label,key,value) : datasource + label + (property.key & .value)
-    public List<ElasticVertex> findV_DatasourceAndLabelAndPropertyKeyValue(int size, String datasource, String label, String key, String value) throws Exception {
-        return vertices.findByDatasourceAndLabelAndPropertyKeyValue(size, datasource, label, key, value);
-    }
-*/
+
     ///////////////////////////////////////////////////////////////
     //
     // find edges for baseAPI
     //
     ///////////////////////////////////////////////////////////////
-/*
-    @Override
-    public Collection<BaseEdge> findEdges(final String[] ids){
-        try{
-            return edges.findByIds(ids)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource, String label){
-        try{
-            return edges.findByDatasourceAndLabel(MAX_READ_SIZE, datasource, label)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource, final String[] labels){
-        try{
-            return edges.findByDatasourceAndLabels(MAX_READ_SIZE, datasource, labels)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource, String key, String value){
-        try{
-            return edges.findByDatasourceAndPropertyKeyValue(MAX_READ_SIZE, datasource, key, value)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource, String label, String key, String value){
-        try{
-            return edges.findByDatasourceAndLabelAndPropertyKeyValue(MAX_READ_SIZE, datasource, label, key, value)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource, String key, boolean hasNot){
-        try{
-            Collection<ElasticEdge> list = !hasNot
-                    ? edges.findByDatasourceAndPropertyKey(MAX_READ_SIZE, datasource, key)
-                    : edges.findByDatasourceAndPropertyKeyNot(MAX_READ_SIZE, datasource, key);
-            return list.stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys){
-        try{
-            return edges.findByDatasourceAndPropertyKeys(MAX_READ_SIZE, datasource, keys)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial){
-        try{
-            Collection<ElasticEdge> list = !isPartial
-                    ? edges.findByDatasourceAndPropertyValue(MAX_READ_SIZE, datasource, value)
-                    : edges.findByDatasourceAndPropertyValuePartial(MAX_READ_SIZE, datasource, value);
-            return list.stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdgesWithValues(String datasource, final String[] values){
-        try{
-            return edges.findByDatasourceAndPropertyValues(MAX_READ_SIZE, datasource, values)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-    @Override
-    public Collection<BaseEdge> findEdgesWithKeyValues(String datasource, String label, final Map<String,String> kvPairs){
-        try{
-            return edges.findByDatasourceAndLabelAndPropertyKeyValues(MAX_READ_SIZE, datasource, label, kvPairs)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-
-    // V : hasContainers
-    @Override
-    public Collection<BaseEdge> findEdges(String datasource
-            , String label, String[] labels
-            , String key, String keyNot, String[] keys
-            , String[] values, Map<String,String> kvPairs){
-        try{
-            return edges.findByHasContainers(MAX_READ_SIZE, datasource, label, labels, key, keyNot, keys, values, kvPairs)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-
-    @Override
-    public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction){
-        try{
-            return edges.findByDatasourceAndDirection(MAX_READ_SIZE, datasource, vid, direction)
-                    .stream().map(r->(BaseEdge)r).collect(Collectors.toList());
-        }
-        catch(Exception e){ return Collections.EMPTY_LIST; }
-    }
-
-    @Override
-    public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, final String[] labels){
-        if( labels.length > 0 ){
-            List<String> filterLabels = Arrays.asList(labels);
-            return findEdgesOfVertex(datasource, vid, direction).stream()
-                    .filter(r->filterLabels.contains(r.getLabel())).collect(Collectors.toList());
-        }
-        return findEdgesOfVertex(datasource, vid, direction);
-    }
-
-    @Override
-    public Collection<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction, String label, String key, Object value){
-        return findEdgesOfVertex(datasource, vid, direction).stream()
-                .filter(r->{
-                    if( label != null && !label.equals(r.getLabel()) ) return false;
-                    if( key != null ){
-                        if( !r.keys().contains(key) ) return false;
-                        if( value != null && !r.getProperty(key).value().equals(value) ) return false;
-                    }
-                    return true;
-                }).collect(Collectors.toList());
-    }
-*/
 
     @Override
     public Stream<BaseEdge> findEdges(final String[] ids){
@@ -748,63 +455,77 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @Override
     public Stream<BaseEdge> findEdges(String datasource, String label){
         try{
-            return edges.streamByDatasourceAndLabel(datasource, label)
-                    .map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndLabel(datasource, label).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdges(String datasource, final String[] labels){
         try{
-            return edges.streamByDatasourceAndLabels(datasource, labels)
-                    .map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndLabels(datasource, labels).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdges(String datasource, String key, String value){
         try{
-            return edges.streamByDatasourceAndPropertyKeyValue(datasource, key, value).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndPropertyKeyValue(datasource, key, value).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdges(String datasource, String label, String key, String value){
         try{
-            return edges.streamByDatasourceAndLabelAndPropertyKeyValue(datasource, label, key, value).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndLabelAndPropertyKeyValue(datasource, label, key, value).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdges(String datasource, String key, boolean hasNot){
         try{
-            Stream<ElasticEdge> stream = !hasNot
-                    ? edges.streamByDatasourceAndPropertyKey(datasource, key)
-                    : edges.streamByDatasourceAndPropertyKeyNot(datasource, key);
-            return stream.map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = !hasNot
+                    ? edges.streamByDatasourceAndPropertyKey(datasource, key).map(r->(BaseEdge)r)
+                    : edges.streamByDatasourceAndPropertyKeyNot(datasource, key).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdgesWithKeys(String datasource, final String[] keys){
         try{
-            return edges.streamByDatasourceAndPropertyKeys(datasource, keys).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndPropertyKeys(datasource, keys).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdgesWithValue(String datasource, String value, boolean isPartial){
         try{
-            Stream<ElasticEdge> stream = !isPartial
-                    ? edges.streamByDatasourceAndPropertyValue(datasource, value)
-                    : edges.streamByDatasourceAndPropertyValuePartial(datasource, value);
-            return stream.map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = !isPartial
+                    ? edges.streamByDatasourceAndPropertyValue(datasource, value).map(r->(BaseEdge)r)
+                    : edges.streamByDatasourceAndPropertyValuePartial(datasource, value).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdgesWithValues(String datasource, final String[] values){
         try{
-            return edges.streamByDatasourceAndPropertyValues(datasource, values).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndPropertyValues(datasource, values).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override
     public Stream<BaseEdge> findEdgesWithKeyValues(String datasource, String label, final Map<String,String> kvPairs){
         try{
-            return edges.streamByDatasourceAndLabelAndPropertyKeyValues(datasource, label, kvPairs).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndLabelAndPropertyKeyValues(datasource, label, kvPairs).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
 
@@ -815,14 +536,18 @@ public class ElasticGraphAPI implements BaseGraphAPI {
             , String key, String keyNot, String[] keys
             , String[] values, Map<String,String> kvPairs){
         try{
-            return edges.streamByHasContainers(datasource, label, labels, key, keyNot, keys, values, kvPairs).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByHasContainers(datasource, label, labels, key, keyNot, keys, values, kvPairs).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
 
     @Override
     public Stream<BaseEdge> findEdgesOfVertex(String datasource, String vid, Direction direction){
         try{
-            return edges.streamByDatasourceAndDirection(datasource, vid, direction).map(r->(BaseEdge)r);
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndDirection(datasource, vid, direction).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
 
@@ -848,49 +573,5 @@ public class ElasticGraphAPI implements BaseGraphAPI {
                     return true;
                 });
     }
-/*
-    ///////////////////////////////////////////////////////////////
-    // find edges for native
 
-    // E.hasId : ids
-    public List<ElasticEdge> findE_Ids(String[] ids) throws Exception {
-        return edges.findByIds(ids);
-    }
-    // E : datasource
-    public List<ElasticEdge> findE_Datasource(int size, String datasource) throws Exception {
-        return edges.findByDatasource(size, datasource);
-    }
-    // E.hasLabel : datasource + labels
-    public List<ElasticEdge> findE_DatasourceAndLabels(int size, String datasource, String[] labels) throws Exception {
-        return edges.findByDatasourceAndLabels(size, datasource, labels);
-    }
-    // E : datasource + property.keys
-    public List<ElasticEdge> findE_DatasourceAndPropertyKeys(int size, String datasource, String[] keys) throws Exception {
-        return edges.findByDatasourceAndPropertyKeys(size, datasource, keys);
-    }
-    // E : datasource + (NOT property.key)
-    public List<ElasticEdge> findE_DatasourceAndPropertyKeyNot(String datasource, String key) throws Exception {
-        return edges.findByDatasourceAndPropertyKeyNot(MAX_READ_SIZE, datasource, key);
-    }
-    // E : datasource + (property.key)
-    public List<ElasticEdge> findE_DatasourceAndPropertyKey(int size, String datasource, String key) throws Exception {
-        return edges.findByDatasourceAndPropertyKey(size, datasource, key);
-    }
-    // E : datasource + property.values
-    public List<ElasticEdge> findE_DatasourceAndPropertyValues(int size, String datasource, String[] values) throws Exception {
-        return edges.findByDatasourceAndPropertyValues(size, datasource, values);
-    }
-    // E : datasource + property.values (partial)
-    public List<ElasticEdge> findE_DatasourceAndPropertyValuePartial(String datasource, String value) throws Exception {
-        return edges.findByDatasourceAndPropertyValuePartial(MAX_READ_SIZE, datasource, value);
-    }
-    // E.has(key,value) : datasource + (property.key & .value)
-    public List<ElasticEdge> findE_DatasourceAndPropertyKeyValue(int size, String datasource, String key, String value) throws Exception {
-        return edges.findByDatasourceAndPropertyKeyValue(size, datasource, key, value);
-    }
-    // E.has(label,key,value) : datasource + label + (property.key & .value)
-    public List<ElasticEdge> findE_DatasourceAndLabelAndPropertyKeyValue(int size, String datasource, String label, String key, String value) throws Exception {
-        return edges.findByDatasourceAndLabelAndPropertyKeyValue(size, datasource, label, key, value);
-    }
-*/
 }
