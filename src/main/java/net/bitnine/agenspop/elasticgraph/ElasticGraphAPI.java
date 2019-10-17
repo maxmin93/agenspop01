@@ -12,6 +12,7 @@ import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
+import net.bitnine.agenspop.elasticgraph.model.ElasticElement;
 import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticEdgeService;
@@ -439,6 +440,34 @@ public class ElasticGraphAPI implements BaseGraphAPI {
         } catch(Exception e){ return Stream.empty(); }
     }
 
+    public Map<String,Map<String,List<String>>> findNeighborsOfVertex(String datasource, String vid){
+        try{
+            // 1) outgoers
+            Stream<ElasticEdge> outlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.IN);
+            Set<String> outIds = outlinks.map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc())
+                     .collect(Collectors.toSet());
+            String[] arrayOutIds = new String[outIds.size()];
+            Map<String,List<String>> outgoers = vertices.streamByIds(outIds.toArray(arrayOutIds))
+                    .collect(Collectors.groupingBy(ElasticVertex::getLabel,
+                            Collectors.mapping(ElasticVertex::getId, Collectors.toList()) ));
+            // 2) incommers
+            Stream<ElasticEdge> inlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.OUT);
+            Set<String> inIds = inlinks.map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc())
+                    .collect(Collectors.toSet());
+            String[] arrayInIds = new String[inIds.size()];
+            Map<String,List<String>> incomers = vertices.streamByIds(inIds.toArray(arrayInIds))
+                    .collect(Collectors.groupingBy(ElasticVertex::getLabel,
+                            Collectors.mapping(ElasticVertex::getId, Collectors.toList()) ));
+            // 3) make result to Map
+            Map<String,Map<String,List<String>>> neighbors = new HashMap<>();
+            neighbors.put("outgoers", outgoers);
+            neighbors.put("incomers", incomers);
+            return neighbors;
+        } catch(Exception e){
+            // System.out.println("  ==> ERROR : "+e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
 
     ///////////////////////////////////////////////////////////////
     //

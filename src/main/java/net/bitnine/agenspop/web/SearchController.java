@@ -125,6 +125,19 @@ curl -X GET "localhost:8080/elastic/sample/e"
 curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
 curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     */
+    @GetMapping(value="/{datasource}/v/neighbors", produces="application/json; charset=UTF-8")
+    public ResponseEntity<?> findV_Neighbors(
+            @PathVariable String datasource,
+            @RequestParam(value = "q") String vid
+    ) throws Exception {
+        return new ResponseEntity(base.findNeighborsOfVertex(datasource, vid)
+                , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
+    }
+
+    /*
+curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
+curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
+    */
     @GetMapping(value="/{datasource}/v/labels", produces="application/stream+json; charset=UTF-8")
     public ResponseEntity<Flux<String>> findV_Label(
             @PathVariable String datasource,
