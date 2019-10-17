@@ -236,4 +236,18 @@ public final class ElasticEdgeService extends ElasticElementService {
         ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, queryBuilder, client, mapper, ElasticEdge.class);
         return ElasticScrollIterator.flatMapStream(iter);
     }
+
+    // **참고 https://stackoverflow.com/a/49674368/6811653
+    // ((A and B) or (C and D))
+    // ==> bool.should( bool.must(A).must(B) ).should( bool.must(C).must(D) )
+    public Stream<ElasticEdge> streamByDatasourceWithVertices(String datasource, String[] vids) throws Exception{
+        // define : AND query with array value
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .must(QueryBuilders.termsQuery("src", vids))
+                .must(QueryBuilders.termsQuery("dst", vids));
+
+        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, queryBuilder, client, mapper, ElasticEdge.class);
+        return ElasticScrollIterator.flatMapStream(iter);
+    }
 }

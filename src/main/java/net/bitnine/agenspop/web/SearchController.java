@@ -122,8 +122,7 @@ curl -X GET "localhost:8080/elastic/sample/e"
     ///////////////////////////////////////////////////////////////
 
     /*
-curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
-curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
+curl -X GET "localhost:8080/api/search/modern/v/neighbors?q=modern_1"
     */
     @GetMapping(value="/{datasource}/v/neighbors", produces="application/json; charset=UTF-8")
     public ResponseEntity<?> findV_Neighbors(
@@ -133,6 +132,21 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
         return new ResponseEntity(base.findNeighborsOfVertex(datasource, vid)
                 , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
+
+/*
+curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,modern_4"
+ */
+    @GetMapping(value="/{datasource}/e/connected", produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findE_Connected(
+            @PathVariable String datasource,
+            @RequestParam(value = "q") List<String> vids
+    ) throws Exception {
+        String[] array = new String[vids.size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , vids.size() == 0 ? Stream.empty() :
+                        base.findEdgesOfVertices(datasource, vids.toArray(array)) );
+    }
+
 
     /*
 curl -X GET "localhost:8080/elastic/sample/v/label?q=person"

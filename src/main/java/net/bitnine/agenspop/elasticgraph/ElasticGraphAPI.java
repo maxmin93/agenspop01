@@ -603,4 +603,10 @@ public class ElasticGraphAPI implements BaseGraphAPI {
                 });
     }
 
+    public Stream<BaseEdge> findEdgesOfVertices(String datasource, final String[] vids){
+        try{
+            return edges.streamByDatasourceWithVertices(datasource, vids).map(r->(BaseEdge)r);
+        } catch(Exception e){ return Stream.empty(); }
+    }
+
 }
