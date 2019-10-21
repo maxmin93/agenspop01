@@ -443,7 +443,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     public Map<String,Map<String,List<String>>> findNeighborsOfVertex(String datasource, String vid){
         try{
             // 1) outgoers
-            Stream<ElasticEdge> outlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.IN);
+            Stream<ElasticEdge> outlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.OUT);
             Set<String> outIds = outlinks.map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc())
                      .collect(Collectors.toSet());
             String[] arrayOutIds = new String[outIds.size()];
@@ -451,7 +451,7 @@ public class ElasticGraphAPI implements BaseGraphAPI {
                     .collect(Collectors.groupingBy(ElasticVertex::getLabel,
                             Collectors.mapping(ElasticVertex::getId, Collectors.toList()) ));
             // 2) incommers
-            Stream<ElasticEdge> inlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.OUT);
+            Stream<ElasticEdge> inlinks = edges.streamByDatasourceAndDirection(datasource, vid, Direction.IN);
             Set<String> inIds = inlinks.map(r->r.getSrc().equals(vid) ? r.getDst() : r.getSrc())
                     .collect(Collectors.toSet());
             String[] arrayInIds = new String[inIds.size()];
