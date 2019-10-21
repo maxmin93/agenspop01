@@ -3,17 +3,13 @@ package net.bitnine.agenspop.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.bitnine.agenspop.basegraph.model.BaseEdge;
-import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.config.properties.ProductProperties;
 import net.bitnine.agenspop.elasticgraph.ElasticGraphAPI;
-import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
-import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.util.AgensJacksonModule;
 import net.bitnine.agenspop.util.AgensUtilHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -21,8 +17,6 @@ import reactor.core.publisher.Flux;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static net.bitnine.agenspop.util.AgensUtilHelper.wrapException;
 
 @Slf4j
 @RestController
@@ -137,7 +131,7 @@ curl -X GET "localhost:8080/api/search/modern/v/neighbors?q=modern_1"
 curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,modern_4"
  */
     @GetMapping(value="/{datasource}/e/connected", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Connected(
+    public ResponseEntity<Flux<String>> findE_Connected_Get(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> vids
     ) throws Exception {
@@ -145,6 +139,18 @@ curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,mo
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
                 , vids.size() == 0 ? Stream.empty() :
                         base.findEdgesOfVertices(datasource, vids.toArray(array)) );
+    }
+    @PostMapping(value="/{datasource}/e/connected"
+            , consumes="application/json; charset=UTF-8"
+            , produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findE_Connected_Post(
+            @PathVariable String datasource,
+            @RequestBody Map<String,List<String>> param
+    ) throws Exception {
+        String[] array = new String[param.get("q").size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , param.get("q").size() == 0 ? Stream.empty() :
+                        base.findEdgesOfVertices(datasource, param.get("q").toArray(array)) );
     }
 
 
@@ -162,6 +168,18 @@ curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
                 , ids.size() == 0 ? Stream.empty() :
                         base.findVerticesByIds(datasource, ids.toArray(array)) );
     }
+    @PostMapping(value="/{datasource}/v/ids"
+            , consumes="application/json; charset=UTF-8"
+            , produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findV_Ids_Post(
+            @PathVariable String datasource,
+            @RequestBody Map<String,List<String>> param
+    ) throws Exception {
+        String[] array = new String[param.get("q").size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , param.get("q").size() == 0 ? Stream.empty() :
+                        base.findVerticesByIds(datasource, param.get("q").toArray(array)) );
+    }
     @GetMapping(value="/{datasource}/e/ids", produces="application/stream+json; charset=UTF-8")
     public ResponseEntity<Flux<String>> findE_Ids(
             @PathVariable String datasource,
@@ -171,6 +189,18 @@ curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
                 , ids.size() == 0 ? Stream.empty() :
                         base.findEdgesByIds(datasource, ids.toArray(array)) );
+    }
+    @PostMapping(value="/{datasource}/e/ids"
+            , consumes="application/json; charset=UTF-8"
+            , produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findE_Ids_Post(
+            @PathVariable String datasource,
+            @RequestBody Map<String,List<String>> param
+    ) throws Exception {
+        String[] array = new String[param.get("q").size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , param.get("q").size() == 0 ? Stream.empty() :
+                        base.findEdgesByIds(datasource, param.get("q").toArray(array)) );
     }
 
 
