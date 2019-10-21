@@ -338,6 +338,12 @@ public class ElasticGraphAPI implements BaseGraphAPI {
             return vertices.streamByIds(ids).map(r->(BaseVertex)r);
         } catch(Exception e){ return Stream.empty(); }
     }
+
+    public Stream<BaseVertex> findVerticesByIds(String datasource, final String[] ids){
+        try{
+            return vertices.streamByDatasourceAndIds(datasource, ids).map(r->(BaseVertex)r);
+        } catch(Exception e){ return Stream.empty(); }
+    }
     @Override
     public Stream<BaseVertex> findVertices(String datasource, String label){
         try{
@@ -479,6 +485,14 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     public Stream<BaseEdge> findEdges(final String[] ids){
         try{
             return edges.streamByIds(ids).map(r->(BaseEdge)r);
+        } catch(Exception e){ return Stream.empty(); }
+    }
+
+    public Stream<BaseEdge> findEdgesByIds(String datasource, final String[] ids){
+        try{
+            Stream<BaseEdge> stream = edges.streamByDatasourceAndIds(datasource, ids).map(r->(BaseEdge)r);
+            return !config.isEdgeValidation() ? stream :
+                    ElasticHelper.filterValidEdges(vertices, datasource, stream);
         } catch(Exception e){ return Stream.empty(); }
     }
     @Override

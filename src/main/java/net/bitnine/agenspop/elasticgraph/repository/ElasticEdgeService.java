@@ -169,6 +169,9 @@ public final class ElasticEdgeService extends ElasticElementService {
     public Stream<ElasticEdge> streamByDatasource(String datasource) throws Exception {
         return super.streamByDatasource(INDEX, ElasticEdge.class, datasource);
     }
+    public Stream<ElasticEdge> streamByDatasourceAndIds(String datasource, String[] ids) throws Exception {
+        return super.streamByDatasourceAndIds(INDEX, ElasticEdge.class, datasource, ids);
+    }
 
     public Stream<ElasticEdge> streamByDatasourceAndLabel(String datasource, String label) throws Exception {
         return super.streamByDatasourceAndLabel(INDEX, ElasticEdge.class, datasource, label);

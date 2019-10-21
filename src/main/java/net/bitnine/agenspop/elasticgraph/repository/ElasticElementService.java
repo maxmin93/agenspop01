@@ -463,6 +463,19 @@ public class ElasticElementService {
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
+    // DS.hadId(id..)
+    protected <T extends ElasticElement> Stream<T> streamByDatasourceAndIds(
+            String index, Class<T> tClass, String datasource, String[] ids
+    ) throws Exception {
+        // match to datasource
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+                .filter(termQuery("datasource", datasource))
+                .must(QueryBuilders.idsQuery().addIds(ids));
+
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        return ElasticScrollIterator.flatMapStream(iter);
+    }
+
     // DS.V(), DS.E()
     protected <T extends ElasticElement> Stream<T> streamByDatasource(
             String index, Class<T> tClass, String datasource

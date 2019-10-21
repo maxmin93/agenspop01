@@ -149,6 +149,32 @@ curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,mo
 
 
     /*
+curl -X GET "localhost:8080/api/search/sample/v/ids?q=modern_1,modern_2"
+curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
+    */
+    @GetMapping(value="/{datasource}/v/ids", produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findV_Ids(
+            @PathVariable String datasource,
+            @RequestParam(value = "q") List<String> ids
+    ) throws Exception {
+        String[] array = new String[ids.size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , ids.size() == 0 ? Stream.empty() :
+                        base.findVerticesByIds(datasource, ids.toArray(array)) );
+    }
+    @GetMapping(value="/{datasource}/e/ids", produces="application/stream+json; charset=UTF-8")
+    public ResponseEntity<Flux<String>> findE_Ids(
+            @PathVariable String datasource,
+            @RequestParam(value = "q") List<String> ids
+    ) throws Exception {
+        String[] array = new String[ids.size()];
+        return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
+                , ids.size() == 0 ? Stream.empty() :
+                        base.findEdgesByIds(datasource, ids.toArray(array)) );
+    }
+
+
+    /*
 curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
 curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     */

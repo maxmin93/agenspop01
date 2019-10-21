@@ -149,6 +149,10 @@ public class ElasticVertexService extends ElasticElementService {
         return super.streamByDatasource(INDEX, ElasticVertex.class
                 , datasource);
     }
+    public Stream<ElasticVertex> streamByDatasourceAndIds(String datasource, String[] ids) throws Exception {
+        return super.streamByDatasourceAndIds(INDEX, ElasticVertex.class
+                , datasource, ids);
+    }
 
     public Stream<ElasticVertex> streamByDatasourceAndLabel(String datasource, String label) throws Exception {
         return super.streamByDatasourceAndLabel(INDEX, ElasticVertex.class
