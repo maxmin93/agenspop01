@@ -26,10 +26,10 @@ public final class AgensUtilHelper {
         // https://stackoverflow.com/a/50988970/6811653
         // StringJoiner sj = new StringJoiner(",");
         Stream<String> vstream = stream.map(r ->
-                wrapException(() -> mapper.writeValueAsString(r) + ",")
+                wrapException(() -> mapper.writeValueAsString(r) +"\n," )
         );
-        return new ResponseEntity(
-                Flux.fromStream(Stream.concat(Stream.concat(Stream.of("["), vstream), Stream.of("]")))
+        return new ResponseEntity(      // Flux.fromStream(vstream)
+                Flux.fromStream(Stream.concat(Stream.concat(Stream.of("[\n"), vstream), Stream.of("]")))
                 , headers, HttpStatus.OK);
     }
 
