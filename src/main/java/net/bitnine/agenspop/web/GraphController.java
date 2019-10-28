@@ -100,7 +100,7 @@ public class GraphController {
                 , stream );
     }
 
-    // http://localhost:8080/api/graph/cypher?ds=modern&q=match%20(a:person)%20return%20a%20limit%202
+    // http://localhost:8080/api/graph/cypher?ds=modern&q=match%20(a:person%20%7Bcountry:%20%27USA%27%7D)%20return%20a,%20id(a)%20limit%2010
     @GetMapping(value="/cypher", produces="application/stream+json; charset=UTF-8")
     public ResponseEntity<Flux<String>> runCypher(
             @RequestParam("q") String script

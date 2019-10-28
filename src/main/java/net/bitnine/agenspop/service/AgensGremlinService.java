@@ -107,6 +107,7 @@ expected> type = LinkedHashMap()
             //
             // translate cypher query to gremlin
             String script = cfog.toGremlinGroovy(cypher);
+
 /*
             // **NOTE: 기본 translator 와 별 다를게 없다
             String cypher = "MATCH (p:Person) WHERE p.age > 25 RETURN p.name";
