@@ -26,7 +26,10 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 public class ElasticScrollIterator<T extends ElasticElement> implements Iterator<List<T>> {
 
-    public static int REQUEST_MAX_SIZE = 2500;      // MAX=10000
+    private final long SCROLL_LIMIT;    // if -1, then unlimit scroll
+    private long current_size = 0L;
+
+    public static int SCROLL_SIZE = 2500;      // MAX=10000
     public static Scroll SCROLL_TIME = new Scroll(TimeValue.timeValueMinutes(1L));
 
     private final RestHighLevelClient client;
@@ -38,18 +41,20 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
     private String scrollId;
     private SearchHit[] searchHits;
 
-    public ElasticScrollIterator(String index, QueryBuilder queryBuilder
+    public ElasticScrollIterator(String index, long limit, QueryBuilder queryBuilder
                 , RestHighLevelClient client, ObjectMapper mapper, Class<T> tClass) {
         this.client = client;
+        this.SCROLL_LIMIT = limit;
         this.index = index;
         this.tClass = tClass;
         this.mapper = mapper;
         startScroll(queryBuilder, true);
     }
 
-    public ElasticScrollIterator(String index, String datasource
+    public ElasticScrollIterator(String index, long limit, String datasource
             , RestHighLevelClient client, ObjectMapper mapper, Class<T> tClass){
         this.client = client;
+        this.SCROLL_LIMIT = limit;
         this.index = index;
         this.tClass = tClass;
         this.mapper = mapper;
@@ -58,8 +63,11 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
 
     @Override
     public boolean hasNext() {
-        if( searchHits != null && searchHits.length > 0 ) return true;
-        endScroll();    // clear scroll
+        if( searchHits != null && searchHits.length > 0
+            && (SCROLL_LIMIT < 0 || SCROLL_LIMIT >= current_size + SCROLL_SIZE)
+        ) return true;
+
+        endScroll();    // stop and clear scroll
         return false;
     }
 
@@ -69,6 +77,7 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
         for (SearchHit hit : searchHits) {
             documents.add(mapper.convertValue(hit.getSourceAsMap(), tClass));
         }
+        current_size += documents.size();
         doScroll();     // next scroll
         return documents;
     }
@@ -99,8 +108,8 @@ public class ElasticScrollIterator<T extends ElasticElement> implements Iterator
             SearchRequest searchRequest = new SearchRequest(index);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
             searchSourceBuilder.query(queryBuilder);        // All
-            searchSourceBuilder.size(REQUEST_MAX_SIZE);     // LIMIT
-            searchSourceBuilder.fetchSource(withSource);   // fetch source
+            searchSourceBuilder.size(SCROLL_SIZE);          // 1-page size
+            searchSourceBuilder.fetchSource(withSource);    // fetch source
             searchRequest.source(searchSourceBuilder);
             searchRequest.scroll(SCROLL_TIME);
 

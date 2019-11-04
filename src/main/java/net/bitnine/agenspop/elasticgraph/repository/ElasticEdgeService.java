@@ -19,15 +19,18 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 @Slf4j
 public final class ElasticEdgeService extends ElasticElementService {
 
+    private final long SCROLL_LIMIT;
     private final String INDEX;
 
     public ElasticEdgeService(
             RestHighLevelClient client,     // elasticsearch config
             ObjectMapper mapper,            // spring boot web starter
-            String index
+            String index,
+            long limit
     ) {
-        super(client, mapper);
+        super(client, limit, mapper);
         this.INDEX = index;
+        this.SCROLL_LIMIT = limit;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -236,7 +239,8 @@ public final class ElasticEdgeService extends ElasticElementService {
             queryBuilder = queryBuilder.should(termQuery("src", vid));
         }
 
-        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, queryBuilder, client, mapper, ElasticEdge.class);
+        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, SCROLL_LIMIT
+                , queryBuilder, client, mapper, ElasticEdge.class);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -250,7 +254,8 @@ public final class ElasticEdgeService extends ElasticElementService {
                 .must(QueryBuilders.termsQuery("src", vids))
                 .must(QueryBuilders.termsQuery("dst", vids));
 
-        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, queryBuilder, client, mapper, ElasticEdge.class);
+        ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, SCROLL_LIMIT
+                , queryBuilder, client, mapper, ElasticEdge.class);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 }

@@ -12,14 +12,13 @@ import net.bitnine.agenspop.basegraph.model.BaseProperty;
 import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.config.properties.ElasticProperties;
 import net.bitnine.agenspop.elasticgraph.model.ElasticEdge;
-import net.bitnine.agenspop.elasticgraph.model.ElasticElement;
 import net.bitnine.agenspop.elasticgraph.model.ElasticProperty;
 import net.bitnine.agenspop.elasticgraph.model.ElasticVertex;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticEdgeService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticGraphService;
 import net.bitnine.agenspop.elasticgraph.repository.ElasticVertexService;
 import net.bitnine.agenspop.elasticgraph.util.ElasticHelper;
-import net.bitnine.agenspop.graph.structure.AgensHelper;
+import net.bitnine.agenspop.elasticgraph.util.ElasticSample;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +34,7 @@ import java.util.stream.Stream;
 public class ElasticGraphAPI implements BaseGraphAPI {
 
     private final static String ID_DELIMITER = "_";
-    private final static int MAX_READ_SIZE = 10000;
+    private final long SCROLL_LIMIT;
 
     private final RestHighLevelClient client;
     private final ObjectMapper mapper;
@@ -51,14 +50,18 @@ public class ElasticGraphAPI implements BaseGraphAPI {
             RestHighLevelClient client,     // elasticsearch config
             ObjectMapper mapper             // spring boot web starter
     ) {
+        this.SCROLL_LIMIT = elasticProperties.getScrollLimit();
         this.client = client;
         this.mapper = mapper;
 
         this.config = elasticProperties;
-        this.vertices = new ElasticVertexService(client, mapper, elasticProperties.getVertexIndex());
-        this.edges = new ElasticEdgeService(client, mapper, elasticProperties.getEdgeIndex());
+        this.vertices = new ElasticVertexService(client, mapper
+                , elasticProperties.getVertexIndex(), SCROLL_LIMIT);
+        this.edges = new ElasticEdgeService(client, mapper
+                , elasticProperties.getEdgeIndex(), SCROLL_LIMIT);
         this.graph = new ElasticGraphService(client, mapper
-                , elasticProperties.getVertexIndex(), elasticProperties.getEdgeIndex());
+                , elasticProperties.getVertexIndex(), elasticProperties.getEdgeIndex()
+                , elasticProperties.getIndexShards(), elasticProperties.getIndexReplicas());
     }
 
     @Override
@@ -76,10 +79,24 @@ public class ElasticGraphAPI implements BaseGraphAPI {
     @PostConstruct
     private void ready() throws Exception {
         graph.ready();      // if not exists index, create index
+
+        // check sample graph-data
+        String datasource = "modern";
+        if( vertices.count(datasource) != 6 ){
+            for( ElasticVertex v : ElasticSample.modernVertices()) saveVertex(v);
+        }
+        if( edges.count(datasource) != 6 ){
+            for( ElasticEdge e : ElasticSample.modernEdges()) saveEdge(e);
+        }
     }
 
     public boolean reset() throws Exception {
-        return graph.resetIndex();
+        boolean state = graph.resetIndex();
+        // insert sample data
+        for( ElasticVertex v : ElasticSample.modernVertices()) saveVertex(v);
+        for( ElasticEdge e : ElasticSample.modernEdges()) saveEdge(e);
+
+        return state;
     }
 
     public String remove(String datasource) throws Exception {

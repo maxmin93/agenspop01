@@ -18,7 +18,10 @@ public class ElasticProperties {
 
     private String username;
     private String password;
-    private int pageSize;       // = 2500;
+    private long scrollLimit;      // = 10000;  if -1, then unlimit scroll
+
+    private int indexShards;       // when create index, apply to setting
+    private int indexReplicas;     // no effect in case of select, upsert, delete
 
     @NotBlank
     private String vertexIndex;

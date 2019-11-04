@@ -85,6 +85,7 @@ public class ManagerController {
         }
 
         AgensGraph g = manager.resetSampleGraph();
+
         // AgensFactory.traversalTestModern(g);
         String message = "{\"reset\" : \""+g.toString()+"\"}";
         return new ResponseEntity<String>(message

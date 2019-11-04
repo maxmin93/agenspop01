@@ -118,7 +118,7 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
         System.out.println("  - V(id).bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
 
         Vertex v1 = t.V("modern_1").next();
-        vertexList = t.V(v1).out().next(100);
+        vertexList = t.V(v1.id()).out().next(100);  // BUT, on groovy ==> g.V(v1).out()
         System.out.println("  - V(id).out ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
         List<Object> valueList = t.V().values("name").next(100);

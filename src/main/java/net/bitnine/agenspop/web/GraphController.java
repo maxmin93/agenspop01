@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -30,24 +29,22 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/graph")
 public class GraphController {
+    private static final ObjectMapper mapper = new ObjectMapper();
 
 //    private static ObjectMapper mapperV1 = GraphSONMapper.build().
 //            addRegistry(AgensIoRegistryV1.instance()).
 //            addCustomModule(new AbstractGraphSONMessageSerializerV1d0.GremlinServerModule()).
 //            version(GraphSONVersion.V1_0).create().createMapper();
 
-    private final ObjectMapper mapper;
     private final AgensGremlinService gremlin;
     private final ProductProperties productProperties;
 
     @Autowired
     public GraphController(
-            ObjectMapper objectMapper,
             AgensGremlinService gremlin,
             ProductProperties productProperties
     ){
         this.gremlin = gremlin;
-        this.mapper = objectMapper;
         this.mapper.registerModule(new AgensJacksonModule());
         this.productProperties = productProperties;
     }
@@ -74,7 +71,7 @@ public class GraphController {
 
     // http://localhost:8080/api/graph/gremlin?q=modern_g.V()
     @GetMapping(value="/gremlin", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> runGremlin(
+    public ResponseEntity<?> runGremlin(
             @RequestParam("q") String script
     ) throws Exception {
         if( script == null || script.length() == 0 )
@@ -102,7 +99,7 @@ public class GraphController {
 
     // http://localhost:8080/api/graph/cypher?ds=modern&q=match%20(a:person%20%7Bcountry:%20%27USA%27%7D)%20return%20a,%20id(a)%20limit%2010
     @GetMapping(value="/cypher", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> runCypher(
+    public ResponseEntity<?> runCypher(
             @RequestParam("q") String script
             , @RequestParam(value="ds", required=false, defaultValue ="modern") String datasource
     ) throws Exception {

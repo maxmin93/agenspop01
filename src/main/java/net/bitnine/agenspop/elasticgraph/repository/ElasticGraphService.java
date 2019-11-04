@@ -38,18 +38,24 @@ public class ElasticGraphService {
     public final String INDEX_VERTEX;
     public final String INDEX_EDGE;
 
+    private final int numOfShards;
+    private final int numOfReplicas;
+
     private RestHighLevelClient client;
     private ObjectMapper objectMapper;
 
     public ElasticGraphService(
             RestHighLevelClient client,     // elasticsearch config
             ObjectMapper objectMapper,      // spring boot web starter
-            String vertexIndex, String edgeIndex
+            String vertexIndex, String edgeIndex,
+            int numOfShards, int numOfReplicas
     ) {
         this.client = client;
         this.objectMapper = objectMapper;
         this.INDEX_VERTEX = vertexIndex;
         this.INDEX_EDGE = edgeIndex;
+        this.numOfShards = numOfShards;
+        this.numOfReplicas = numOfReplicas;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -73,8 +79,8 @@ public class ElasticGraphService {
 
         // settings
         request.settings(Settings.builder()
-                .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_shards", numOfShards)
+                .put("index.number_of_replicas", numOfReplicas)
         );
         // mappings
         request.mapping(readMappings(index), XContentType.JSON);
@@ -103,9 +109,13 @@ public class ElasticGraphService {
     }
 
     public void ready() throws Exception {
+        boolean state = false;
         // if not exists index, create index
-        if( !checkExistsIndex(INDEX_VERTEX) ) createIndex(INDEX_VERTEX);
-        if( !checkExistsIndex(INDEX_EDGE) ) createIndex(INDEX_EDGE);
+        if( !checkExistsIndex(INDEX_VERTEX) ) state |= createIndex(INDEX_VERTEX);
+        if( !checkExistsIndex(INDEX_EDGE) ) state |= createIndex(INDEX_EDGE);
+
+        if( state )
+            System.out.println("index not found : create index ["+INDEX_VERTEX+","+INDEX_EDGE+"]");
     }
 
     //////////////////////////////////////////////

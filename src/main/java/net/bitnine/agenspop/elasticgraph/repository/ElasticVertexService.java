@@ -16,14 +16,17 @@ import java.util.stream.Stream;
 public class ElasticVertexService extends ElasticElementService {
 
     private final String INDEX;
+    private final long SCROLL_LIMIT;
 
     public ElasticVertexService(
             RestHighLevelClient client,     // elasticsearch config
             ObjectMapper mapper,            // spring boot web starter
-            String index
+            String index,
+            long limit
     ) {
-        super(client, mapper);
+        super(client, limit, mapper);
         this.INDEX = index;
+        this.SCROLL_LIMIT = limit;
     }
 
     ///////////////////////////////////////////////////////////////

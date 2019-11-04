@@ -42,14 +42,18 @@ import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 public class ElasticElementService {
 
+    private final long SCROLL_LIMIT;
+
     protected final RestHighLevelClient client;
     protected final ObjectMapper mapper;
 
     protected ElasticElementService(
             RestHighLevelClient client,     // elasticsearch config
+            long limit,                     // request scroll limit(-1, more than 2500)
             ObjectMapper mapper             // spring boot web starter
     ) {
         this.client = client;
+        this.SCROLL_LIMIT = limit;
         this.mapper = mapper;
     }
 
@@ -446,7 +450,8 @@ public class ElasticElementService {
     ){
         List<String> ids = new ArrayList<>();
         try {
-            ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, datasource, client, mapper, tClass);
+            ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                    , datasource, client, mapper, tClass);
             while (iter.hasNext()) ids.addAll(iter.nextIds());
         } catch(Exception e){ }
         return ids;
@@ -459,7 +464,8 @@ public class ElasticElementService {
         // match to datasource
         IdsQueryBuilder queryBuilder = QueryBuilders.idsQuery().addIds(ids);
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -472,7 +478,8 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .must(QueryBuilders.idsQuery().addIds(ids));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -484,7 +491,8 @@ public class ElasticElementService {
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
                 .filter(termQuery("datasource", datasource));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -497,7 +505,8 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .filter(termQuery("label", label));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -510,7 +519,8 @@ public class ElasticElementService {
                 .filter(termQuery("datasource", datasource))
                 .filter(termsQuery("label", labels));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -529,7 +539,8 @@ public class ElasticElementService {
                     , ScoreMode.Max));
         }
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -545,7 +556,8 @@ public class ElasticElementService {
                                 termQuery("properties.key", key))
                         , ScoreMode.Avg));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -561,7 +573,8 @@ public class ElasticElementService {
                                 termQuery("properties.key", key))
                         , ScoreMode.Avg));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -580,7 +593,8 @@ public class ElasticElementService {
                     , ScoreMode.Total));
         }
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // compare two valuesList each other by full match with lowercase
@@ -604,7 +618,8 @@ public class ElasticElementService {
                                 QueryBuilders.queryStringQuery("properties.value:\"" + value.toLowerCase() + "\""))
                         , ScoreMode.Total));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // compare value with valuesList by full match with lowercase
@@ -628,7 +643,8 @@ public class ElasticElementService {
                                 QueryBuilders.queryStringQuery("properties.value:*"+value.toLowerCase()+"*"))
                         , ScoreMode.Avg));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         return ElasticScrollIterator.flatMapStream(iter);
     }
 
@@ -645,7 +661,8 @@ public class ElasticElementService {
                                 .must(QueryBuilders.queryStringQuery("properties.value:\""+value.toLowerCase()+"\""))
                         , ScoreMode.Total));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // compare value with valuesList by full match with lowercase
@@ -675,7 +692,8 @@ public class ElasticElementService {
                     , ScoreMode.Total));
         }
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // compare two valuesList each other by full match with lowercase
@@ -700,7 +718,8 @@ public class ElasticElementService {
                                 .must(QueryBuilders.queryStringQuery("properties.value:\""+value.toLowerCase()+"\""))
                         , ScoreMode.Total));
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, queryBuilder, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , queryBuilder, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // compare value with valuesList by full match with lowercase
@@ -734,7 +753,8 @@ public class ElasticElementService {
             }
         }
 
-        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, qb, client, mapper, tClass);
+        ElasticScrollIterator<T> iter = new ElasticScrollIterator(index, SCROLL_LIMIT
+                , qb, client, mapper, tClass);
         Stream<T> stream = ElasticScrollIterator.flatMapStream(iter);
 
         // post filters

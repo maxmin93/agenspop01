@@ -5,9 +5,9 @@ import net.bitnine.agenspop.config.properties.ProductProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Flux;
+// import reactor.core.publisher.Flux;
 
-import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class AgensUtilHelper {
@@ -18,7 +18,7 @@ public final class AgensUtilHelper {
         headers.add("agens.product.version", productProperties.getVersion());
         return headers;
     }
-
+/*
     public static <T> ResponseEntity<Flux<String>> responseStream(
             ObjectMapper mapper, HttpHeaders headers, Stream<T> stream
     ) {
@@ -26,10 +26,22 @@ public final class AgensUtilHelper {
         // https://stackoverflow.com/a/50988970/6811653
         // StringJoiner sj = new StringJoiner(",");
         Stream<String> vstream = stream.map(r ->
-                wrapException(() -> mapper.writeValueAsString(r) +"\n," )
+                wrapException(() -> mapper.writeValueAsString(r) +"\n" )
         );
-        return new ResponseEntity(      // Flux.fromStream(vstream)
-                Flux.fromStream(Stream.concat(Stream.concat(Stream.of("[\n"), vstream), Stream.of("]")))
+        return new ResponseEntity( Flux.fromStream(vstream), headers, HttpStatus.OK);
+    }
+*/
+
+    public static <T> ResponseEntity<String> responseStream(
+            ObjectMapper mapper, HttpHeaders headers, Stream<T> stream
+    ) {
+        // **NOTE: cannot use StringJoiner beacause it's Streaming and Map function
+        // https://stackoverflow.com/a/50988970/6811653
+        // StringJoiner sj = new StringJoiner(",");
+        Stream<String> vstream = stream.map(r ->
+                wrapException(() -> mapper.writeValueAsString(r))
+        );
+        return new ResponseEntity( vstream.collect(Collectors.joining(",", "[", "]"))
                 , headers, HttpStatus.OK);
     }
 

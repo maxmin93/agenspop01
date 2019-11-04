@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,8 +21,9 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping(value = "${agens.api.base-path}/search")
 public class SearchController {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private final ElasticGraphAPI base;
-    private final ObjectMapper mapper;
     private final ProductProperties productProperties;
 
     @Autowired
@@ -31,7 +31,6 @@ public class SearchController {
             ElasticGraphAPI base, ObjectMapper objectMapper, ProductProperties productProperties
     ){
         this.base = base;
-        this.mapper = objectMapper;
         this.mapper.registerModule(new AgensJacksonModule());
         this.productProperties = productProperties;
     }
@@ -103,12 +102,12 @@ curl -X GET "localhost:8080/elastic/sample/e"
 */
     // stream of JSON lines
     @GetMapping(value="/{datasource}/v", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_All(@PathVariable String datasource) throws Exception {
+    public ResponseEntity<?> findV_All(@PathVariable String datasource) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
                 , base.vertices(datasource) );
     }
     @GetMapping(value="/{datasource}/e", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_All(@PathVariable String datasource) throws Exception {
+    public ResponseEntity<?> findE_All(@PathVariable String datasource) throws Exception {
         return AgensUtilHelper.responseStream(mapper, AgensUtilHelper.productHeaders(productProperties)
                 , base.edges(datasource) );
     }
@@ -131,7 +130,7 @@ curl -X GET "localhost:8080/api/search/modern/v/neighbors?q=modern_1"
 curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,modern_4"
  */
     @GetMapping(value="/{datasource}/e/connected", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Connected_Get(
+    public ResponseEntity<?> findE_Connected_Get(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> vids
     ) throws Exception {
@@ -143,7 +142,7 @@ curl -X GET "localhost:8080/api/search/modern/e/connected?q=modern_2,modern_3,mo
     @PostMapping(value="/{datasource}/e/connected"
             , consumes="application/json; charset=UTF-8"
             , produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Connected_Post(
+    public ResponseEntity<?> findE_Connected_Post(
             @PathVariable String datasource,
             @RequestBody Map<String,List<String>> param
     ) throws Exception {
@@ -159,7 +158,7 @@ curl -X GET "localhost:8080/api/search/sample/v/ids?q=modern_1,modern_2"
 curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
     */
     @GetMapping(value="/{datasource}/v/ids", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_Ids(
+    public ResponseEntity<?> findV_Ids(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> ids
     ) throws Exception {
@@ -171,7 +170,7 @@ curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
     @PostMapping(value="/{datasource}/v/ids"
             , consumes="application/json; charset=UTF-8"
             , produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_Ids_Post(
+    public ResponseEntity<?> findV_Ids_Post(
             @PathVariable String datasource,
             @RequestBody Map<String,List<String>> param
     ) throws Exception {
@@ -181,7 +180,7 @@ curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
                         base.findVerticesByIds(datasource, param.get("q").toArray(array)) );
     }
     @GetMapping(value="/{datasource}/e/ids", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Ids(
+    public ResponseEntity<?> findE_Ids(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> ids
     ) throws Exception {
@@ -193,7 +192,7 @@ curl -X GET "localhost:8080/api/search/sample/e/ids?q=modern_7,modern_8"
     @PostMapping(value="/{datasource}/e/ids"
             , consumes="application/json; charset=UTF-8"
             , produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Ids_Post(
+    public ResponseEntity<?> findE_Ids_Post(
             @PathVariable String datasource,
             @RequestBody Map<String,List<String>> param
     ) throws Exception {
@@ -209,7 +208,7 @@ curl -X GET "localhost:8080/elastic/sample/v/label?q=person"
 curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     */
     @GetMapping(value="/{datasource}/v/labels", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_Label(
+    public ResponseEntity<?> findV_Label(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
@@ -219,7 +218,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                         base.findVertices(datasource, labels.toArray(array)) );
     }
     @GetMapping(value="/{datasource}/e/labels", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_Label(
+    public ResponseEntity<?> findE_Label(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> labels
     ) throws Exception {
@@ -231,7 +230,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
 
     @GetMapping(value="/{datasource}/v/keys", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_PropertyKey(
+    public ResponseEntity<?> findV_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> keys
     ) throws Exception {
@@ -241,7 +240,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                         base.findVerticesWithKeys(datasource, keys.toArray(array)) );
     }
     @GetMapping(value="/{datasource}/e/keys", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_PropertyKey(
+    public ResponseEntity<?> findE_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> keys
     ) throws Exception {
@@ -253,7 +252,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
 
     @GetMapping(value="/{datasource}/v/key", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_PropertyKey(
+    public ResponseEntity<?> findV_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") String key,
             @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
@@ -263,7 +262,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                         base.findVertices(datasource, key, hasNot) );
     }
     @GetMapping(value="/{datasource}/e/key", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_PropertyKey(
+    public ResponseEntity<?> findE_PropertyKey(
             @PathVariable String datasource,
             @RequestParam(value = "q") String key,
             @RequestParam(value = "hasNot", required=false, defaultValue="false") boolean hasNot
@@ -275,7 +274,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
 
     @GetMapping(value="/{datasource}/v/values", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_PropertyValues(
+    public ResponseEntity<?> findV_PropertyValues(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> values
     ) throws Exception {
@@ -285,7 +284,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                         base.findVerticesWithValues(datasource, values.toArray(array)) );
     }
     @GetMapping(value="/{datasource}/e/values", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_PropertyValues(
+    public ResponseEntity<?> findE_PropertyValues(
             @PathVariable String datasource,
             @RequestParam(value = "q") List<String> values
     ) throws Exception {
@@ -298,7 +297,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
     // http://localhost:8080/api/search/modern/v/value?q=ja
     @GetMapping(value = "/{datasource}/v/value", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_PropertyValuePartial(
+    public ResponseEntity<?> findV_PropertyValuePartial(
             @PathVariable String datasource,
             @RequestParam(value = "q") String value
     ) throws Exception {
@@ -308,7 +307,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     }
     // http://localhost:8080/api/search/modern/e/value?q=0.
     @GetMapping(value = "/{datasource}/e/value", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_PropertyValuePartial(
+    public ResponseEntity<?> findE_PropertyValuePartial(
             @PathVariable String datasource,
             @RequestParam(value = "q") String value
     ) throws Exception {
@@ -321,7 +320,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
     // http://localhost:8080/api/search/modern/v/keyvalue?key=name&value=java
     @GetMapping(value="/{datasource}/v/keyvalue", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_PropertyKeyValue(
+    public ResponseEntity<?> findV_PropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
@@ -332,7 +331,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     }
     // http://localhost:8080/api/search/modern/e/keyvalue?key=weight&value=0.5
     @GetMapping(value="/{datasource}/e/keyvalue", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_PropertyKeyValue(
+    public ResponseEntity<?> findE_PropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "key") String key,
             @RequestParam(value = "value") String value
@@ -344,7 +343,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
 
 
     @GetMapping(value="/{datasource}/v/labelkeyvalue", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_LabelAndPropertyKeyValue(
+    public ResponseEntity<?> findV_LabelAndPropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "label") String label,
             @RequestParam(value = "key") String key,
@@ -355,7 +354,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                         base.findVertices(datasource, label, key, value) );
     }
     @GetMapping(value="/{datasource}/e/labelkeyvalue", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_LabelAndPropertyKeyValue(
+    public ResponseEntity<?> findE_LabelAndPropertyKeyValue(
             @PathVariable String datasource,
             @RequestParam(value = "label") String label,
             @RequestParam(value = "key") String key,
@@ -370,7 +369,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
     // http://localhost:8080/api/search/modern/v/hasContainers?label=person&keyNot=gender&key=country&values=USA
     // http://localhost:8080/api/search/modern/v/hasContainers?label=person&kvPairs=country@USA,name@marko
     @GetMapping(value="/{datasource}/v/hasContainers", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findV_hasContainers(
+    public ResponseEntity<?> findV_hasContainers(
             @PathVariable String datasource,
             @RequestParam(value = "label", required = false) String label,
             @RequestParam(value = "labels", required = false) List<String> labelParams,
@@ -407,7 +406,7 @@ curl -X GET "localhost:8080/elastic/sample/e/label?q=person"
                 , base.findVertices(datasource, label, labels, key, keyNot, keys, values, kvPairs) );
     }
     @GetMapping(value = "/{datasource}/e/hasContainers", produces="application/stream+json; charset=UTF-8")
-    public ResponseEntity<Flux<String>> findE_hasContainers(
+    public ResponseEntity<?> findE_hasContainers(
             @PathVariable String datasource,
             @RequestParam(value = "label", required = false) String label,
             @RequestParam(value = "labels", required = false) List<String> labelParams,

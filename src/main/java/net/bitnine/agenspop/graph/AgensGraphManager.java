@@ -68,16 +68,13 @@ public class AgensGraphManager implements GraphManager {
 
     public AgensGraph resetSampleGraph(){
         String gName = "modern";
-        // if not exists, insert sample of modern graph
-        // if( graphStates.size() == 0 || !graphStates.keySet().contains(gName) ){
-        AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
-        AgensFactory.generateModern(g);
+        AgensGraph g = AgensFactory.createModern(baseAPI);
         putGraph(gName, g);
         updateTraversalSource(gName, g);
-        // }
+
         try {
             System.out.println("reloading sample graph.. ["+gName+"]");
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -298,10 +295,6 @@ public class AgensGraphManager implements GraphManager {
                 AgensGraph g = (AgensGraph) openGraph(gName);
                 AgensFactory.traversalTestModern(g);
                 System.out.println("\n-------------------------------------------\n");
-            }
-            else{
-                resetSampleGraph();
-                updateCounter.decrementAndGet();    // again
             }
         }
     }

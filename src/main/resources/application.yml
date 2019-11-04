@@ -23,14 +23,20 @@ agens:
     base-path: /api
     query-timeout: 600000       # 1000 ms = 1 sec
   elasticsearch:
-    host: 27.117.163.21
-    port: 15619
+    host: 127.0.0.1
+    port: 9200
+    # host: 27.117.163.21
+    # port: 15619
+#    host: 192.168.0.54
+#    port: 8087
     username:
     password:
-    page-size: 2500
+    scroll-limit: 10000         # -1(unlimit), more than 2500
     vertex-index: elasticvertex
     edge-index: elasticedge
     edge-validation: false      # if true, check valid edge on each request (make slow)
+    index-shards: 1             # when create index, apply to setting
+    index-replicas: 0           # when create index, apply to setting
   spark:
     app-name: es-bitnine
     spark-home: ~/Servers/spark

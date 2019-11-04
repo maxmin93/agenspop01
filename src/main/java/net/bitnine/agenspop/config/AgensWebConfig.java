@@ -2,13 +2,11 @@ package net.bitnine.agenspop.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.config.CorsRegistry;
-import org.springframework.web.reactive.config.EnableWebFlux;
-import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableWebFlux
-public class AgensWebConfig implements WebFluxConfigurer {
+public class AgensWebConfig implements WebMvcConfigurer {
 
     @Value("${agens.api.base-path}")
     private String basePath;
