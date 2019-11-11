@@ -35,11 +35,12 @@ public class SearchController {
         this.productProperties = productProperties;
     }
 
-    @GetMapping(value="/test", produces="application/json; charset=UTF-8")
-    public String test(){
-        return "{ \"test\": \"Success\" }";
+    @GetMapping(value="/hello", produces="application/json; charset=UTF-8")
+    @ResponseStatus(HttpStatus.OK)
+    public String hello() throws Exception {
+        return "{ \"msg\": \"Hello, search!\"}";
     }
-
+    
     ///////////////////////////////////////////////////////////////
 
     @GetMapping(value="/count", produces="application/json; charset=UTF-8")

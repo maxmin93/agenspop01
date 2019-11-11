@@ -43,7 +43,7 @@ public class SparkController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> hello() throws Exception {
         // sparkService.wordcount();
-        return new ResponseEntity<>("hello Spark~"
+        return new ResponseEntity<>("Hello, spark!"
                 , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }
 }

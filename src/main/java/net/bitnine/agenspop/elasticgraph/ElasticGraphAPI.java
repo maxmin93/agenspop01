@@ -82,10 +82,10 @@ public class ElasticGraphAPI implements BaseGraphAPI {
 
         // check sample graph-data
         String datasource = "modern";
-        if( vertices.count(datasource) != 6 ){
+        if( vertices.count(datasource) < 6 ){
             for( ElasticVertex v : ElasticSample.modernVertices()) saveVertex(v);
         }
-        if( edges.count(datasource) != 6 ){
+        if( edges.count(datasource) < 6 ){
             for( ElasticEdge e : ElasticSample.modernEdges()) saveEdge(e);
         }
     }
