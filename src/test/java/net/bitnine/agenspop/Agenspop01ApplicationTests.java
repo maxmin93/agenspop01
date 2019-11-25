@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -173,6 +174,47 @@ public class Agenspop01ApplicationTests {
 		script = "modern_g.V().has(\"name\",\"marko\").out().out()";
 		result = runGremlin(script).count();
 		assertEquals( script+" => "+result, 2, result);
+
+		// 2 = modern_g.V().groupCount().by(T.label)
+		script = "modern_g.V().groupCount().by(T.label)";
+		Map<String,Long> grp1 = (Map<String,Long>)runGremlin(script).collect(Collectors.toList()).get(0);
+		assertEquals( script+" => "+grp1.size(), 2, grp1.size());
+
+		// 3 = modern_g.V().hasLabel("person").properties().key().groupCount()
+		script = "modern_g.V().hasLabel(\"person\").properties().key().groupCount()";
+		Map<String,Long> grp2 = (Map<String,Long>)runGremlin(script).collect(Collectors.toList()).get(0);
+		assertEquals( script+" => "+grp2.size(), 3, grp2.size());
+
+		// 2 = modern_g.E().project("self","inL","outL").by(__.label()).by(__.inV().label()).by(__.outV().label()).groupCount()
+		script = "modern_g.E().project(\"self\",\"inL\",\"outL\").by(__.label()).by(__.inV().label()).by(__.outV().label()).groupCount()";
+		Map<String,Long> grp3 = (Map<String,Long>)runGremlin(script).collect(Collectors.toList()).get(0);
+		assertEquals( script+" => "+grp3.size(), 2, grp3.size());
+	}
+
+	private Stream<Object> runCypher(String script){
+		Stream<Object> stream = Stream.empty();
+		try {
+			CompletableFuture<?> future = gremlin.runCypher(script, datasource);
+			CompletableFuture.allOf(future).join();
+			stream = (Stream<Object>) future.get();
+		}catch (Exception ex){
+			System.out.println("** ERROR: runCypher ==> " + ex.getMessage());
+		}
+		return stream;
+	}
+
+	@Test
+	public void apiGraphCypherGrammar01(){
+		String script;
+		long result;
+
+		script = "match (a:person) return a, id(a) limit 2";
+		result = runCypher(script).count();
+		assertEquals( script+" => "+result, 2, result);
+
+		script = "match (a {name:'marko'})-[b]->(c) return b, id(b)";
+		result = runCypher(script).count();
+		assertEquals( script+" => "+result, 3, result);
 	}
 
 /*
