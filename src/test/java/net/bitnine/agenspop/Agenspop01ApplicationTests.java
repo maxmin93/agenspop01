@@ -32,7 +32,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,6 +73,11 @@ public class Agenspop01ApplicationTests {
 
 	AgensGraph g;
 	String gName = "test";
+	String datasource = "modern";
+
+	/*
+	///////////////////////////////////////
+	// called for every test
 
 	@Before
 	public void setUp() throws Exception {
@@ -81,6 +89,8 @@ public class Agenspop01ApplicationTests {
 		Graph removed = manager.removeGraph(gName);
 		System.out.println("graph["+gName+"] removed: "+removed.toString());
 	}
+	///////////////////////////////////////
+	*/
 
 	@Test
 	public void contexLoads() throws Exception {
@@ -109,6 +119,60 @@ public class Agenspop01ApplicationTests {
 	public void graphManagerLoad() {
 		Set<String> names = manager.getGraphNames();
 		assertTrue("graphs is empty", names.size() > 0);
+	}
+
+	@Test
+	public void apiAdminLabels() {
+		Map<String, Map<String,Long>> labels = manager.getGraphLabels(datasource);
+		assertEquals( "labels of V = "+labels.get("V").size(), 2, labels.get("V").size());
+		assertEquals( "labels of E = "+labels.get("E").size(), 2, labels.get("E").size());
+	}
+
+	@Test
+	public void apiAdminKeys() {
+		String label = "person";
+		Map<String,Long> keys = manager.getGraphKeys(datasource, label);
+		assertEquals( "keys of '"+label+"' = "+keys.keySet().size(), 3, keys.keySet().size());
+	}
+
+	private Stream<Object> runGremlin(String script){
+		Stream<Object> stream = Stream.empty();
+		try {
+			CompletableFuture<?> future = gremlin.runGremlin(script);
+			CompletableFuture.allOf(future).join();
+			stream = (Stream<Object>) future.get();
+		}catch (Exception ex){
+			System.out.println("** ERROR: runGremlin ==> " + ex.getMessage());
+		}
+		return stream;
+	}
+
+	@Test
+	public void apiGraphGremlinGrammar01(){
+		String script;
+		long result;
+
+		script = "modern_g.V()";
+		result = runGremlin(script).count();
+		assertEquals( script+" => "+result, 6, result);
+
+		script = "modern_g.E()";
+		result = runGremlin(script).count();
+		assertEquals( script+" => "+result, 6, result);
+	}
+
+	@Test
+	public void apiGraphGremlinGrammar02(){
+		String script;
+		long result;
+
+		script = "modern_g.V().has(\"age\",gt(30))";
+		result = runGremlin(script).count();
+		assertEquals( script+" => "+result, 2, result);
+
+		script = "modern_g.V().has(\"name\",\"marko\").out().out()";
+		result = runGremlin(script).count();
+		assertEquals( script+" => "+result, 2, result);
 	}
 
 /*

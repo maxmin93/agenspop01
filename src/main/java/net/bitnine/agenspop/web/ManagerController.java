@@ -66,7 +66,7 @@ public class ManagerController {
 
     @GetMapping(value="/keys/{datasource}/{label}", produces="application/json; charset=UTF-8")
     public ResponseEntity listKeys(@PathVariable String datasource, @PathVariable String label) throws Exception {
-        Map<String,Map<String,Long>> keys = manager.getGraphKeys(datasource, label);
+        Map<String,Long> keys = manager.getGraphKeys(datasource, label);
         return new ResponseEntity(keys
                 , AgensUtilHelper.productHeaders(productProperties), HttpStatus.OK);
     }

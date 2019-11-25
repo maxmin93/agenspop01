@@ -257,11 +257,10 @@ public class AgensGraphManager implements GraphManager {
         return agg;
     }
 
-    public Map<String,Map<String,Long>> getGraphKeys(String datasource, String label){
-        Map<String,Map<String,Long>> agg = new HashMap<>();
-        agg.put("V", baseAPI.listVertexLabelKeys(datasource, label));
-        agg.put("E", baseAPI.listEdgeLabelKeys(datasource, label));
-        return agg;
+    public Map<String,Long> getGraphKeys(String datasource, String label){
+        Map<String,Long> agg = baseAPI.listVertexLabelKeys(datasource, label);
+        return agg.keySet().size() > 0 ? agg :
+                baseAPI.listEdgeLabelKeys(datasource, label);
     }
 
     public synchronized void updateGraphs(){
