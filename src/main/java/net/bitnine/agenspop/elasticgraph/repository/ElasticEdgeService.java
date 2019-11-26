@@ -235,8 +235,11 @@ public final class ElasticEdgeService extends ElasticElementService {
         else if( direction.equals(Direction.OUT))
             queryBuilder = queryBuilder.must(termQuery("src", vid));
         else{
-            queryBuilder = queryBuilder.should(termQuery("dst", vid));
-            queryBuilder = queryBuilder.should(termQuery("src", vid));
+            queryBuilder = queryBuilder.must(
+                    QueryBuilders.boolQuery()   // or Clause
+                            .should(termQuery("dst", vid))
+                            .should(termQuery("src", vid))
+            );
         }
 
         ElasticScrollIterator<ElasticEdge> iter = new ElasticScrollIterator(INDEX, SCROLL_LIMIT

@@ -49,6 +49,7 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         edges.forEach(r->graph.api.dropEdge(r));
         // 2) remove AgensVertex
         this.graph.api.dropVertex((BaseVertex)baseElement);
+        System.out.println("** remove vertex: "+toString());
     }
 
     // **NOTE: Cardinality.single 만 다룬다 ==> multi(set or list) 인 경우 Exception 처리
