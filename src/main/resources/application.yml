@@ -31,7 +31,7 @@ agens:
 #    port: 8087
     username:
     password:
-    scroll-limit: 10000         # -1(unlimit), more than 2500
+    scroll-limit: -1            # -1(unlimit), more than 2500
     vertex-index: elasticvertex
     edge-index: elasticedge
     edge-validation: false      # if true, check valid edge on each request (make slow)
