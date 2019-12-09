@@ -15,6 +15,7 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.hamcrest.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,17 +28,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.web.client.RestTemplate;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -107,6 +108,80 @@ public class Agenspop01ApplicationTests {
 	}
 
 	@Test
+	public void modernSearchShouldReturnMessage() throws URISyntaxException {
+		RestTemplate restTemplate = new RestTemplate();
+		String prefixUrl = "http://localhost:" + port + basePath + "/search/";
+
+		URI uri;
+		ResponseEntity<List> result;
+
+		uri = new URI(prefixUrl + datasource + "/v");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: v.size = 6", result.getBody().size() == 6);
+
+		uri = new URI(prefixUrl + datasource + "/e");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: e.size = 6", result.getBody().size() == 6);
+	}
+
+	@Test
+	public void modernGraphGremlinShouldReturnMessage() throws URISyntaxException {
+		RestTemplate restTemplate = new RestTemplate();
+		String prefixUrl = "http://localhost:" + port + basePath + "/graph";
+
+		URI uri;
+		ResponseEntity<List> result;
+
+		uri = new URI(prefixUrl + "/gremlin?q=" + datasource + "_g.V()");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: v.size = 6", result.getBody().size() == 6);
+
+		uri = new URI(prefixUrl + "/gremlin?q=" + datasource + "_g.E()");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: e.size = 6", result.getBody().size() == 6);
+	}
+
+	@Test
+	public void modernGraphCypherShouldReturnMessage() throws URISyntaxException {
+		RestTemplate restTemplate = new RestTemplate();
+		String prefixUrl = "http://localhost:" + port + basePath + "/graph";
+
+		URI uri;
+		ResponseEntity<List> result;
+
+		// match (a:person {country: 'USA'}) return a, id(a) limit 10;
+		uri = new URI(prefixUrl + "/cypher?ds="+datasource+"&q=match%20(a:person%20%7Bcountry:%20%27USA%27%7D)%20return%20a,%20id(a)%20limit%2010");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: v.size = 4", result.getBody().size() == 4);
+
+		// match (a:person {name: 'marko'})-[b]->(c) return b, id(b) limit 10;
+		uri = new URI(prefixUrl + "/cypher?ds="+datasource+"&q=match%20(a:person%20%7Bname:%20%27marko%27%7D)-[b]-%3E(c)%20return%20b,%20id(b)%20limit%2010");
+		result = restTemplate.getForEntity(uri, List.class);
+		assertTrue("search: e.size = 3", result.getBody().size() == 3);
+	}
+
+	@Test
+	public void modernAdminShouldReturnMessage() throws URISyntaxException {
+		RestTemplate restTemplate = new RestTemplate();
+		String prefixUrl = "http://localhost:" + port + basePath + "/admin";
+
+		URI uri;
+		ResponseEntity<Map> result;
+
+		uri = new URI(prefixUrl + "/labels/" + datasource);
+		result = restTemplate.getForEntity(uri, Map.class);			// V, E
+		assertTrue("meta: keys = 2", result.getBody().keySet().size() == 2);
+
+		uri = new URI(prefixUrl + "/keys/" + datasource + "/person");
+		result = restTemplate.getForEntity(uri, Map.class);
+		// exclude graph features like started with '_$$'
+		List<String> keys = (List<String>) result.getBody().keySet().stream().filter(k->!((String) k).startsWith("_$$")).collect(Collectors.toList());
+		assertTrue("meta: keys.elements = 3", keys.size() == 3);
+	}
+
+	//////////////////////////////////////////////////////////////
+
+	@Test
 	public void graphManagerLoad() {
 		Set<String> names = manager.getGraphNames();
 		assertNotNull(names);
@@ -126,7 +201,9 @@ public class Agenspop01ApplicationTests {
 		String label = "person";
 		Map<String,Long> keys = manager.getGraphKeys(datasource, label);
 		assertNotNull(keys);
-		assertEquals( "keys of '"+label+"' = "+keys.keySet().size(), 3, keys.keySet().size());
+		// exclude graph features like started with '_$$'
+		List<String> results = keys.keySet().stream().filter(k->!k.startsWith("_$$")).collect(Collectors.toList());
+		assertEquals( "keys of '"+label+"' = "+results.size(), 3, results.size());
 	}
 
 	private Stream<Object> runGremlin(String script){
@@ -182,7 +259,9 @@ public class Agenspop01ApplicationTests {
 		list = runGremlin(script).collect(Collectors.toList());
 		assertTrue(list.size() > 0);
 		Map<String,Long> grp2 = (Map<String,Long>)list.get(0);
-		assertEquals( script+" => "+grp2.size(), 3, grp2.size());
+		// exclude graph features like started with '_$$'
+		List<String> results = grp2.keySet().stream().filter(k->!k.startsWith("_$$")).collect(Collectors.toList());
+		assertEquals( script+" => "+results.size(), 3, results.size());
 
 		// 2 = modern_g.E().project("self","inL","outL").by(__.label()).by(__.inV().label()).by(__.outV().label()).groupCount()
 		script = "modern_g.E().project(\"self\",\"inL\",\"outL\").by(__.label()).by(__.inV().label()).by(__.outV().label()).groupCount()";
