@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>net.bitnine.agens</groupId>
 	<artifactId>agenspop</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.7.3</version>
 	<name>agenspop01</name>
 	<description>Demo project for Agenspop with gremlin and elasticsearch</description>
 
