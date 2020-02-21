@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
@@ -46,13 +47,14 @@ public class AgensPropertyMapStep<K,E> extends MapStep<Element, Map<K, E>>
     private TraversalRing<K, E> traversalRing;
 
     // includeTokens = true => .valueMap(true) => [id, label, property...]
-
     @Deprecated
     public AgensPropertyMapStep(final Traversal.Admin traversal, final boolean includeTokens, final PropertyType propertyType, final String... propertyKeys) {
         this(traversal, propertyType, propertyKeys);
         this.configure(WithOptions.tokens, includeTokens ? WithOptions.all : WithOptions.none);
     }
 
+    // **NOTE: 생성자 valueMap() 의 생성자. (includeTokens=true) 옵션은 넘어오지 않음
+    //          ==> id, label 등을 포함하고 싶으면 직접 명시해야 함
     public AgensPropertyMapStep(final Traversal.Admin traversal, final PropertyType propertyType, final String... propertyKeys) {
         super(traversal);
         this.propertyKeys = propertyKeys;

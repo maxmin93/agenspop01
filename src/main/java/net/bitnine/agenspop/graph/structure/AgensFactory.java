@@ -1,8 +1,7 @@
 package net.bitnine.agenspop.graph.structure;
 
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
@@ -10,6 +9,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.*;
+import org.springframework.context.index.CandidateComponentsIndexLoader;
 
 import java.io.InputStream;
 import java.util.List;
@@ -41,8 +41,8 @@ public final class AgensFactory {
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, defaultGraphName());
         // **NOTE: 필요 없음.
         //      AgensGraph 초기화시 IdManager 고정
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.MIX_ID.name());
-        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.MIX_ID.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER, AgensIdManager.ANY.name());
+        conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER, AgensIdManager.ANY.name());
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY, VertexProperty.Cardinality.single);
         return conf;
     }
@@ -51,7 +51,7 @@ public final class AgensFactory {
 
     /////////////////////////////////////
 
-    public static AgensGraph createEmpty(ElasticGraphAPI baseGraph, String gName) {
+    public static AgensGraph createEmpty(BaseGraphAPI baseGraph, String gName) {
         final Configuration conf = getMixIdManagerConfiguration();
         conf.setProperty(AgensGraph.GREMLIN_AGENSGRAPH_GRAPH_NAME, gName);
         return AgensGraph.open(baseGraph, conf);
@@ -61,7 +61,7 @@ public final class AgensFactory {
      * Create the "modern" graph which has the same structure as the "classic" graph from AgensPop 2.x but includes
      * 3.x features like vertex labels.
      */
-    public static AgensGraph createModern(ElasticGraphAPI baseGraph) {
+    public static AgensGraph createModern(BaseGraphAPI baseGraph) {
         final Configuration conf = getMixIdManagerConfiguration();
         final AgensGraph g = AgensGraph.open(baseGraph, conf);
         generateModern(g);
@@ -85,26 +85,21 @@ e5 = v4.addEdge("created", v3, T.id, 11, "weight", 0.4f);
 e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
  */
     public static void generateModern(final AgensGraph g) {
-        final Vertex marko = g.addVertex(T.id, 1, T.label, "person", "name", "marko", "age", 29, "country", "USA");
-        final Vertex vadas = g.addVertex(T.id, 2, T.label, "person", "name", "vadas", "age", 27, "country", "USA");
-        final Vertex lop = g.addVertex(T.id, 3, T.label, "software", "name", "lop", "lang", "java");
-        final Vertex josh = g.addVertex(T.id, 4, T.label, "person", "name", "josh", "age", 32, "country", "USA");
-        final Vertex ripple = g.addVertex(T.id, 5, T.label, "software", "name", "ripple", "lang", "java");
-        final Vertex peter = g.addVertex(T.id, 6, T.label, "person", "name", "peter", "age", 35, "country", "USA");
-        marko.addEdge("knows", vadas, T.id, 7, "weight", 0.5d);
-        marko.addEdge("knows", josh, T.id, 8, "weight", 1.0d);
-        marko.addEdge("created", lop, T.id, 9, "weight", 0.4d);
-        josh.addEdge("created", ripple, T.id, 10, "weight", 1.0d);
-        josh.addEdge("created", lop, T.id, 11, "weight", 0.4d);
-        peter.addEdge("created", lop, T.id, 12, "weight", 0.2d);
+        final Vertex marko = g.addVertex(T.id, "modern_1", T.label, "person", "name", "marko", "age", 29, "country", "USA");
+        final Vertex vadas = g.addVertex(T.id, "modern_2", T.label, "person", "name", "vadas", "age", 27, "country", "USA");
+        final Vertex lop = g.addVertex(T.id, "modern_3", T.label, "software", "name", "lop", "lang", "java");
+        final Vertex josh = g.addVertex(T.id, "modern_4", T.label, "person", "name", "josh", "age", 32, "country", "USA");
+        final Vertex ripple = g.addVertex(T.id, "modern_5", T.label, "software", "name", "ripple", "lang", "java");
+        final Vertex peter = g.addVertex(T.id, "modern_6", T.label, "person", "name", "peter", "age", 35, "country", "USA");
+        marko.addEdge("knows", vadas, T.id, "modern_7", "weight", 0.5d);
+        marko.addEdge("knows", josh, T.id, "modern_8", "weight", 1.0d);
+        marko.addEdge("created", lop, T.id, "modern_9", "weight", 0.4d);
+        josh.addEdge("created", ripple, T.id, "modern_10", "weight", 1.0d);
+        josh.addEdge("created", lop, T.id, "modern_11", "weight", 0.4d);
+        peter.addEdge("created", lop, T.id, "modern_12", "weight", 0.2d);
+    }
 
-        try{
-            Thread.sleep(1000);
-            // Then do something meaningful...
-        }catch(InterruptedException e){
-            e.printStackTrace();
-        }
-
+    public static void traversalTestModern(final AgensGraph g){
         ///////////////////////////////////////////////////
         // gremlin test
 
@@ -114,26 +109,26 @@ e6 = v6.addEdge("created", v3, T.id, 12, "weight", 0.2f);
 
         GraphTraversalSource t = g.traversal();
         List<Vertex> vertexList = t.V().next(100);
-        System.out.println("  - list vertices ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.all ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         List<Edge> edgeList = t.E().next(100);
-        System.out.println("  - list edges ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        System.out.println("  - E.all ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
         vertexList = t.V("modern_5", "modern_4", "modern_3").next(100);
-        System.out.println("  - vertex ids ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V(id..) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
         edgeList = t.V("modern_1").bothE().next(100);
-        System.out.println("  - edge bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V(id).bothE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
 
         Vertex v1 = t.V("modern_1").next();
-        vertexList = t.V(v1).out().next(100);
-        System.out.println("  - vertex(1) out neighbors ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        vertexList = t.V(v1.id()).out().next(100);  // BUT, on groovy ==> g.V(v1).out()
+        System.out.println("  - V(id).out ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
         List<Object> valueList = t.V().values("name").next(100);
-        System.out.println("  - vertices.value('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
+        System.out.println("  - V.values('name') ==> "+valueList.stream().map(v->String.valueOf(v)).collect(Collectors.joining(",")));
         vertexList = t.V().has("name","josh").next(100);
-        System.out.println("  - vertex has ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        System.out.println("  - V.has(key,value) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
 
-        vertexList = t.V().hasLabel("person").out("knows").next(100);
-        System.out.println("  - vertex hasLabel ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
-        vertexList = t.V().hasLabel("person").out("knows").where(__.values("age").is(P.lt(30))).next(100);
-        System.out.println("  - vertex where ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
+        edgeList = t.V().hasLabel("person").outE("knows").next(100);
+        System.out.println("  - V.hasLabel.outE ==> "+edgeList.stream().map(Edge::toString).collect(Collectors.joining(",")));
+        vertexList = t.V().hasLabel("person").out().where(__.values("age").is(P.lt(30))).next(100);
+        System.out.println("  - V.where(age<30) ==> "+vertexList.stream().map(Vertex::toString).collect(Collectors.joining(",")));
     }
 }

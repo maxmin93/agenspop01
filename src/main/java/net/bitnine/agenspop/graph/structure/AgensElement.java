@@ -1,6 +1,6 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.model.ElasticElement;
+import net.bitnine.agenspop.basegraph.model.BaseElement;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
@@ -10,20 +10,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class AgensElement implements Element, WrappedElement<ElasticElement> {
-
-    protected boolean removed = false;
+public abstract class AgensElement implements Element, WrappedElement<BaseElement> {
 
     protected final AgensGraph graph;
-    protected final ElasticElement baseElement;
+    protected final BaseElement baseElement;
 
-    protected AgensElement(final ElasticElement baseElement, final AgensGraph graph) {
-        this.baseElement = baseElement;
+    protected AgensElement(final AgensGraph graph, final BaseElement baseElement) {
         this.graph = graph;
+        this.baseElement = baseElement;
     }
 
     @Override
-    public ElasticElement getBaseElement() {
+    public BaseElement getBaseElement() {
         return this.baseElement;
     }
 
@@ -45,7 +43,7 @@ public abstract class AgensElement implements Element, WrappedElement<ElasticEle
     public Set<String> keys() {
         this.graph.tx().readWrite();
         final Set<String> keys = new HashSet<>();
-        for (final String key : this.baseElement.getKeys()) {
+        for (final String key : this.baseElement.keys()) {
             if (!Graph.Hidden.isHidden(key))
                 keys.add(key);
         }

@@ -1,40 +1,26 @@
 package net.bitnine.agenspop.service;
 
-import com.google.common.base.Joiner;
-import io.netty.buffer.ByteBuf;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.server.util.LifeCycleHook;
 import org.apache.tinkerpop.gremlin.server.util.MetricManager;
-import org.apache.tinkerpop.gremlin.server.util.ThreadFactoryUtil;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import org.apache.tinkerpop.gremlin.groovy.engine.GremlinExecutor;
 import org.apache.tinkerpop.gremlin.jsr223.GremlinScriptEngine;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalSource;
-import org.apache.tinkerpop.gremlin.server.Channelizer;
 import org.apache.tinkerpop.gremlin.server.GraphManager;
-import org.apache.tinkerpop.gremlin.server.GremlinServer;
 import org.apache.tinkerpop.gremlin.server.Settings;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.script.Bindings;
 import javax.script.SimpleBindings;
-import java.lang.reflect.Constructor;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -49,13 +35,13 @@ public class AgensGroovyServer {
 
     private static final Logger logger = LoggerFactory.getLogger(AgensGroovyServer.class);
 
-    private AgensGraphManager graphManager;
-    private Settings settings;
-    private List<LifeCycleHook> hooks;
+    private final AgensGraphManager graphManager;
+    private final Settings settings;
+    private final List<LifeCycleHook> hooks;
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private ExecutorService gremlinExecutorService;
-    private GremlinExecutor gremlinExecutor;
+    private final ScheduledExecutorService scheduledExecutorService;
+    private final ExecutorService gremlinExecutorService;
+    private final GremlinExecutor gremlinExecutor;
 
     private final Map<String,Object> hostOptions = new ConcurrentHashMap<>();
 
@@ -132,6 +118,14 @@ public class AgensGroovyServer {
 
         // graphManager.configureGremlinExecutor for ScheduledTask
         this.graphManager.configureGremlinExecutor(gremlinExecutor);
+
+        // update graphs by scheduler
+        this.scheduledExecutorService.scheduleWithFixedDelay( new Runnable() {
+            public void run() {
+                graphManager.updateGraphs();
+            }
+            }, 2000, this.settings.scriptEvaluationTimeout, TimeUnit.MILLISECONDS
+        );
     }
 
     /////////////////////////////////////////////////////

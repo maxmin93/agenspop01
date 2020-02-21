@@ -1,8 +1,12 @@
 package net.bitnine.agenspop.config.properties;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 // application.yml 파일에서 prefix에 대응되는 설정값들을 class 로 로딩하기
+@Getter @Setter @ToString
 @ConfigurationProperties(prefix = "agens.product")
 public class ProductProperties {
 
@@ -10,21 +14,4 @@ public class ProductProperties {
     private String version = "";
     private String helloMsg = "";
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getVersion() { return version; }
-    public void setVersion(String version) { this.version = version; }
-
-    public String getHelloMsg() { return helloMsg; }
-    public void setHelloMsg(String helloMsg) { this.helloMsg = helloMsg; }
-
-    @Override
-    public String toString() {
-        return "ProductProperties{" +
-                " name='" + name + '\'' +
-                ", version='" + version + '\'' +
-                ", hello-msg='" + helloMsg + '\'' +
-                '}';
-    }
 }

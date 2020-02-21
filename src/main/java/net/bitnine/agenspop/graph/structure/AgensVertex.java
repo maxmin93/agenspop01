@@ -1,44 +1,35 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedVertex;
-import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- * @author Marko A. Rodriguez (http://markorodriguez.com)
- */
-public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<ElasticVertex> {
+public final class AgensVertex extends AgensElement implements Vertex, WrappedVertex<BaseVertex> {
 
-    protected Map<String, VertexProperty> properties;
-//    protected Map<String, Set<Edge>> outEdges;
-//    protected Map<String, Set<Edge>> inEdges;
-
-    public AgensVertex(final ElasticVertex vertex, final AgensGraph graph) {
-        super(vertex, graph);
-        this.properties = new HashMap<>();
-        for( ElasticProperty item : vertex.getProperties() ){
-            AgensVertexProperty property = new AgensVertexProperty(this, item);
-            this.properties.put( property.key(), property );
-        }
+    public AgensVertex(final AgensGraph graph, final BaseVertex vertex) {
+        super(graph, vertex);
     }
 
-    public AgensVertex(final Object id, final String label, final AgensGraph graph) {
-        super(graph.baseGraph.createVertex(id.toString(), label), graph);
+    public AgensVertex(final AgensGraph graph, final Object id, final String label) {
+        super(graph, graph.api.createVertex(graph.name(), id.toString(), label));
     }
 
     @Override
     public Graph graph(){ return this.graph; }
 
     @Override
-    public ElasticVertex getBaseVertex() {
-        return (ElasticVertex) this.baseElement;
+    public BaseVertex getBaseVertex() {
+        return (BaseVertex) this.baseElement;
+    }
+
+    public AgensVertex save(){
+        this.graph.api.saveVertex(getBaseVertex());
+        return this;
     }
 
     ////////////////////////////////////
@@ -46,40 +37,36 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
     @Override
     public Edge addEdge(final String label, final Vertex inVertex, final Object... keyValues) {
         if (inVertex == null) throw Graph.Exceptions.argumentCanNotBeNull("vertex");
-        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if (this.baseElement.notexists()) throw elementAlreadyRemoved(Vertex.class, this.id());
         return AgensHelper.addEdge(this.graph, this, (AgensVertex) inVertex, label, keyValues);
     }
 
     @Override
     public void remove() {
         this.graph.tx().readWrite();
-        // remove connected AgensEdges and AgensVertex
-        final Iterable<ElasticEdge> edges = graph.baseGraph.findEdgesOfVertex(id().toString(), Direction.BOTH);
-        for( ElasticEdge edge : edges ) {
-            edge.delete();
-            graph.baseGraph.deleteEdge(edge);
-        }
-        // post processes of remove vertex : properties, graph, marking
-        this.properties = null;
-        this.removed = true;
-        // remove connected ElasticEdges and ElasticVertex
-        this.graph.trait.removeVertex(this);
+        // 1) remove connected AgensEdges
+        Stream<BaseEdge> edges = graph.api.findEdgesOfVertex(graph.name(), id().toString(), Direction.BOTH);
+        edges.forEach(r->graph.api.dropEdge(r));
+        // 2) remove AgensVertex
+        this.graph.api.dropVertex((BaseVertex)baseElement);
+        System.out.println("** remove vertex: "+toString());
     }
 
+    // **NOTE: Cardinality.single 만 다룬다 ==> multi(set or list) 인 경우 Exception 처리
+    //
     @Override
     public <V> VertexProperty<V> property(final VertexProperty.Cardinality cardinality
             , final String key, final V value, final Object... keyValues) {
 
-        if (this.removed) throw elementAlreadyRemoved(Vertex.class, this.id());
+        if( this.baseElement.notexists() ) throw elementAlreadyRemoved(Vertex.class, this.id());
         ElementHelper.legalPropertyKeyValueArray(keyValues);
         ElementHelper.validateProperty(key, value);
-        if (cardinality.equals(VertexProperty.Cardinality.single) && properties != null )
-            properties.remove(key);
 
         this.graph.tx().readWrite();
-        final VertexProperty<V> vertexProperty = this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
-        if( this.properties == null ) this.properties = new HashMap<>();
-        this.properties.put(key, vertexProperty);
+        final VertexProperty<V> vertexProperty = new AgensVertexProperty<>(this, key, value);
+                // this.graph.trait.setVertexProperty(this, cardinality, key, value, keyValues);
+        // rest keyValues
+        if( keyValues.length > 0 ) ElementHelper.attachProperties(vertexProperty, keyValues);
         return vertexProperty;
     }
 
@@ -88,45 +75,39 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
         return this.property(VertexProperty.Cardinality.single, key, value);
     }
 
-    // @Todo remove trait codes about VertexProperty
     @Override
     public <V> VertexProperty<V> property(final String key) {
-        this.graph.tx().readWrite();
-        return this.graph.trait.getVertexProperty(this, key);
+        return baseElement.hasProperty(key) ?
+                new AgensVertexProperty<>(this, baseElement.getProperty(key))
+                : VertexProperty.empty();
     }
 
     @Override
     public <V> Iterator<VertexProperty<V>> properties(final String... propertyKeys) {
-        this.graph.tx().readWrite();
-        return this.graph.trait.getVertexProperties(this, propertyKeys);
+        return baseElement.keys().stream()
+                .filter(k->ElementHelper.keyExists(k, propertyKeys))
+                .map(k->(VertexProperty<V>) new AgensVertexProperty<V>(this, baseElement.getProperty(k)))
+                .iterator();
     }
 
     // 정점의 이웃 정점들 (방향성, 연결간선의 라벨셋)
     @Override
     public Iterator<Vertex> vertices(final Direction direction, final String... edgeLabels) {
-//        return (Iterator) AgensHelper.getVertices(this, direction, edgeLabels);
-
         this.graph.tx().readWrite();
-        Iterable<ElasticVertex> bases = graph.baseGraph.findNeighborVertices(id().toString(), direction, edgeLabels);
-        final List<Vertex> vertices = new ArrayList<>();
-        for( ElasticVertex base : bases ){
-            vertices.add( new AgensVertex(base, graph));
-        }
-
-        return vertices.iterator();
+        Stream<Vertex> stream = graph.api
+                .findNeighborVertices(graph.name(), id().toString(), direction, edgeLabels)
+                .map(r->(Vertex)new AgensVertex(graph, r));
+        return stream.iterator();
     }
 
-    // 정점의 연결간선들 (방향, 연결간선의 라벨셋)
+    // 정점의 연결 간선들 (방향, 연결간선의 라벨셋)
     @Override
     public Iterator<Edge> edges(final Direction direction, final String... edgeLabels) {
-//        final Iterator<Edge> edgeIterator = (Iterator) AgensHelper.getEdges(this, direction, edgeLabels);
-//        return edgeIterator;
-
         this.graph.tx().readWrite();
-        Iterable<ElasticEdge> bases = graph.baseGraph.findEdgesOfVertex(id().toString(), direction, edgeLabels);
-        final List<Edge> edges = new ArrayList<>();
-        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
-        return edges.iterator();
+        Stream<Edge> stream = graph.api
+                .findEdgesOfVertex(graph.name(), id().toString(), direction, edgeLabels)
+                .map(r->(Edge)new AgensEdge(graph, r));
+        return stream.iterator();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -134,48 +115,12 @@ public final class AgensVertex extends AgensElement implements Vertex, WrappedVe
 
     public Iterator<Edge> edges(final Direction direction, final String label, final String key, final Object value) {
         this.graph.tx().readWrite();
-        Iterable<ElasticEdge> bases = graph.baseGraph
-                .findEdgesOfVertex(id().toString(), direction, label, key, value);
-        final List<Edge> edges = new ArrayList<>();
-        for( ElasticEdge base : bases ) edges.add( new AgensEdge(base, graph));
-        return edges.iterator();
+        Stream<Edge> stream = graph.api
+                .findEdgesOfVertex(graph.name(), id().toString(), direction, label, key, value)
+                .map(r->(Edge)new AgensEdge(graph, r));
+        return stream.iterator();
     }
 
-/*
-    public Iterator<Edge> edgesInRange(final Direction direction, final String label, final String key,
-                                       final Object inclusiveFromValue, final Object exclusiveToValue) {
-        return graph.getEdgeIndexModel().edgesInRange(this, direction, label, key, inclusiveFromValue, exclusiveToValue);
-    }
-
-    public Iterator<Edge> edgesWithLimit(final Direction direction, final String label, final String key,
-                                         final Object fromValue, final int limit) {
-        return edgesWithLimit(direction, label, key, fromValue, limit, false);
-    }
-
-    public Iterator<Edge> edgesWithLimit(final Direction direction, final String label, final String key,
-                                         final Object fromValue, final int limit, final boolean reversed) {
-        return graph.getEdgeIndexModel().edgesWithLimit(this, direction, label, key, fromValue, limit, reversed);
-    }
-
-    public Iterator<Vertex> vertices(final Direction direction, final String label, final String key, final Object value) {
-        return graph.getEdgeIndexModel().vertices(this, direction, label, key, value);
-    }
-
-    public Iterator<Vertex> verticesInRange(final Direction direction, final String label, final String key,
-                                            final Object inclusiveFromValue, final Object exclusiveToValue) {
-        return graph.getEdgeIndexModel().verticesInRange(this, direction, label, key, inclusiveFromValue, exclusiveToValue);
-    }
-
-    public Iterator<Vertex> verticesWithLimit(final Direction direction, final String label, final String key,
-                                              final Object fromValue, final int limit) {
-        return verticesWithLimit(direction, label, key, fromValue, limit, false);
-    }
-
-    public Iterator<Vertex> verticesWithLimit(final Direction direction, final String label, final String key,
-                                              final Object fromValue, final int limit, final boolean reversed) {
-        return graph.getEdgeIndexModel().verticesWithLimit(this, direction, label, key, fromValue, limit, reversed);
-    }
-*/
     //////////////////////////////////////////////////////////////////////////////////////
 
     @Override

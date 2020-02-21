@@ -1,11 +1,11 @@
 package net.bitnine.agenspop.service;
 
-import com.google.common.base.Joiner;
 import net.bitnine.agenspop.graph.AgensGraphManager;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
+import net.bitnine.agenspop.graph.structure.AgensHelper;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
-import net.bitnine.agenspop.web.dto.DetachedGraph;
+import net.bitnine.agenspop.dto.DetachedGraph;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.groovy.engine.GremlinExecutor;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal;
@@ -13,22 +13,17 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.opencypher.gremlin.translation.CypherAst;
 import org.opencypher.gremlin.translation.TranslationFacade;
-import org.opencypher.gremlin.translation.groovy.GroovyPredicate;
-import org.opencypher.gremlin.translation.translator.Translator;
-import org.opencypher.gremlin.translation.translator.TranslatorFlavor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.script.Bindings;
 import javax.script.SimpleBindings;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.bitnine.agenspop.graph.AgensGraphManager.GRAPH_TRAVERSAL_NAME;
 
@@ -69,17 +64,16 @@ public class AgensGremlinService {
             if( result != null && result instanceof GraphTraversal ){
                 GraphTraversal t = (GraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+                System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+//                List<Object> resultList = new ArrayList<>();
+//                while( t.hasNext() ) { resultList.add(t.next()); }
 
-                List<Object> resultList = new ArrayList<>();
-                while( t.hasNext() ) {          // if result exists,
-                    resultList.add(t.next());
-                }
-                return CompletableFuture.completedFuture(resultList);
+                return CompletableFuture.completedFuture(
+                        AgensHelper.getStreamFromIterator((Iterator<Object>)t) );
             }
             // for DEBUG
             System.out.println("  ==> "+result.toString()+"|"+result.getClass().getSimpleName()+"\n");
-            return CompletableFuture.completedFuture(result);
+            return CompletableFuture.completedFuture( Stream.of(result) );
 
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method
@@ -113,6 +107,7 @@ expected> type = LinkedHashMap()
             //
             // translate cypher query to gremlin
             String script = cfog.toGremlinGroovy(cypher);
+
 /*
             // **NOTE: 기본 translator 와 별 다를게 없다
             String cypher = "MATCH (p:Person) WHERE p.age > 25 RETURN p.name";
@@ -127,7 +122,7 @@ expected> type = LinkedHashMap()
                 script = script.replaceAll("\\s+","");   // remove tailling spaces
             }
             // for DEBUG
-            System.out.println("** translate: "+cypher+"\n  ==> "+script);
+            System.out.println("**cypher-to-gremlin: "+cypher+"\n  ==> "+script);
 
             // use no timeout on the engine initialization - perhaps this can be a configuration later
             final GremlinExecutor.LifeCycle lifeCycle = GremlinExecutor.LifeCycle.build().
@@ -138,25 +133,18 @@ expected> type = LinkedHashMap()
             CompletableFuture.allOf(evalFuture).join();
 
             Object result = evalFuture.get();
-            if( result != null && result instanceof DefaultGraphTraversal ){
+            if( result != null && result instanceof DefaultGraphTraversal ){    // DefaultGraphTraversal
+                // DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 DefaultGraphTraversal t = (DefaultGraphTraversal) evalFuture.get();
                 // for DEBUG
-                System.out.println("** traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+                System.out.println("**traversal: \""+script+"\"\n  ==> "+t.toString()+" <"+t.hasNext()+">\n");
+//                List<Object> resultList = new ArrayList<>();
+//                while( t.hasNext() ) { resultList.add(t.next()); }
 
-                if( t.hasNext() ){          // if result exists,
-                    Object r = t.next();
-                    if( t.hasNext() ){      // if result is iterable,
-                        List<Object> resultList = new ArrayList<>();
-                        resultList.add(r);
-                        while( t.hasNext() ) resultList.add(t.next());
-
-                        return CompletableFuture.completedFuture(resultList);
-                    }
-                    return CompletableFuture.completedFuture(r);
-                }
-                return CompletableFuture.completedFuture(null);
+                return CompletableFuture.completedFuture(
+                        AgensHelper.getStreamFromIterator((Iterator<Object>)t) );
             }
-            return CompletableFuture.completedFuture(result);
+            return CompletableFuture.completedFuture(Stream.of(result));
 
         } catch (Exception ex) {
             // tossed to exceptionCaught which delegates to sendError method
@@ -188,21 +176,17 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensVertex>> getVertices(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
+            , String label, List<String> labels
+            , String key, String keyNot, List<String> keys
+            , List<String> values, Map<String, String> kvPairs
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
-        // for DEBUG
-//        System.out.println("ids=["+String.join(",",ids)+"]");
-//        System.out.println("labels=["+String.join(",",labels)+"]");
-//        System.out.println("keys=["+String.join(",",keys)+"]");
-//        System.out.println("values=["+String.join(",",values.stream().map(Object::toString).collect(Collectors.toList()))+"]");
-
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Vertex> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
-                g.verticesWithFilters(ids, labels, keys, values)
-                : g.vertices();
+        Map<String, Object> params = AgensHelper.optimizedParams(label, labels, key, keyNot, keys, values, kvPairs);
+        Iterator<Vertex> t =  params.size() == 0 ? g.vertices()
+                : AgensHelper.verticesWithHasContainers(g, params).iterator();
 
         List<AgensVertex> vertices = new ArrayList<>();
         while( t.hasNext() ) vertices.add( (AgensVertex) t.next() );
@@ -212,15 +196,17 @@ expected> type = LinkedHashMap()
 
     @Async("agensExecutor")
     public CompletableFuture<List<AgensEdge>> getEdges(String gName
-            , List<String> ids, List<String> labels, List<String> keys, List<Object> values
+            , String label, List<String> labels
+            , String key, String keyNot, List<String> keys
+            , List<String> values, Map<String, String> kvPairs
     ) throws InterruptedException {
         if( !graphManager.getGraphNames().contains(gName) )
             return CompletableFuture.completedFuture( Collections.EMPTY_LIST );
 
         AgensGraph g = (AgensGraph) graphManager.getGraph(gName);
-        Iterator<Edge> t = (ids.size()>0 || labels.size()>0 || keys.size()>0 || values.size()>0) ?
-                g.edgesWithFilters(ids, labels, keys, values)
-                : g.edges();
+        Map<String, Object> params = AgensHelper.optimizedParams(label, labels, key, keyNot, keys, values, kvPairs);
+        Iterator<Edge> t = params.size() == 0 ? g.edges()
+                : AgensHelper.edgesWithHasContainers(g, params).iterator();
 
         List<AgensEdge> edges = new ArrayList<>();
         while( t.hasNext() ) edges.add( (AgensEdge) t.next() );

@@ -1,56 +1,56 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.document.ElasticPropertyDocument;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticProperty;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseProperty;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import org.apache.tinkerpop.gremlin.structure.*;
 import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedEdge;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
-public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<ElasticEdge> {
+public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<BaseEdge> {
 
-    public AgensEdge(final ElasticEdge edge, final AgensGraph graph) {
-        super(edge, graph);
+    public AgensEdge(final AgensGraph graph, final BaseEdge edge) {
+        super(graph, edge);
     }
 
-    public AgensEdge(final Object id, final AgensVertex outVertex, final String label, final AgensVertex inVertex) {
-        super(
-            outVertex.graph.baseGraph.createEdge(id.toString(), label
-                , outVertex.baseElement.getId(), inVertex.baseElement.getId()
-            )                           // elasticedge
-            , outVertex.graph           // graph
-        );
+    public AgensEdge(final AgensGraph graph, final Object id, final String label, final AgensVertex outVertex, final AgensVertex inVertex) {
+        super(graph, graph.api.createEdge(graph.name(), id.toString(), label
+                , outVertex.baseElement.getId(), inVertex.baseElement.getId()));
     }
 
     @Override
     public Vertex outVertex() {     // source v of edge
-        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getSid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getSrc());
         if( v.isPresent() ){
-            return (Vertex) new AgensVertex(v.get(), this.graph);
+            return (Vertex) new AgensVertex(this.graph, v.get());
         }
         return (Vertex) null;
     }
 
     @Override
     public Vertex inVertex() {      // target v of edge
-        Optional<? extends ElasticVertex> v = this.graph.baseGraph.getVertexById(getBaseEdge().getTid());
+        Optional<? extends BaseVertex> v = this.graph.api.getVertexById(getBaseEdge().getDst());
         if( v.isPresent() ){
-            return (Vertex) new AgensVertex(v.get(), this.graph);
+            return (Vertex) new AgensVertex(this.graph, v.get());
         }
         return (Vertex) null;
     }
 
     @Override
-    public ElasticEdge getBaseEdge() {
-        return (ElasticEdge) this.baseElement;
+    public BaseEdge getBaseEdge() {
+        return (BaseEdge) this.baseElement;
+    }
+
+    public AgensEdge save(){
+        this.graph.tx().readWrite();
+        this.graph.api.saveEdge(getBaseEdge());
+        return this;
     }
 
     ////////////////////////////////
@@ -58,7 +58,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public <V> Iterator<Property<V>> properties(final String... propertyKeys) {
         this.graph.tx().readWrite();
-        Iterable<String> keys = this.baseElement.getKeys();
+        Collection<String> keys = this.baseElement.keys();
         Iterator<String> filter = IteratorUtils.filter(keys.iterator(),
                 key -> ElementHelper.keyExists(key, propertyKeys));
         return IteratorUtils.map(filter,
@@ -68,8 +68,7 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public <V> Property<V> property(final String key) {
         this.graph.tx().readWrite();
-        // properties 에 없으면 가져오기
-        if (this.baseElement.hasProperty(key))
+        if( this.baseElement.hasProperty(key) )
             return new AgensProperty<>(this, this.baseElement.getProperty(key));
         else
             return Property.empty();
@@ -78,10 +77,9 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
     @Override
     public <V> Property<V> property(final String key, final V value) {
         ElementHelper.validateProperty(key, value);
-//        if( this.properties == null ) this.properties = new HashMap<>();
+        BaseProperty propertyBase = this.graph.api.createProperty(key, value);
 
         this.graph.tx().readWrite();
-        ElasticProperty propertyBase = new ElasticPropertyDocument(key, value.getClass().getName(), value);
         baseElement.setProperty(propertyBase);
         return new AgensProperty<V>(this, propertyBase);
     }
@@ -90,15 +88,13 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     @Override
     public void remove() {
-        if( this.removed ) return;
+        if( this.baseElement.notexists() ) return;
 
-        this.removed = true;
         this.graph.tx().readWrite();
         // post processes of remove vertex : properties, graph, marking
-        ElasticEdge baseEdge = this.getBaseEdge();
+        BaseEdge baseEdge = this.getBaseEdge();
         try {
-            baseEdge.delete();                          // marking deleted
-            this.graph.baseGraph.deleteEdge(baseEdge);  // delete ElasticEdgeDocument
+            this.graph.api.dropEdge(baseEdge);
         }
         catch (RuntimeException e) {
             if (!AgensHelper.isNotFound(e)) throw e;
@@ -107,19 +103,19 @@ public final class AgensEdge extends AgensElement implements Edge, WrappedEdge<E
 
     @Override
     public String toString() {
-        return "e[" + getBaseEdge().getId() + "]" + "[" + getBaseEdge().getSid() + "->" + getBaseEdge().getTid() + "]";
+        return "e[" + getBaseEdge().getId() + "]" + "[" + getBaseEdge().getSrc() + "->" + getBaseEdge().getDst() + "]";
     }
 
     @Override
     public Iterator<Vertex> vertices(final Direction direction) {
-        if (removed) return Collections.emptyIterator();
+        if ( this.baseElement.notexists() ) return Collections.emptyIterator();
         switch (direction) {
             case OUT:
-                return IteratorUtils.of(this.outVertex());
+                return IteratorUtils.of(this.outVertex());  // source
             case IN:
-                return IteratorUtils.of(this.inVertex());
+                return IteratorUtils.of(this.inVertex());   // target
             default:
-                return IteratorUtils.of(this.outVertex(), this.inVertex());
+                return IteratorUtils.of(this.outVertex(), this.inVertex()); // BOTH
         }
     }
 

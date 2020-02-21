@@ -1,8 +1,6 @@
 package net.bitnine.agenspop.graph;
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.ElasticGraphService;
-import net.bitnine.agenspop.graph.exception.AgensGraphManagerException;
+import net.bitnine.agenspop.elasticgraph.ElasticGraphAPI;
 import net.bitnine.agenspop.graph.structure.AgensFactory;
 
 import net.bitnine.agenspop.graph.structure.AgensGraph;
@@ -18,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -34,6 +33,8 @@ import javax.script.Bindings;
 @Service
 public class AgensGraphManager implements GraphManager {
 
+    private static final AtomicLong updateCounter = new AtomicLong(0L);
+
     private static final Logger log =
             LoggerFactory.getLogger(AgensGraphManager.class);
     public static final String AGENS_GRAPH_MANAGER_EXPECTED_STATE_MSG
@@ -48,12 +49,12 @@ public class AgensGraphManager implements GraphManager {
     private final Object instantiateGraphLock = new Object();
 
     // private final ElasticGraphAPI baseAPI;
-    private final ElasticGraphService baseAPI;
+    private final ElasticGraphAPI baseAPI;
     private static AgensGraphManager instance = null;
     private GremlinExecutor gremlinExecutor = null;
 
     @Autowired
-    public AgensGraphManager(ElasticGraphService baseAPI) {
+    public AgensGraphManager(ElasticGraphAPI baseAPI) {
         this.baseAPI = baseAPI;
         this.instance = this;
 
@@ -65,36 +66,23 @@ public class AgensGraphManager implements GraphManager {
         return instance;
     }
 
-/*
-    @PostConstruct
-    private synchronized void ready(){
-        // check exist datasources
-        Map<String, Long> dsVlist = baseAPI.listVertexDatasources();
-        Map<String, Long> dsElist = baseAPI.listEdgeDatasources();
+    public AgensGraph resetSampleGraph(){
+        String gName = "modern";
+        AgensGraph g = AgensFactory.createModern(baseAPI);
+        putGraph(gName, g);
+        updateTraversalSource(gName, g);
 
-        // if not exists, insert sample of modern graph
-        if( dsVlist.size() == 0 || !dsVlist.keySet().contains("modern") || dsVlist.get("modern") < 6L ){
-            String gName = "modern";
-            AgensGraph g = AgensFactory.createEmpty(baseAPI, gName);
-            AgensFactory.generateModern(g);
-            putGraph(gName, g);
-            updateTraversalSource(gName, g);
+        try {
+            System.out.println("reloading sample graph.. ["+gName+"]");
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        // graphs loading
-        StringBuilder sb = new StringBuilder();
-        for(Map.Entry<String, Long> ds : dsVlist.entrySet() ){
-            AgensGraph g = AgensFactory.createEmpty(baseAPI, ds.getKey());
-            putGraph(ds.getKey(), g);
-            updateTraversalSource(ds.getKey(), g);
-            sb.append(" ").append(ds.getKey()).append("[V=").append(ds.getValue()).append(",E=")
-                    .append(dsElist.getOrDefault(ds.getKey(), 0L))
-                    .append("],");
-        }
-        if( sb.length() > 1 ) sb.setLength(sb.length() - 1);
-        System.out.println("AgensGraphManager ready ==>"+sb.toString()+"\n");
+        // for TEST (when startup)
+        System.out.println("\n[Sample Graph Test]\n-------------------------------------------\n");
+        AgensFactory.traversalTestModern(g);
+        return g;
     }
-*/
 
     public void configureGremlinExecutor(GremlinExecutor gremlinExecutor) {
         this.gremlinExecutor = gremlinExecutor;
@@ -249,11 +237,11 @@ public class AgensGraphManager implements GraphManager {
     }
 
     @Override
-    public Graph removeGraph(String gName) {
+    public Graph removeGraph(String gName) throws Exception {
         if (gName == null) return null;
 
-        boolean isDone = this.baseAPI.removeDatasource(gName);
-        System.out.println("** remove graph["+gName+"] ==> "+isDone );
+        String result = this.baseAPI.remove(gName);
+        System.out.println("** remove graph["+gName+"] ==> "+result );
 
         return graphs.remove(gName);
     }
@@ -262,16 +250,21 @@ public class AgensGraphManager implements GraphManager {
 
     public Map<String,String> getGraphStates(){ return this.graphStates; }
 
-    public Map<String,Map<String,Long>> getGraphLabels(){
-        return baseAPI.getGraphLabels();
+    public Map<String,Map<String,Long>> getGraphLabels(String datasource){
+        Map<String,Map<String,Long>> agg = new HashMap<>();
+        agg.put("V", baseAPI.listVertexLabels(datasource));
+        agg.put("E", baseAPI.listEdgeLabels(datasource));
+        return agg;
     }
 
-    public Map<String,Map<String,Long>> getGraphKeys(String datasource){
-        return baseAPI.getGraphKeys(datasource);
+    public Map<String,Long> getGraphKeys(String datasource, String label){
+        Map<String,Long> agg = baseAPI.listVertexLabelKeys(datasource, label);
+        return agg.keySet().size() > 0 ? agg :
+                baseAPI.listEdgeLabelKeys(datasource, label);
     }
 
     public synchronized void updateGraphs(){
-        boolean isFirst = graphs.size() == 0 ? true : false;
+        boolean isFirst = updateCounter.getAndIncrement() == 1L ? true : false;
         graphStates = new HashMap<>();
 
         // check exist datasources
@@ -292,6 +285,16 @@ public class AgensGraphManager implements GraphManager {
 
         if( isFirst ){
             System.out.println("AgensGraphManager ready ==> "+String.join(", ", graphStates.values())+"\n");
+
+            String gName = "modern";
+            if( graphStates.keySet().contains(gName) ) {
+                // for TEST (when startup)
+                System.out.println("\n== Sample Graph Test ==");
+                System.out.println(  "-------------------------------------------\n");
+                AgensGraph g = (AgensGraph) openGraph(gName);
+                AgensFactory.traversalTestModern(g);
+                System.out.println("\n-------------------------------------------\n");
+            }
         }
     }
 

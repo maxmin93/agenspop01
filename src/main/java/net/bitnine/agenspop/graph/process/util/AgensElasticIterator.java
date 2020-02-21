@@ -1,7 +1,7 @@
 package net.bitnine.agenspop.graph.process.util;
 
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.graph.structure.AgensEdge;
 import net.bitnine.agenspop.graph.structure.AgensGraph;
 import net.bitnine.agenspop.graph.structure.AgensVertex;
@@ -33,10 +33,10 @@ public final class AgensElasticIterator<T> implements Iterator<Map<String, T>> {
                 Map.Entry::getKey,
                 entry -> {
                     final T val = entry.getValue();
-                    if (ElasticVertex.class.isAssignableFrom(val.getClass())) {
-                        return (T) new AgensVertex((ElasticVertex)val, this.graph);
-                    } else if (ElasticEdge.class.isAssignableFrom(val.getClass())) {
-                        return (T) new AgensEdge((ElasticEdge)val, this.graph);
+                    if (BaseVertex.class.isAssignableFrom(val.getClass())) {
+                        return (T) new AgensVertex(graph, (BaseVertex)val);
+                    } else if (BaseEdge.class.isAssignableFrom(val.getClass())) {
+                        return (T) new AgensEdge(graph, (BaseEdge)val);
                     } else {
                         return val;
                     }

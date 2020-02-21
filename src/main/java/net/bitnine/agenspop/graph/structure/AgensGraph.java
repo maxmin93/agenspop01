@@ -1,16 +1,13 @@
 package net.bitnine.agenspop.graph.structure;
 
-import net.bitnine.agenspop.elastic.ElasticGraphAPI;
-import net.bitnine.agenspop.elastic.ElasticTx;
-import net.bitnine.agenspop.elastic.model.ElasticEdge;
-import net.bitnine.agenspop.elastic.model.ElasticVertex;
+import net.bitnine.agenspop.basegraph.BaseGraphAPI;
+import net.bitnine.agenspop.basegraph.BaseTx;
+import net.bitnine.agenspop.basegraph.model.BaseEdge;
+import net.bitnine.agenspop.basegraph.model.BaseVertex;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphCountStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensGraphStepStrategy;
 
-import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensPropertyMapStepStrategy;
 import net.bitnine.agenspop.graph.process.traversal.strategy.optimization.AgensVertexStepStrategy;
-import net.bitnine.agenspop.graph.structure.trait.AgensTrait;
-import net.bitnine.agenspop.graph.structure.trait.SimpleAgensTrait;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
@@ -22,14 +19,11 @@ import org.apache.tinkerpop.gremlin.structure.io.IoCore;
 import org.apache.tinkerpop.gremlin.structure.util.*;
 import org.apache.tinkerpop.gremlin.structure.util.wrapped.WrappedGraph;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
-import org.jruby.RubyProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -48,7 +42,7 @@ import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphson;
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_STANDARD)
 @Graph.OptIn(Graph.OptIn.SUITE_STRUCTURE_INTEGRATE)
 @Graph.OptIn(Graph.OptIn.SUITE_PROCESS_STANDARD)
-public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
+public final class AgensGraph implements Graph, WrappedGraph<BaseGraphAPI> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AgensGraph.class);
     static {
@@ -66,7 +60,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     public static final String GREMLIN_AGENSGRAPH_VERTEX_ID_MANAGER = "gremlin.agensgraph.vertexIdManager";
     public static final String GREMLIN_AGENSGRAPH_EDGE_ID_MANAGER = "gremlin.agensgraph.edgeIdManager";
-    public static final String GREMLIN_AGENSGRAPH_VERTEX_PROPERTY_ID_MANAGER = "gremlin.agensgraph.vertexPropertyIdManager";
     public static final String GREMLIN_AGENSGRAPH_DEFAULT_VERTEX_PROPERTY_CARDINALITY = "gremlin.agensgraph.defaultVertexPropertyCardinality";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_LOCATION = "gremlin.agensgraph.graphLocation";
     public static final String GREMLIN_AGENSGRAPH_GRAPH_FORMAT = "gremlin.agensgraph.graphFormat";
@@ -74,41 +67,33 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     private final AgensGraphFeatures features = new AgensGraphFeatures();
 
-    protected ElasticGraphAPI baseGraph;
+    protected final BaseGraphAPI api;
     protected BaseConfiguration configuration = new BaseConfiguration();
-    protected AgensTrait trait;
 
     private final AgensTransaction transaction = new AgensTransaction();
     protected AgensGraphVariables graphVariables;
 
-    protected AtomicInteger currentId = new AtomicInteger(0);
-    // **NOTE: 그래프의 vertex, edge 는 모두 elastic-index 에서 가져와야 함
-    //      -- AgensVertex 의 in/out edges 들은 어떻게 관리?
-    //         => ElasticVertex 에 연결 정보 없음
-    //      -- AgensEdge 의 in/out vertex 들은 어떻게 관리?  => 자체 id 로 요청때 가져오는 방식
-    //
+    protected Object graphComputerView = null;          // excluded
 
-    protected Object graphComputerView = null;  // excluded
-
-    protected AgensIdManager vertexIdManager;   // IdManager<?>
-    protected AgensIdManager edgeIdManager;     // IdManager<?>
-    // protected IdManager<?> vertexPropertyIdManager;
+    protected AtomicLong currentId = new AtomicLong(1L);
+    protected AgensIdManager vertexIdManager;
+    protected AgensIdManager edgeIdManager;
+    protected AgensIdManager vertexPropertyIdManager;   // not used
     protected VertexProperty.Cardinality defaultVertexPropertyCardinality;
 
-    protected final String graphName;
+    private final String graphName;
     private String graphLocation;
     private String graphFormat;
 
-    private void initialize(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+    private void initialize(final Configuration configuration) {
         this.configuration.copy(configuration);
-        this.baseGraph = baseGraph;
         this.graphVariables = new AgensGraphVariables(this);
-        this.trait = SimpleAgensTrait.instance();
 
         this.tx().readWrite();
 
-        vertexIdManager = AgensIdManager.MIX_ID;
-        edgeIdManager = AgensIdManager.MIX_ID;
+        vertexIdManager = AgensIdManager.ANY;
+        edgeIdManager = AgensIdManager.ANY;
+        vertexPropertyIdManager = AgensIdManager.ANY;
         defaultVertexPropertyCardinality = VertexProperty.Cardinality.single;   // fixed!
 
         // added
@@ -124,18 +109,19 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
         this.tx().commit();
     }
 
-    protected AgensGraph(final ElasticGraphAPI baseGraph, final Configuration configuration) {
+    protected AgensGraph(final BaseGraphAPI baseGraph, final Configuration configuration) {
         this.graphName = configuration.getString(GREMLIN_AGENSGRAPH_GRAPH_NAME, "default");
-        this.initialize(baseGraph, configuration);
+        this.api = baseGraph;
+        this.initialize(configuration);
     }
 
-    public static AgensGraph open(final ElasticGraphAPI baseGraph){
+    public static AgensGraph open(final BaseGraphAPI baseGraph){
         final Configuration config = new BaseConfiguration();
         config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
         return new AgensGraph(baseGraph, config);
     }
 
-    public static AgensGraph open(final ElasticGraphAPI baseGraph, final Configuration config){
+    public static AgensGraph open(final BaseGraphAPI baseGraph, final Configuration config){
         if( !config.containsKey( GREMLIN_AGENSGRAPH_GRAPH_NAME )){
             config.setProperty( GREMLIN_AGENSGRAPH_GRAPH_NAME, AgensFactory.defaultGraphName());
         }
@@ -159,23 +145,22 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
             this.graphVariables = new AgensGraphVariables(this);
         return this.graphVariables;
     }
-
+/*
     @Override
     public <I extends Io> I io(final Io.Builder<I> builder) {
         return (I) builder.graph(this).onMapper(mapper ->
                 mapper.addRegistry(AgensIoRegistryV1.instance())).create();
     }
-
+*/
     @Override
     public String toString() {
-        long vSize = baseGraph.countV(graphName);
-        long eSize = baseGraph.countE(graphName);
+        long vSize = api.countV(graphName);
+        long eSize = api.countE(graphName);
         return graphName+"[V="+vSize+",E="+eSize+"]";
     }
 
-    public String name() {
-        return this.graphName;
-    }
+    public String name() { return this.graphName; }
+    public BaseGraphAPI api() { return this.api; }
 
     public void clear() {
         this.graphVariables = null;
@@ -195,13 +180,12 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     @Override
     public Transaction tx() {
-//        throw Exceptions.transactionsNotSupported();
         return this.transaction;
     }
 
     @Override
-    public ElasticGraphAPI getBaseGraph() {
-        return this.baseGraph;
+    public BaseGraphAPI getBaseGraph() {
+        return this.api;
     }
 
     @Override
@@ -270,183 +254,175 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     @Override
     public Vertex addVertex(final Object... keyValues) {
         ElementHelper.legalPropertyKeyValueArray(keyValues);
-        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null), this);
+        Object idValue = vertexIdManager.convert(ElementHelper.getIdValue(keyValues).orElse(null));
         final String label = ElementHelper.getLabelValue(keyValues).orElse(Vertex.DEFAULT_LABEL);
 
         if (null != idValue) {
-            if( baseGraph.existsVertex(idValue.toString()) )
+            if( api.existsVertex(idValue.toString()) )
                 throw Exceptions.vertexWithIdAlreadyExists(idValue);
         } else {
             idValue = vertexIdManager.getNextId(this);
         }
 
-        // @Todo : type of idValue must be Long!!
-        final ElasticVertex baseElement = this.baseGraph.createVertex(idValue.toString(), label);
-        final AgensVertex vertex = new AgensVertex( baseElement, this);
-        for (int i = 0; i < keyValues.length; i = i + 2) {
-            if (!keyValues[i].equals(T.id) && !keyValues[i].equals(T.label))
-                vertex.property((String) keyValues[i], keyValues[i + 1]);
-        }
-
-        this.baseGraph.saveVertex(baseElement);     // write to elasticsearch index
-        return vertex;
+        // create BaseVertex with BaseProperties
+        final BaseVertex baseElement = this.api.createVertex(graphName, idValue.toString(), label);
+        AgensHelper.attachProperties(api, baseElement, keyValues);
+        final AgensVertex vertex = new AgensVertex( this, baseElement);
+        return vertex.save();
     }
 
     @Override
     public Iterator<Vertex> vertices(final Object... vertexIds) {
         this.tx().readWrite();
-        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
         final Iterator<Vertex> iter;
         if (0 == vertexIds.length) {
-            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName))
-                    .filter(nodePredicate)
-                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+//            iter = IteratorUtils.stream(this.api.vertices(graphName))
+            iter = this.api.vertices(graphName)
+                    .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = Stream.of(vertexIds)
-                    .map(id -> {
-                        if (id instanceof Number)
-                            return vertexIdManager.convert(((Number) id).longValue(), this);
-                        else if (id instanceof String)
-                            return (String) id.toString();
-                        else if (id instanceof Vertex) {
-                            return (String) ((Vertex) id).id();
-                        } else
-                            throw new IllegalArgumentException("Unknown vertex id type: " + id);
-                    })
-                    .flatMap(id -> {
-                        try {
-                            Optional<? extends ElasticVertex> base = this.baseGraph.getVertexById(id.toString());
-                            if( base.isPresent() ) return Stream.of((ElasticVertex)base.get());
-                            return Stream.empty();
-                        } catch (final RuntimeException e) {
-                            if (AgensHelper.isNotFound(e)) return Stream.empty();
-                            throw e;
-                        }
-                    })
-                    .filter(nodePredicate)
-                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+//            iter = Stream.of(vertexIds)
+//                    .map(id -> {
+//                        if (id instanceof String)
+//                            return id.toString();
+//                        else if (id instanceof Vertex) {
+//                            return (String) ((Vertex) id).id();
+//                        } else
+//                            throw new IllegalArgumentException("Unknown vertex id type: " + id);
+//                    })
+//                    .flatMap(id -> {
+//                        try {
+//                            Optional<? extends BaseVertex> base = this.api.getVertexById(id);
+//                            if( base.isPresent() ) return Stream.of((BaseVertex)base.get());
+//                            return Stream.empty();
+//                        } catch (final RuntimeException e) {
+//                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+//                            throw e;
+//                        }
+//                    })
+            iter = this.api.verticesByIds(Stream.of(vertexIds).map(Object::toString).toArray(String[]::new))
+                    .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         }
         return iter;
     }
 
-    public Iterator<Vertex> verticesWithFilters(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
+    public Iterator<Vertex> vertices(List<HasContainer> hasContainers, Object... vertexIds) {
         this.tx().readWrite();
-        return IteratorUtils.stream(
-                    this.baseGraph.findVertices(graphName, ids, labels, keys, values))
-                .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
-    }
+        Map<String, Object> optimizedParams = AgensHelper.optimizeHasContainers(hasContainers);
 
-    public Iterator<Vertex> vertices(List<HasContainer> hasContainers, final Object... vertexIds) {
-        this.tx().readWrite();
-        final Predicate<ElasticVertex> nodePredicate = this.trait.getVertexPredicate();
-
-        final List<String> ids = new ArrayList<>();
-        final List<String> labels = new ArrayList<>();
-        final List<String> keys = new ArrayList<>();
-        final List<Object> values = new ArrayList<>();
-        int optType = AgensHelper.optimizeHasContainers(hasContainers, ids, labels, keys, values);
+        String[] vids = null;
+        if( optimizedParams.containsKey("ids") ){
+            if( vertexIds == null || vertexIds.length == 0 ){
+                // ids 의 내용을 vertexIds 로 바꿔치기
+                vids = ((List<Object>)optimizedParams.get("ids")).stream().toArray(String[]::new);
+            }
+            else{
+                // ids 의 내용과 vertexIds 의 교집합으로 vertexIds 바꾸기
+                List<String> intersection = new ArrayList<>();
+                for( Object id : vertexIds ){
+                    if( id instanceof Vertex ) id = ((Vertex)id).id();
+                    else if( id instanceof String ){
+                        if( ((List<String>)optimizedParams.get("ids")).contains(id) )
+                            intersection.add( id.toString() );
+                    }
+                }
+                vids = intersection.stream().toArray(String[]::new);
+            }
+        }
 
         final Iterator<Vertex> iter;
-        if ( vertexIds == null || vertexIds.length == 0) {
-            if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName, ids, labels, keys, values))
-                    .filter(nodePredicate)
-                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+        if ( vids == null || vids.length == 0) {
+            if( optimizedParams.size() > 0 )
+                // optimizeHasContainers 내용 실행
+                iter = AgensHelper.verticesWithHasContainers(this, optimizedParams).iterator();
             else
-                iter = IteratorUtils.stream(this.baseGraph.findVertices(graphName))
-                        .filter(nodePredicate)
-                        .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+                iter = this.api.vertices(graphName)
+                        .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         } else {
-            ElementHelper.validateMixedElementIds(Vertex.class, vertexIds);
-            iter = IteratorUtils.stream(this.getBaseGraph().findVertices(graphName, (String[]) vertexIds))
-                    .filter(nodePredicate)
-                    .map(node -> (Vertex) new AgensVertex(node, this)).iterator();
+            iter = this.api.findVertices(graphName, vids)
+                    .map(node -> (Vertex) new AgensVertex(this, node)).iterator();
         }
-        // for DEBUG
-//        System.out.println("vertices : optType="+optType+", iter.hasNext="+iter.hasNext());
-//        while( iter.hasNext() ){
-//            System.out.println("  ==> "+iter.next().toString() );
-//        }
+
         return iter;
     }
+
+    //////////////////////////////////////////////////////
 
     @Override
     public Iterator<Edge> edges(final Object... edgeIds) {
         this.tx().readWrite();
-        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
         final Iterator<Edge> iter;
         if (0 == edgeIds.length) {
-            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName))
-                    .filter(relationshipPredicate)
-                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+//            iter = IteratorUtils.stream(this.api.edges(graphName))
+            iter = this.api.edges(graphName)
+                    .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         } else {
             ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
-            iter = Stream.of(edgeIds)
-                    .map(id -> {
-                        if (id instanceof Number)
-                            return edgeIdManager.convert(((Number) id).longValue(), this);
-                        else if (id instanceof String)
-                            return (String) id.toString();
-                        else if (id instanceof Edge) {
-                            return (String) ((Edge) id).id();
-                        } else
-                            throw new IllegalArgumentException("Unknown edge id type: " + id);
-                    })
-                    .flatMap(id -> {
-                        try {
-                            Optional<? extends ElasticEdge> base = this.baseGraph.getEdgeById(id.toString());
-                            if( base.isPresent() ) return Stream.of((ElasticEdge)base.get());
-                            else return Stream.empty();
-                        } catch (final RuntimeException e) {
-                            if (AgensHelper.isNotFound(e)) return Stream.empty();
-                            throw e;
-                        }
-                    })
-                    .filter(relationshipPredicate)
-                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+//            iter = Stream.of(edgeIds)
+//                    .map(id -> {
+//                        if (id instanceof String)
+//                            return (String) id.toString();
+//                        else if (id instanceof Edge) {
+//                            return (String) ((Edge) id).id();
+//                        } else
+//                            throw new IllegalArgumentException("Unknown edge id type: " + id);
+//                    })
+//                    .flatMap(id -> {
+//                        try {
+//                            Optional<? extends BaseEdge> base = this.api.getEdgeById(id.toString());
+//                            if( base.isPresent() ) return Stream.of((BaseEdge)base.get());
+//                            else return Stream.empty();
+//                        } catch (final RuntimeException e) {
+//                            if (AgensHelper.isNotFound(e)) return Stream.empty();
+//                            throw e;
+//                        }
+//                    })
+            iter = this.api.edgesByIds(Stream.of(edgeIds).map(Object::toString).toArray(String[]::new))
+                    .map(e -> (Edge) new AgensEdge(this, e)).iterator();
         }
         return iter;
-    }
-
-    public Iterator<Edge> edgesWithFilters(List<String> ids, List<String> labels, List<String> keys, List<Object> values) {
-        this.tx().readWrite();
-        return IteratorUtils.stream(
-                    this.baseGraph.findEdges(graphName, ids, labels, keys, values))
-                .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
     }
 
     public Iterator<Edge> edges(List<HasContainer> hasContainers, final Object... edgeIds) {
-        System.out.println("** graph.edges() with hasContainers="+hasContainers.size());
         this.tx().readWrite();
-        final Predicate<ElasticEdge> relationshipPredicate = this.trait.getEdgePredicate();
+        Map<String, Object> optimizedParams = AgensHelper.optimizeHasContainers(hasContainers);
 
-        final List<String> ids = new ArrayList<>();
-        final List<String> labels = new ArrayList<>();
-        final List<String> keys = new ArrayList<>();
-        final List<Object> values = new ArrayList<>();
-        int optType = AgensHelper.optimizeHasContainers(hasContainers, ids, labels, keys, values);
+        String[] eids = null;
+        if( optimizedParams.containsKey("ids") ){
+            if( edgeIds == null || edgeIds.length == 0 ){
+                // ids 의 내용을 edgeIds 로 바꿔치기
+                eids = ((List<Object>)optimizedParams.get("ids")).stream().toArray(String[]::new);
+            }
+            else{
+                // ids 의 내용과 edgeIds 의 교집합으로 edgeIds 바꾸기
+                List<String> intersection = new ArrayList<>();
+                for( Object id : edgeIds ){
+                    if( id instanceof Edge ) id = ((Edge)id).id();
+                    else if( id instanceof String ){
+                        if( ((List<String>)optimizedParams.get("ids")).contains(id) )
+                            intersection.add( id.toString() );
+                    }
+                }
+                eids = intersection.stream().toArray(String[]::new);
+            }
+        }
 
         final Iterator<Edge> iter;
-        if ( edgeIds == null || edgeIds.length == 0) {
-            if( optType > 0 )
-                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName, ids, labels, keys, values))
-                        .filter(relationshipPredicate)
-                        .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+        if ( eids == null || eids.length == 0) {
+            if( optimizedParams.size() > 0 )
+                // optimizeHasContainers 내용 실행
+                iter = AgensHelper.edgesWithHasContainers(this, optimizedParams).iterator();
             else
-                iter = IteratorUtils.stream(this.baseGraph.findEdges(graphName))
-                        .filter(relationshipPredicate)
-                        .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+                iter = this.api.edges(graphName)
+                        .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         } else {
-            ElementHelper.validateMixedElementIds(Edge.class, edgeIds);
-            iter = IteratorUtils.stream(this.getBaseGraph().findEdges(graphName, (String[]) edgeIds))
-                    .filter(relationshipPredicate)
-                    .map(relationship -> (Edge) new AgensEdge(relationship, this)).iterator();
+            iter = this.getBaseGraph().findEdges(graphName, eids)
+                    .map(relationship -> (Edge) new AgensEdge(this, relationship)).iterator();
         }
-        System.out.println("edges : optType="+optType+", iter.hasNext="+iter.hasNext());
         return iter;
     }
 
+/*
     private <T extends Element> Iterator<T> createElementIterator(
                 final Class<T> clazz, final Map<Object, T> elements,
                 final IdManager idManager, final Object... ids) {
@@ -480,7 +456,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
                 throw Graph.Exceptions.idArgsMustBeEitherIdOrElement();
         }
     }
-
+*/
     ///////////////////////////////////////////////////////
 
     public class AgensGraphFeatures implements Features {
@@ -600,9 +576,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
     /**
      * AgensGraph will use an implementation of this interface to generate identifiers when a user does not supply
      * them and to handle identifier conversions when querying to provide better flexibility with respect to
-     * handling different data types that mean the same thing.  For example, the
-     * {@link AgensIdManager#LONG} implementation will allow {@code g.vertices(1l, 2l)} and
-     * {@code g.vertices(1, 2)} to both return values.
+     * handling different data types that mean the same thing.
      *
      * @param <T> the id type
      */
@@ -615,7 +589,6 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
          * Convert an identifier to the type required by the manager.
          */
         T convert(final Object id);
-        T convert(final Object id, final AgensGraph graph);
         /**
          * Determine if an identifier is allowed by this manager given its type.
          */
@@ -626,7 +599,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
     class AgensTransaction extends AbstractThreadLocalTransaction {
 
-        protected final ThreadLocal<ElasticTx> threadLocalTx = ThreadLocal.withInitial(() -> null);
+        protected final ThreadLocal<BaseTx> threadLocalTx = ThreadLocal.withInitial(() -> null);
 
         public AgensTransaction() {
             super(AgensGraph.this);
@@ -639,7 +612,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         @Override
         public void doCommit() throws TransactionException {
-            try (ElasticTx tx = threadLocalTx.get()) {
+            try (BaseTx tx = threadLocalTx.get()) {
                 tx.success();
             } catch (Exception ex) {
                 throw new TransactionException(ex);
@@ -650,7 +623,7 @@ public final class AgensGraph implements Graph, WrappedGraph<ElasticGraphAPI> {
 
         @Override
         public void doRollback() throws TransactionException {
-            try (ElasticTx tx = threadLocalTx.get()) {
+            try (BaseTx tx = threadLocalTx.get()) {
                 tx.failure();
             } catch (Exception e) {
                 throw new TransactionException(e);
