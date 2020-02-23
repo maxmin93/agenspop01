@@ -1,6 +1,6 @@
 HELP.md
-/target/
-!.mvn/wrapper/maven-wrapper.jar
+target/
+.mvn/
 *.pid
 
 ### STS ###
@@ -13,7 +13,7 @@ HELP.md
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -28,3 +28,25 @@ HELP.md
 
 ### VS Code ###
 .vscode/
+
+### Angular ###
+
+package-lock.json
+
+# dependencies
+node_modules/
+node/
+
+# e2e
+e2e/*.js
+e2e/*.map
+
+#System Files
+.DS_Store
+Thumbs.db
+
+### Temporary Directories ###
+logs/
+temp/
+uploads/
+downloads/
